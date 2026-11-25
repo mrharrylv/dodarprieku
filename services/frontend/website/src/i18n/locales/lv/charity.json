@@ -40,7 +40,8 @@
     "other": "Citas vajadzības",
     "urgent": "Steidzami",
     "pledged": "Apsolīts: {{count}}",
-    "empty": "Organizācija vēl nav norādījusi, kas tai vajadzīgs.",
+    "empty": "Vajadzības vēl nav norādītas.",
+    "emptyHint": "Iestāde tās varēs pievienot, tiklīdz būs reģistrējusies vai pārņēmusi savu profilu.",
     "selected": "Atzīmēts: {{count}}",
     "cta": "Es ziedošu",
     "selectFirst": "Vispirms atzīmējiet vismaz vienu lietu sarakstā."

@@ -14,8 +14,7 @@ export const PAGE_IN_CLASS = 'animate-page-in'
  * never on the first page: that one was prerendered and is already on screen,
  * and fading it would blank text the reader may have started reading. Living
  * in `SiteChrome`, it works the same in every style without touching a shell.
- * The stylesheet fades only the light sections of the new page; a dark hero
- * band stays solid so two dark heroes never flash the light page between them.
+ * The stylesheet fades each top-level section of the new page.
  * Reduced motion zeroes the animation, so nothing moves then.
  */
 export const PageTransition = () => {

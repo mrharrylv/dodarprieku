@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { SnapshotState } from '@/hooks/useSnapshot'
 import type { CharityFilter } from '@/lib/snapshot'
 import { MapPanelCard } from './MapPanelCard'
+import { InfoContent } from './InfoPanel'
 import { LeaderboardContent, NewsContent, OrganisationsContent } from './PanelContent'
 import type { MapPanels as Panels } from './useMapPanels'
 
@@ -47,6 +48,12 @@ export const MapPanels = ({
       return (
         <MapPanelCard key={open} {...shell} title={t('news.title')}>
           <NewsContent />
+        </MapPanelCard>
+      )
+    case 'info':
+      return (
+        <MapPanelCard key={open} {...shell} title={t('info.title')}>
+          <InfoContent />
         </MapPanelCard>
       )
   }

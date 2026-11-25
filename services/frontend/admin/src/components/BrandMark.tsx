@@ -2,7 +2,7 @@
  * The Dod ar prieku mark: a heart inside a map pin, the same drawing as the
  * website's logo and `public/favicon.svg`. Decorative: it always sits beside
  * the brand name. The pin takes the accent fill and the heart the label colour
- * on it, so it keeps its contrast in both themes.
+ * on it, so it keeps its contrast.
  */
 export const BrandMark = ({ className = 'size-8' }: { readonly className?: string }) => (
   <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" className={`shrink-0 ${className}`}>

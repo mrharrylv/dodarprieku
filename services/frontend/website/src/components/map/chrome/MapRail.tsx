@@ -13,6 +13,7 @@ const RAIL_PANELS: ReadonlyArray<{ readonly id: PanelId; readonly icon: IconName
   { id: 'list', icon: 'list' },
   { id: 'leaderboard', icon: 'trophy' },
   { id: 'news', icon: 'mail' },
+  { id: 'info', icon: 'info' },
 ]
 
 const ROUND = cn(
@@ -26,8 +27,8 @@ const ACTIVE = 'border-(--ring-accent) bg-(--surface-accent-soft) text-(--text-a
 
 /**
  * The floating icon rail on the map's left edge: the list, the leaderboard,
- * the newsletter (each opens a panel), the project page and the charities'
- * account. Every button carries its name as `aria-label` and as a tooltip
+ * the newsletter and the project's info (each opens a panel), and the
+ * charities' account. Every button carries its name as `aria-label` and as a tooltip
  * that shows on hover and on keyboard focus.
  */
 export const MapRail = ({ panels }: { panels: MapPanels }) => {
@@ -54,10 +55,6 @@ export const MapRail = ({ panels }: { panels: MapPanels }) => {
           </button>
         )
       })}
-      <Link to={localePath(ROUTES.about, locale)} aria-label={t('rail.about')} className={cn(ROUND, 'h-12 w-12 text-(length:--text-lg)')}>
-        <Icon name="info" />
-        <Tooltip>{t('rail.about')}</Tooltip>
-      </Link>
       <Link to={localePath(ROUTES.account, locale)} aria-label={t('rail.account')} className={cn(ROUND, 'mt-3 ml-0.5 h-11 w-11')}>
         <Icon name="user" />
         <Tooltip>{t('rail.account')}</Tooltip>

@@ -7,7 +7,6 @@ import { App } from '@/App'
 import { HeadCollectorContext } from '@/components/seo/head-collector'
 import { originUrl } from '@/config/env'
 import * as site from '@/config/site'
-import { ThemeProvider } from '@/context/ThemeProvider'
 import { crawlerFiles, type NamespaceReader } from '@/lib/crawler-files'
 import type { PageHead } from '@/lib/head'
 import { declaredPages, type PrerenderPage, type RenderedPage } from '@/lib/prerender'
@@ -68,11 +67,9 @@ export const renderPage = async (page: PrerenderPage): Promise<RenderedPage> => 
   const { prelude } = await prerender(
     <StrictMode>
       <HeadCollectorContext.Provider value={collect}>
-        <ThemeProvider>
-          <StaticRouter location={page.url}>
-            <App />
-          </StaticRouter>
-        </ThemeProvider>
+        <StaticRouter location={page.url}>
+          <App />
+        </StaticRouter>
       </HeadCollectorContext.Provider>
     </StrictMode>,
     {

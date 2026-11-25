@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { shelter, childrenHome } from '@/lib/snapshot.fixtures'
+import { fakeFetch, shelter, childrenHome } from '@/lib/snapshot.fixtures'
 import { renderWithProviders } from '@/test/render'
 import type { MapEngine, MaplibreModule } from './maplibre-engine'
 import { MapView } from './MapView'
@@ -11,6 +11,7 @@ const fakeLibrary = () => {
   const state = {
     map: null as FakeMap | null,
     features: [] as unknown[],
+    zoom: 7,
     flyTo: vi.fn(),
     easeTo: vi.fn(),
     setData: vi.fn(),
@@ -19,21 +20,24 @@ const fakeLibrary = () => {
   }
 
   class FakeMap {
-    handlers = new Map<string, (() => void)[]>()
+    handlers = new Map<string, ((e?: unknown) => void)[]>()
     container: HTMLElement
     constructor(options: { container: HTMLElement }) {
       this.container = options.container
       state.map = this
     }
-    on(event: string, cb: () => void) {
+    on(event: string, cb: (e?: unknown) => void) {
       this.handlers.set(event, [...(this.handlers.get(event) ?? []), cb])
       return this
     }
-    fire(event: string) {
-      for (const cb of this.handlers.get(event) ?? []) cb()
+    fire(event: string, e?: unknown) {
+      for (const cb of this.handlers.get(event) ?? []) cb(e)
     }
+    sources: string[] = []
     addControl() {}
-    addSource() {}
+    addSource(id: string) {
+      this.sources.push(id)
+    }
     addLayer() {}
     resize() {}
     fitBounds() {}
@@ -54,11 +58,20 @@ const fakeLibrary = () => {
     querySourceFeatures() {
       return state.features
     }
-    getSource() {
-      return { setData: state.setData, getClusterExpansionZoom: () => Promise.resolve(9) }
+    getSource(id: string) {
+      return this.sources.includes(id) ? { setData: state.setData, getClusterExpansionZoom: () => Promise.resolve(9) } : undefined
     }
     getZoom() {
-      return 7
+      return state.zoom
+    }
+    getCenter() {
+      return { lng: 24.6, lat: 56.9 }
+    }
+    getBounds() {
+      return { getWest: () => 20, getSouth: () => 55, getEast: () => 29, getNorth: () => 58.5 }
+    }
+    getContainer() {
+      return this.container
     }
     flyTo(o: unknown) {
       state.flyTo(o)
@@ -144,6 +157,7 @@ describe('MapView', () => {
   })
 
   it('draws pins and clusters as buttons, opens a popup and flies to a focus', async () => {
+    vi.stubGlobal('fetch', fakeFetch({}))
     const { state, engine } = fakeLibrary()
     const onSelect = vi.fn()
     const charities = [shelter, childrenHome]
@@ -165,24 +179,108 @@ describe('MapView', () => {
     fireEvent.click(pin)
     expect(onSelect).toHaveBeenCalledWith('c-ulubele')
 
+    // A big cluster is a heart; clicking it zooms past its expansion zoom, so it really opens.
     fireEvent.click(screen.getByRole('button', { name: '4 organizācijas šajā apgabalā. Pietuvināt' }))
-    await waitFor(() => expect(state.easeTo).toHaveBeenCalledWith(expect.objectContaining({ zoom: 9 })))
+    await waitFor(() => expect(state.easeTo).toHaveBeenCalledWith(expect.objectContaining({ zoom: 9.5 })))
 
     rerender(view('c-ulubele', { id: 'c-ulubele', nonce: 1 }))
-    expect(state.flyTo).toHaveBeenCalledWith(expect.objectContaining({ center: [24.1, 56.95], zoom: 12.5 }))
-    const link = await screen.findByRole('link', { name: /Skatīt vajadzības/ })
-    expect(link).toHaveAttribute('href', '/organizacija/ulubele')
+    expect(state.flyTo).toHaveBeenCalledWith(expect.objectContaining({ center: [24.1, 56.95], zoom: 14 }))
+    // The small card first; "Skatīt vajadzības" expands it in place, it does not navigate.
+    const expand = await screen.findByRole('button', { name: /Skatīt vajadzības/ })
+    expect(expand).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
     expect(screen.getByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(expand)
+    expect(await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })).toHaveAttribute('href', '/organizacija/ulubele')
+    // Focus follows the card: into the expanded card, back to "Skatīt vajadzības" when it collapses.
+    expect(screen.getByRole('button', { name: 'Sakļaut' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: /Es ziedošu/ })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Kā nogādāt' })).toBeInTheDocument()
+    // Escape collapses it back to the small card first.
+    fireEvent.keyDown(screen.getByRole('link', { name: /Atvērt pilnu lapu/ }), { key: 'Escape' })
+    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Skatīt vajadzības/ })).toHaveFocus()
 
     fireEvent.click(screen.getByRole('button', { name: 'Aizvērt' }))
     expect(onSelect).toHaveBeenLastCalledWith(null)
 
     // Pins leave when the data no longer has them.
     state.features = []
-    act(() => state.map?.fire('render'))
-    expect(screen.queryByRole('button', { name: /Ulubele, / })).not.toBeInTheDocument()
+    act(() => state.map?.fire('sourcedata', { sourceId: 'charities' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Ulubele, / })).not.toBeInTheDocument())
 
     rerender(<MapView charities={[childrenHome]} selectedId={null} onSelect={onSelect} focus={null} engine={engine} />)
     expect(state.setData).toHaveBeenCalled()
+  })
+  it('draws two or three charities as one category pin with a count, and leaves off-screen ones out', async () => {
+    const { state, engine } = fakeLibrary()
+    renderWithProviders(<MapView charities={[shelter, childrenHome]} selectedId={null} onSelect={vi.fn()} focus={null} engine={engine} />)
+    await waitFor(() => expect(state.map).not.toBeNull())
+    state.features = [
+      { geometry: { type: 'Point', coordinates: [24, 57] }, properties: { cluster: true, cluster_id: 5, point_count: 2, 'n:bernu-nams': 2 } },
+      point('c-far', 40, 40),
+    ]
+    act(() => state.map?.fire('load'))
+
+    const small = await screen.findByRole('button', { name: '2 organizācijas šajā apgabalā. Pietuvināt' })
+    expect(small).toHaveTextContent('2')
+    expect(small.querySelector('svg path')).not.toBeNull()
+    expect(state.map?.sources).toEqual(['charities', 'charities-fine'])
+    expect(screen.queryAllByRole('button', { name: /, / })).toHaveLength(0)
+  })
+
+  it('opens the small card of a charity with no needs yet, saying so', async () => {
+    const { state, engine } = fakeLibrary()
+    renderWithProviders(<MapView charities={[childrenHome]} selectedId={childrenHome.id} onSelect={vi.fn()} focus={null} engine={engine} />)
+    await waitFor(() => expect(state.map).not.toBeNull())
+    act(() => state.map?.fire('load'))
+    expect(await screen.findByText('Vajadzības vēl nav norādītas.')).toBeInTheDocument()
+    expect(screen.getByText('Iestāde tās varēs pievienot pēc reģistrēšanās.')).toBeInTheDocument()
+  })
+
+  it('opens small again after the expanded card is closed and the charity chosen again', async () => {
+    const { state, engine } = fakeLibrary()
+    const view = (selectedId: string | null) => (
+      <MapView charities={[shelter, childrenHome]} selectedId={selectedId} onSelect={vi.fn()} focus={null} engine={engine} />
+    )
+    const { rerender } = renderWithProviders(view(shelter.id))
+    await waitFor(() => expect(state.map).not.toBeNull())
+    act(() => state.map?.fire('load'))
+    fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+    expect(await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })).toBeInTheDocument()
+
+    // Closed (the close button, a map click), then the same pin again: the small card.
+    rerender(view(null))
+    rerender(view(shelter.id))
+    expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+
+    // Expanded, then another pin: that one opens small too.
+    fireEvent.click(screen.getByRole('button', { name: /Skatīt vajadzības/ }))
+    await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })
+    rerender(view(childrenHome.id))
+    expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+  })
+
+  it('expands into a modal bottom sheet on a phone, which Escape and the backdrop collapse', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }))
+    const { state, engine } = fakeLibrary()
+    renderWithProviders(<MapView charities={[shelter]} selectedId={shelter.id} onSelect={vi.fn()} focus={null} engine={engine} />)
+    await waitFor(() => expect(state.map).not.toBeNull())
+    act(() => state.map?.fire('load'))
+    fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+    const sheet = await screen.findByRole('dialog', { name: shelter.profile.organization.name })
+    expect(sheet).toHaveAttribute('aria-modal', 'true')
+    expect(screen.getByRole('button', { name: 'Sakļaut' })).toHaveFocus()
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Sakļaut' }), { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: shelter.profile.organization.name })).toBeNull()
+    expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toHaveFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: /Skatīt vajadzības/ }))
+    fireEvent.click(await screen.findByRole('dialog', { name: shelter.profile.organization.name }))
+    expect(screen.queryByRole('dialog', { name: shelter.profile.organization.name })).toBeNull()
+    vi.unstubAllGlobals()
   })
 })

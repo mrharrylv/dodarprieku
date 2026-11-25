@@ -24,7 +24,7 @@ export const REQUEST_TIMEOUT_MS = 15_000
  * is for the load where that never happens (the bundle failed or was
  * blocked, or the redirect never landed), so a visitor is not left with a
  * page hidden for good. The script cannot import this; its copy is held to
- * it by `src/context/theme-init.test.ts`.
+ * it by `src/lib/theme-init.test.ts`.
  */
 export const HIDDEN_PAGE_TIMEOUT_MS = 3_000
 

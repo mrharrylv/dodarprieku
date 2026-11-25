@@ -6,7 +6,7 @@ import { MAIN_CONTENT_ID } from '@/config/dom'
  * The first thing in the tab order.
  *
  * Without it, a keyboard user tabs through the whole header: logo, every nav
- * link, the language switcher, the theme toggle: on every single page before
+ * link, the language switcher, the register button: on every single page before
  * reaching the content. Invisible until focused, then unmissable.
  */
 export const SkipLink = () => {

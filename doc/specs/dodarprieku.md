@@ -200,6 +200,17 @@ allows exactly that origin (`connect-src`, `img-src`, `worker-src blob:`).
 Address search in the wizard uses Nominatim (`https://nominatim.openstreetmap.org`,
 countrycodes=lv), only when the user presses search.
 
+Clusters are small accent hearts with the count inside; a group of two or
+three is one pin of its majority category with a count. Two clustered copies
+of the data: a coarse one for the country view and a fine one (60px) from
+zoom 9, or whenever the coarse one leaves fewer than 5 markers on screen.
+The coarse radius is the map's width over 9, between 56px and 160px, wider
+than the 80-100px first asked for (Harry, 2026-11-26): with the 1024 imported
+charities a 90px radius still left about 40 markers at country zoom, and the
+aim is roughly 7-15 (15 on a 1440px desktop, 8 on a 390px phone). Only the
+markers in or just around the view are drawn, worked out at most every 120ms
+while the map moves.
+
 ## Packages and ownership
 
 | Directory | What |

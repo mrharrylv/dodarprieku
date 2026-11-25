@@ -14,7 +14,7 @@
   },
   "search": {
     "label": "Meklēt pēc nosaukuma vai pilsētas",
-    "placeholder": "Piemēram, Ulubele vai Cēsis",
+    "placeholder": "Meklēt iestādi vai pilsētu",
     "clear": "Notīrīt meklēšanu"
   },
   "filters": {
@@ -28,7 +28,9 @@
     "noMatch": "Neviena organizācija neatbilst meklējumam.",
     "reset": "Rādīt visas",
     "show": "Rādīt kartē: {{name}}",
-    "urgent": "Steidzami"
+    "urgent": "Steidzami",
+    "more": "Rādīt vēl {{count}}",
+    "shown": "Parādītas {{shown}} no {{total}}"
   },
   "empty": {
     "title": "Kartē vēl nav nevienas organizācijas",
@@ -58,27 +60,48 @@
   },
   "popup": {
     "close": "Aizvērt",
+    "collapse": "Sakļaut",
     "view": "Skatīt vajadzības",
     "photoAlt": "{{name}}: attēls",
     "urgent": "Steidzami",
-    "noNeeds": "Vajadzības vēl nav norādītas."
+    "noNeeds": "Vajadzības vēl nav norādītas.",
+    "noNeedsHint": "Iestāde tās varēs pievienot pēc reģistrēšanās.",
+    "openPage": "Atvērt pilnu lapu"
   },
   "loadError": "Neizdevās ielādēt organizācijas",
   "chrome": {
     "label": "Meklēšana un kategorijas",
     "home": "Dod ar prieku: uz karti",
-    "actions": "Pieteikties un iestatījumi"
+    "actions": "Pieteikšanās"
   },
   "rail": {
     "label": "Kartes rīki",
     "list": "Organizācijas",
     "leaderboard": "Lielākie atbalstītāji",
     "news": "Jaunumi",
-    "about": "Par projektu",
+    "info": "Par projektu",
     "account": "Mans konts"
   },
   "news": {
     "title": "Jaunumi",
     "body": "Kad kādai iestādei kaut kas būs steidzami vajadzīgs, mēs jums uzrakstīsim. Atrakstīties var jebkurā brīdī."
+  },
+  "info": {
+    "title": "Par Dod ar prieku",
+    "tabsLabel": "Sadaļas",
+    "tabs": {
+      "about": "Par projektu",
+      "help": "Kā palīdzēt",
+      "us": "Par mums"
+    },
+    "how": {
+      "title": "Kā tas darbojas",
+      "body": "Iestādes pašas norāda, kas tām šobrīd vajadzīgs. Jūs kartē atrodat iestādi, atzīmējat, ko atnesīsiet, un nogādājat to. Visi redz, kas jau ir apsolīts, tāpēc nekas netiek nopirkts divreiz."
+    },
+    "donors": "Ja vēlaties palīdzēt",
+    "institutionSteps": "Trīs soļi līdz kartei",
+    "maintainer": "Uzturētājs: {{name}}",
+    "address": "Adrese: {{value}}",
+    "projects": "Citi HA Group projekti"
   }
 }

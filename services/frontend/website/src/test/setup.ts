@@ -13,8 +13,8 @@ import i18n from '@/i18n'
  * that costs an afternoon.
  */
 
-// jsdom has no matchMedia, and ThemeProvider calls it on mount. Without this,
-// every component test that renders the provider throws.
+// jsdom has no matchMedia, and the map and the panels call it. Without this,
+// every component test that reaches for it throws.
 beforeEach(() => {
   vi.stubGlobal(
     'matchMedia',

@@ -5,6 +5,7 @@ import { HA_GROUP_PROJECTS, ROUTES } from '@/config/site'
 import { useLocale } from '@/hooks/useLocale'
 import { localePath } from '@/lib/locale-path'
 import { legalValues } from '@/components/legal/legal-values'
+import { ProjectCards } from '@/components/layout/ProjectLogo'
 import { RegisterButton } from '@/components/layout/RegisterButton'
 import { Card } from '@/components/ui/Card'
 import { Icon, type IconName } from '@/components/ui/Icon'
@@ -107,33 +108,12 @@ export const Principles = () => {
   )
 }
 
-/** "Citi HA Group projekti": each one a card that opens the project in a new tab. */
+/** "Citi HA Group projekti": each one a card with its logo that opens the project in a new tab. */
 export const OtherProjectsSection = () => {
   const { t } = useTranslation('about')
-  const { t: tc } = useTranslation('common')
   return (
     <Section title={t('projects.title')} subtitle={t('projects.subtitle')}>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {HA_GROUP_PROJECTS.map((project) => (
-          <li key={project.id}>
-            <a
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex h-full flex-col rounded-(--radius-lg) border border-(--border-subtle) bg-(--surface-raised) p-5 shadow-(--shadow-subtle) transition-[border-color,box-shadow,transform] duration-200 ease-(--ease-out-soft) hover:-translate-y-0.5 hover:border-(--ring-accent) hover:shadow-(--shadow-card)"
-            >
-              <IconBubble name={project.icon} />
-              <span className="mt-4 flex items-center gap-1.5 text-(length:--text-lg) font-semibold text-(--text-primary) group-hover:text-(--text-accent)">
-                {project.name}
-                <Icon name="arrowRight" className="-rotate-45 text-(--text-muted)" />
-              </span>
-              <span className="mt-1 text-(length:--text-sm) text-(--text-secondary)">{t(`projects.items.${project.id}`)}</span>
-              <span className="mt-3 text-(length:--text-xs) text-(--text-muted)">{new URL(project.url).host}</span>
-              <span className="sr-only">{tc('a11y.opensInNewTab')}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <ProjectCards projects={HA_GROUP_PROJECTS} className="sm:grid-cols-2 lg:grid-cols-4" />
     </Section>
   )
 }

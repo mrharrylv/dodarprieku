@@ -36,9 +36,6 @@ interface Absolute {
 
 type Colour = Relative | Absolute
 
-/** The attribute selector ThemeProvider sets, escaped for a regex. */
-const DARK_SELECTOR = "\\[data-theme='dark'\\]"
-
 /** Pull the body of `<selector> { … }`. These blocks never nest. */
 const block = (css: string, selector: string): string => {
   const pattern = new RegExp(`${selector}\\s*\\{([^}]*)\\}`, 'm')
@@ -95,38 +92,18 @@ export const readRamps = (css: string): ReadonlyMap<string, Colour> => {
 }
 
 /**
- * The semantic layer for one theme, resolved the way the CASCADE resolves it.
- *
- * The order matters and is not obvious. A style's `tokens.css` is imported
- * into `layer(components)`, and `index.css` defines both themes in
- * `@layer base`. Layer order beats selector specificity, so a style's
- * unqualified `:root` overrides the BASE stylesheet's `[data-theme='dark']`
- * block, not just its `:root`.
- *
- * Which means a style that repoints colours in `:root` and writes no dark
- * block has silently repointed the dark theme as well, and the theme toggle
- * does nothing. Reading only each source's own theme block, which an earlier
- * version of this file did, models a page the browser never paints.
- *
- *   light:  base :root                      -> style :root
- *   dark:   base :root -> base [dark]       -> style :root -> style [dark]
+ * The semantic layer, resolved the way the CASCADE resolves it: the base
+ * stylesheet's `:root`, then each style's `:root` over it. The site is light
+ * only, so there is no other theme to read.
  */
-export const readSemantic = (
-  sources: readonly string[],
-  theme: 'light' | 'dark',
-): ReadonlyMap<string, string> => {
+export const readSemantic = (sources: readonly string[]): ReadonlyMap<string, string> => {
   const resolved = new Map<string, string>()
 
-  const apply = (css: string, selector: string) => {
-    for (const [name, value] of declarations(block(css, selector))) {
+  for (const css of sources) {
+    for (const [name, value] of declarations(block(css, ':root'))) {
       if (name.startsWith('color-')) continue
       resolved.set(name, value)
     }
-  }
-
-  for (const css of sources) {
-    apply(css, ':root')
-    if (theme === 'dark') apply(css, DARK_SELECTOR)
   }
 
   return resolved
@@ -141,7 +118,7 @@ export interface Palette {
 }
 
 /**
- * Resolve a palette at one hue, for one theme.
+ * Resolve a palette at one hue. `theme` is always 'light': the site has no other.
  *
  * `sources` is the base stylesheet followed by any style override, later
  * winning. Every value must be one of the permitted forms; anything else
@@ -150,12 +127,12 @@ export interface Palette {
  */
 export const palette = (
   sources: readonly string[],
-  theme: 'light' | 'dark',
+  theme: 'light',
   hue: number,
   label = 'index.css',
 ): Palette => {
   const ramps = readRamps(sources[0] ?? '')
-  const semantic = readSemantic(sources, theme)
+  const semantic = readSemantic(sources)
 
   const rampRgb = (name: string): Rgb => {
     const entry = ramps.get(name)

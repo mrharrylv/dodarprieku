@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 
 /** The map's floating panels, opened from the rail. One is open at a time. */
-export const PANEL_IDS = ['list', 'leaderboard', 'news'] as const
+export const PANEL_IDS = ['list', 'leaderboard', 'news', 'info'] as const
 export type PanelId = (typeof PANEL_IDS)[number]
 
 /** The DOM id of a panel, for its button's `aria-controls`. */

@@ -42,6 +42,14 @@ const failures = (checks: ReadonlyArray<[string, Rgb, Rgb, number]>): string[] =
     .filter(([, ratio, minimum]) => ratio < minimum)
     .map(([label, ratio, minimum]) => `${label}: ${ratio.toFixed(2)} < ${minimum}`)
 
+describe('light only', () => {
+  it('defines no dark theme: the site is light only (Harry, 2026-11-26)', () => {
+    for (const [, sources] of LAYERS) {
+      for (const css of sources) expect(css).not.toMatch(/data-theme|@custom-variant dark/)
+    }
+  })
+})
+
 describe('the converter itself', () => {
   it('reproduces known colours, so the numbers below can be trusted', () => {
     expect(toHex(gamutMap(1, 0, 0))).toBe('#ffffff')
@@ -55,7 +63,6 @@ describe('the converter itself', () => {
 describe.each(LAYERS)('%s', (label, sources) => {
   describe.each(HUES)('at brand hue %i', (hue) => {
     const light = palette(sources, 'light', hue, label)
-    const dark = palette(sources, 'dark', hue, label)
 
     it('resolves every semantic colour token it defines', () => {
       // A value the parser cannot read is a value nobody has measured.
@@ -76,11 +83,10 @@ describe.each(LAYERS)('%s', (label, sources) => {
       ]
       for (const token of tokens) {
         expect(() => light.colour(token), `light --${token}`).not.toThrow()
-        expect(() => dark.colour(token), `dark --${token}`).not.toThrow()
       }
     })
 
-    it('light theme text clears 4.5:1 on every surface', () => {
+    it('text clears 4.5:1 on every surface', () => {
       const surfaces = ['surface-page', 'surface-raised', 'surface-sunken'] as const
       const texts = ['text-primary', 'text-secondary', 'text-muted', 'text-accent'] as const
 
@@ -98,34 +104,12 @@ describe.each(LAYERS)('%s', (label, sources) => {
       expect(failures(checks)).toEqual([])
     })
 
-    it('dark theme text clears 4.5:1 on every surface', () => {
-      const surfaces = ['surface-page', 'surface-raised', 'surface-sunken'] as const
-      const texts = ['text-primary', 'text-secondary', 'text-muted', 'text-accent'] as const
-
-      const checks = texts.flatMap((text) =>
-        surfaces.map(
-          (surface): [string, Rgb, Rgb, number] => [
-            `${text} on ${surface}`,
-            dark.colour(text),
-            dark.colour(surface),
-            TEXT,
-          ],
-        ),
-      )
-
-      expect(failures(checks)).toEqual([])
-    })
-
-    it('the primary button label clears 4.5:1 in both themes', () => {
-      // This is the check the original palette failed, at 3.31:1. The two
-      // themes need OPPOSITE label colours, which is why --text-on-accent is a
-      // token rather than a hardcoded text-white.
+    it('the primary button label clears 4.5:1', () => {
+      // This is the check the original palette failed, at 3.31:1.
       expect(
         failures([
           ['light: on-accent on fill', light.colour('text-on-accent'), light.colour('fill-accent'), TEXT],
           ['light: on-accent on fill-hover', light.colour('text-on-accent'), light.colour('fill-accent-hover'), TEXT],
-          ['dark: on-accent on fill', dark.colour('text-on-accent'), dark.colour('fill-accent'), TEXT],
-          ['dark: on-accent on fill-hover', dark.colour('text-on-accent'), dark.colour('fill-accent-hover'), TEXT],
         ]),
       ).toEqual([])
     })
@@ -134,7 +118,6 @@ describe.each(LAYERS)('%s', (label, sources) => {
       expect(
         failures([
           ['light: fill vs page', light.colour('fill-accent'), light.colour('surface-page'), UI],
-          ['dark: fill vs page', dark.colour('fill-accent'), dark.colour('surface-page'), UI],
         ]),
       ).toEqual([])
     })
@@ -144,17 +127,14 @@ describe.each(LAYERS)('%s', (label, sources) => {
 
       expect(
         failures(
-          (['light', 'dark'] as const).flatMap((theme) => {
-            const p = theme === 'light' ? light : dark
-            return surfaces.map(
-              (surface): [string, Rgb, Rgb, number] => [
-                `${theme}: ring vs ${surface}`,
-                p.colour('ring-accent'),
-                p.colour(surface),
-                UI,
-              ],
-            )
-          }),
+          surfaces.map(
+            (surface): [string, Rgb, Rgb, number] => [
+              `light: ring vs ${surface}`,
+              light.colour('ring-accent'),
+              light.colour(surface),
+              UI,
+            ],
+          ),
         ),
       ).toEqual([])
     })
@@ -163,7 +143,6 @@ describe.each(LAYERS)('%s', (label, sources) => {
       expect(
         failures([
           ['light: border-strong vs raised', light.colour('border-strong'), light.colour('surface-raised'), UI],
-          ['dark: border-strong vs raised', dark.colour('border-strong'), dark.colour('surface-raised'), UI],
         ]),
       ).toEqual([])
     })

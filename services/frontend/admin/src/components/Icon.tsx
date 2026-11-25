@@ -48,10 +48,6 @@ export const IconList: Icon = (p) => (
 export const IconLogout: Icon = (p) => (
   <Svg {...p}><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3" /><path d="M10 16l-4-4 4-4M6 12h10" /></Svg>
 )
-export const IconSun: Icon = (p) => (
-  <Svg {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Svg>
-)
-export const IconMoon: Icon = (p) => <Svg {...p}><path d="M20 14.5A8 8 0 119.5 4a6.5 6.5 0 0010.5 10.5z" /></Svg>
 export const IconCheck: Icon = (p) => <Svg {...p}><path d="M5 12.5l4.5 4.5L19 7.5" /></Svg>
 export const IconAlert: Icon = (p) => (
   <Svg {...p}><path d="M12 3l9.5 17h-19z" /><path d="M12 10v4M12 17.5v.01" /></Svg>

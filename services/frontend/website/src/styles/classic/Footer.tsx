@@ -17,11 +17,8 @@ export const Footer = () => {
   const social = activeSocial()
 
   return (
-    // Its own band in both themes: always dark, scoped with data-theme so
-    // every token inside takes its dark value and keeps its contrast, under a
-    // line of the accent colour.
+    // Its own band: a shade below the page, under a line of the accent colour.
     <footer
-      data-theme="dark"
       className="mt-auto border-t-2 border-(--fill-accent) bg-(--surface-sunken) text-(--text-secondary)"
     >
       <Container>

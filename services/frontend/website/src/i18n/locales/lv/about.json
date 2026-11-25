@@ -62,12 +62,6 @@
   },
   "projects": {
     "title": "Citi HA Group projekti",
-    "subtitle": "Dod ar prieku ir viens no HA Group projektiem. Iepazīstieties arī ar pārējiem.",
-    "items": {
-      "unveil": "Iepazīšanās lietotne.",
-      "eventapp": "Pasākumi visā Latvijā.",
-      "balticgp": "Motosporta sacīkstes Baltijā.",
-      "hagroup": "Programmatūras izstrāde."
-    }
+    "subtitle": "Dod ar prieku ir viens no HA Group projektiem. Iepazīstieties arī ar pārējiem."
   }
 }

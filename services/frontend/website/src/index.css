@@ -37,11 +37,6 @@
    jsdom does no layout. The build check in doc/styles.md is what catches it. */
 /* @active-style:source */
 
-/* Dark mode is driven by an explicit attribute on <html>, set by ThemeProvider,
-   rather than by the media query alone, so the visitor's own choice wins over
-   the OS setting. Two themes only, light and dark: there is no "system" mode. */
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
-
 @theme {
   /* ---------------------------------------------------------------------
      Brand ramp: the one thing a new site changes.
@@ -82,7 +77,7 @@
   --color-ink-700: oklch(0.372 0.011 var(--brand-hue));
   --color-ink-800: oklch(0.279 0.009 var(--brand-hue));
   /* 900 and 950 are softened (Harry, 2026-11-06: "the black should not be so
-     black"): the dark theme's page and the hero bands are a deep charcoal,
+     black"): the hero bands are a deep charcoal,
      not near-black. Were 0.208 and 0.145. */
   --color-ink-900: oklch(0.245 0.009 var(--brand-hue));
   --color-ink-950: oklch(0.19 0.008 var(--brand-hue));
@@ -157,12 +152,8 @@
    Semantic surface tokens
    =============================================================================
    Components reference these, not the ramps above. That indirection is what
-   makes one component correct in both themes without a single `dark:` class
-   sprinkled through its markup.
-
-   Both themes are defined here explicitly. Never give a colour its only
-   definition inside a dark block: a missing light value renders as an
-   inherited or transparent surface. */
+   lets one component be restyled without touching its markup. Light only:
+   the site has no dark mode (Harry, 2026-11-26). */
 @layer base {
   :root {
     /* Softened (Harry, 2026-11-06: "the white should not be so white"): the
@@ -206,54 +197,16 @@
     --ring-accent: var(--color-brand-600);
 
     /* The label colour on --fill-accent. A token rather than a hardcoded
-       `text-white`, because the two themes need opposite answers. */
+       `text-white`, so a re-theme changes it in one place. */
     --text-on-accent: #fff;
 
     /* A brand-tinted surface for decorative fills: icon badges, chips, the wash
        behind a call to action. It is a SURFACE, so --text-accent has to stay
-       legible on it, which is why it sits at the pale end of the ramp in light
-       and at the dark end in dark rather than being one shade used twice. */
+       legible on it, which is why it sits at the pale end of the ramp. */
     --surface-accent-soft: var(--color-brand-50);
     --border-accent-soft: var(--color-brand-200);
 
     color-scheme: light;
-  }
-
-  [data-theme='dark'] {
-    --surface-page: var(--color-ink-950);
-    --surface-raised: var(--color-ink-900);
-    /* The bands that alternate with the page: a shade below it, still
-       charcoal rather than black. Was 0.115. */
-    --surface-sunken: oklch(0.165 0.007 var(--brand-hue));
-    --surface-inverted: var(--color-ink-50);
-
-    --border-subtle: oklch(0.31 0.009 var(--brand-hue));
-    /* 0.36 measured 1.64:1 against the raised surface. 3.36-3.84:1 here. */
-    --border-strong: oklch(0.53 0.011 var(--brand-hue));
-
-    --text-primary: var(--color-ink-100);
-    --text-secondary: var(--color-ink-300);
-    --text-muted: var(--color-ink-400);
-    --text-inverted: var(--color-ink-950);
-
-    --text-accent: var(--color-brand-400); /* 7.80-8.76:1 on the dark page */
-
-    /* Dark mode inverts the button: a LIGHT fill with a DARK label.
-       Keeping a brand-700 fill with a white label would give a good label
-       contrast but leave the button itself at only ~3.0:1 against the page,
-       which is the button disappearing rather than the text being unreadable.
-       brand-400 with an ink-950 label measures 7.80-8.76:1 both ways. */
-    --fill-accent: var(--color-brand-400);
-    --fill-accent-hover: var(--color-brand-300);
-    --text-on-accent: var(--color-ink-950);
-    --ring-accent: var(--color-brand-400);
-
-    /* Not brand-950: at that chroma it reads as a flat near-black beside the
-       page. A little lightness and much less chroma keeps it a tint. */
-    --surface-accent-soft: oklch(0.23 0.045 var(--brand-hue));
-    --border-accent-soft: oklch(0.34 0.06 var(--brand-hue));
-
-    color-scheme: dark;
   }
 
   /* ---------------------------------------------------------------------
@@ -334,8 +287,8 @@
     font-family: inherit;
   }
 
-  /* One focus treatment for the whole site, visible on every surface and in
-     both themes. Removing an outline without replacing it makes the site
+  /* One focus treatment for the whole site, visible on every surface.
+     Removing an outline without replacing it makes the site
      unusable by keyboard: do not. */
   :focus-visible {
     outline: 2px solid var(--ring-accent);
@@ -346,11 +299,6 @@
   ::selection {
     background-color: var(--color-brand-200);
     color: var(--color-ink-950);
-  }
-
-  [data-theme='dark'] ::selection {
-    background-color: var(--color-brand-800);
-    color: var(--color-ink-50);
   }
 
   /* Honour the OS setting. Animation that cannot be turned off is a WCAG 2.3.3
@@ -543,10 +491,7 @@
     }
   }
 
-  /* Only the light sections fade. A dark band (data-theme="dark") stays put:
-     fading it would let the light page show through for a moment between two
-     dark heroes, which is the blink this is here to stop. */
-  .animate-page-in > :not([data-theme='dark']) {
+  .animate-page-in > * {
     animation: page-in 0.5s var(--ease-out-soft) 0.08s both;
   }
 

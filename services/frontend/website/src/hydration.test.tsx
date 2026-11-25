@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
 import { StrictMode, act } from 'react'
 import { hydrateRoot, type Root } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -8,8 +5,7 @@ import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest'
 
 import i18n, { resources } from '@/i18n'
 import { App } from '@/App'
-import { ThemeProvider } from '@/context/ThemeProvider'
-import { ROUTES, SITE, STORAGE_KEYS } from '@/config/site'
+import { ROUTES, SITE } from '@/config/site'
 import { startupPlan, type RenderedPage } from '@/lib/prerender'
 import { prerenderInChild } from '@/test/prerender-in-child'
 
@@ -32,11 +28,9 @@ import { prerenderInChild } from '@/test/prerender-in-child'
  */
 const clientTree = (
   <StrictMode>
-    <ThemeProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>
 )
 
@@ -55,9 +49,6 @@ const SAMPLE = [
   ['lv:/', '/index.html'],
   ['lv:/par-projektu', '/par-projektu/index.html'],
 ] as const
-
-/** The pre-paint script, run in the page's window before React starts. */
-const THEME_INIT = readFileSync(join(__dirname, '..', 'public', 'theme-init.js'), 'utf8')
 
 let markup: Readonly<Record<string, RenderedPage>> = {}
 
@@ -114,59 +105,6 @@ describe('hydrating the prerendered markup', () => {
     // which would put a different <h1> node in the document.
     expect(heading).not.toBeNull()
     expect(container?.querySelector('h1')).toBe(heading)
-  })
-
-  it('hydrates for a visitor who chose dark, then shows their choice', async () => {
-    window.localStorage.setItem(STORAGE_KEYS.theme, 'dark')
-    document.documentElement.setAttribute('data-theme', 'dark')
-
-    const { onRecoverableError, consoleError } = await hydrate('/par-projektu', 'lv:/par-projektu')
-
-    expect(onRecoverableError).not.toHaveBeenCalled()
-    expect(consoleError).not.toHaveBeenCalled()
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
-    document.documentElement.removeAttribute('data-theme')
-  })
-
-  // theme-init.js used to force light when it could not use the stored value,
-  // and ThemeProvider corrected it to the OS's dark just after hydration. That
-  // context change reached the legal page's Suspense boundary while its chunk
-  // was still loading, and React threw the server markup away.
-  // Each case hydrates a page whose chunk no earlier test has loaded, so its
-  // Suspense boundary is still waiting when the provider's first effect runs.
-  it.each([
-    [
-      'a stored theme this site never wrote',
-      '/legal/cookies',
-      () => window.localStorage.setItem(STORAGE_KEYS.theme, 'blue'),
-    ],
-    [
-      // Reads only: i18next writes the language on every change, and in a real
-      // browser with storage blocked it has already stopped trying.
-      'storage that throws when read',
-      '/legal/terms',
-      () =>
-        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-          throw new DOMException('The operation is insecure.', 'SecurityError')
-        }),
-    ],
-  ])('keeps a lazy legal page for a dark-OS visitor with %s', async (_, url, arrange) => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: query.includes('dark'),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    }))
-    arrange()
-    new Function('window', THEME_INIT)(window)
-
-    const { heading, onRecoverableError, consoleError } = await hydrate(url, `lv:${url}`)
-
-    expect(onRecoverableError).not.toHaveBeenCalled()
-    expect(consoleError).not.toHaveBeenCalled()
-    expect(container?.querySelector('h1')).toBe(heading)
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
-    document.documentElement.removeAttribute('data-theme')
   })
 
   it('keeps working after hydration: the navigation still navigates', async () => {

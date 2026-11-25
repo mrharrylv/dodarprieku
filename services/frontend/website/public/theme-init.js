@@ -6,16 +6,17 @@
   starts; anything decided later is decided after the visitor has seen the
   wrong answer.
 
-  1. The theme. Without this, every visitor whose choice differs from the
-     default sees a full-screen flash of the wrong colour on every page load.
-  2. A page in the wrong language. There is one 404.html, in the default
+  The name is historical: it set the theme too, until the site went light
+  only (2026-11-26). The deploy and index.html load it by this name.
+
+  1. A page in the wrong language. There is one 404.html, in the default
      language, and it answers /lv/nope too. It is hidden here, and main.tsx
      shows it once it has rendered the not-found page in the address's
      language, so nobody reads the default language first. Only a document
      the build wrote, which the prerender marks on <html>: the dev server's
      index.html is always lang="en", and hiding it would hide every /lv and
      /ru page, and Vite's error overlay with them.
-  3. Where the bare root goes. `/` holds the default language's home page,
+  2. Where the bare root goes. `/` holds the default language's home page,
      for crawlers. A visitor whose language is another one the site publishes
      is sent to it here, with the page hidden, rather than shown the default
      language until the bundle has loaded.
@@ -32,10 +33,8 @@
   inline scripts. It is tiny and same-origin, and served with a short cache.
 
   It runs before the bundle exists, so it repeats what the app decides later,
-  and src/context/theme-init.test.ts runs every case through both. Change one,
+  and src/lib/theme-init.test.ts runs every case through both. Change one,
   change the other, in the same commit:
-    - the theme rule is resolveTheme (src/context/theme-context.ts), and the
-      key is STORAGE_KEYS.theme (src/config/site.ts);
     - the language rule is i18next's (src/i18n/index.ts: the stored choice,
       then the browser's languages), the key is STORAGE_KEYS.locale, the list
       is LOCALES with DEFAULT_LOCALE first, and the attributes are
@@ -46,7 +45,7 @@
     - HIDDEN_MS is HIDDEN_PAGE_TIMEOUT_MS (src/config/constants.ts).
 
   It reaches the page only through `window`, which is what lets the test hand
-  it storage that throws, an OS setting, an address and a browser language.
+  it storage that throws, an address and a browser language.
 */
 ;(function (window) {
   var root = window.document.documentElement
@@ -61,15 +60,6 @@
     }
   }
 
-  /* 1. The theme: a stored 'light' or 'dark' wins; anything else, including
-     nothing and unreadable, follows the OS. */
-  var choice = stored('dodarprieku.theme')
-  var systemDark =
-    typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches
-  var theme = choice === 'light' || choice === 'dark' ? choice : systemDark ? 'dark' : 'light'
-  root.setAttribute('data-theme', theme)
-  root.style.colorScheme = theme
-
   var LOCALES = ['lv']
   var HTML_LANGS = ['lv']
   var HIDDEN_MS = 3000
@@ -82,7 +72,7 @@
     }, HIDDEN_MS)
   }
 
-  /* 2. The address names a language the document is not in: the 404 page,
+  /* 1. The address names a language the document is not in: the 404 page,
      which the edge serves in the default language for every address. Hidden,
      not sent anywhere: main.tsx renders the right page and shows it. */
   var named = LOCALES.indexOf(path.split('/')[1])
@@ -91,7 +81,7 @@
     return
   }
 
-  /* 3. The bare root. The default language needs no second request: main.tsx
+  /* 2. The bare root. The default language needs no second request: main.tsx
      moves the address to /<default> and hydrates the page already here. */
   if (LOCALES.length < 2 || (path !== '/' && path !== '/index.html')) return
 

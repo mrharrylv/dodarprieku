@@ -7,8 +7,6 @@
 
 @import 'tailwindcss';
 
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
-
 @theme {
   /* ---------------------------------------------------------------------
      Brand ramp: the one thing a new site changes.
@@ -49,8 +47,7 @@
   --color-ink-700: oklch(0.372 0.011 var(--brand-hue));
   --color-ink-800: oklch(0.279 0.009 var(--brand-hue));
   /* 900 and 950 are softened (Harry, 2026-11-06: "the black should not be so
-     black"): the dark theme's page and the hero bands are a deep charcoal,
-     not near-black. Were 0.208 and 0.145. */
+     black"): a deep charcoal, not near-black. Were 0.208 and 0.145. */
   --color-ink-900: oklch(0.245 0.009 var(--brand-hue));
   --color-ink-950: oklch(0.19 0.008 var(--brand-hue));
 
@@ -113,12 +110,8 @@
    Semantic surface tokens
    =============================================================================
    Components reference these, not the ramps above. That indirection is what
-   makes one component correct in both themes without a single `dark:` class
-   sprinkled through its markup.
-
-   Both themes are defined here explicitly. Never give a colour its only
-   definition inside a dark block: a missing light value renders as an
-   inherited or transparent surface. */
+   lets a component restyle without touching its markup. Light only: the
+   portal has no dark mode (Harry, 2026-11-26). */
 @layer base {
   :root {
     /* Softened (Harry, 2026-11-06: "the white should not be so white"): the
@@ -167,53 +160,16 @@
 
     /* A brand-tinted surface for decorative fills: icon badges, chips, the wash
        behind a call to action. It is a SURFACE, so --text-accent has to stay
-       legible on it, which is why it sits at the pale end of the ramp in light
-       and at the dark end in dark rather than being one shade used twice. */
+       legible on it, which is why it sits at the pale end of the ramp. */
     --surface-accent-soft: var(--color-brand-50);
     --border-accent-soft: var(--color-brand-200);
 
     color-scheme: light;
   }
 
-  [data-theme='dark'] {
-    --surface-page: var(--color-ink-950);
-    --surface-raised: var(--color-ink-900);
-    /* The bands that alternate with the page: a shade below it, still
-       charcoal rather than black. Was 0.115. */
-    --surface-sunken: oklch(0.165 0.007 var(--brand-hue));
-    --surface-inverted: var(--color-ink-50);
-
-    --border-subtle: oklch(0.31 0.009 var(--brand-hue));
-    /* 0.36 measured 1.64:1 against the raised surface. 3.36-3.84:1 here. */
-    --border-strong: oklch(0.53 0.011 var(--brand-hue));
-
-    --text-primary: var(--color-ink-100);
-    --text-secondary: var(--color-ink-300);
-    --text-muted: var(--color-ink-400);
-    --text-inverted: var(--color-ink-950);
-
-    --text-accent: var(--color-brand-400); /* 7.80-8.76:1 on the dark page */
-
-    /* Dark mode inverts the button: a LIGHT fill with a DARK label.
-       Keeping a brand-700 fill with a white label would give a good label
-       contrast but leave the button itself at only ~3.0:1 against the page,
-       which is the button disappearing rather than the text being unreadable.
-       brand-400 with an ink-950 label measures 7.80-8.76:1 both ways. */
-    --fill-accent: var(--color-brand-400);
-    --fill-accent-hover: var(--color-brand-300);
-    --text-on-accent: var(--color-ink-950);
-    --ring-accent: var(--color-brand-400);
-
-    /* Not brand-950: at that chroma it reads as a flat near-black beside the
-       page. A little lightness and much less chroma keeps it a tint. */
-    --surface-accent-soft: oklch(0.23 0.045 var(--brand-hue));
-    --border-accent-soft: oklch(0.34 0.06 var(--brand-hue));
-
-    color-scheme: dark;
-  }
 
   /* Admin only: status and diff tints. Text tokens clear 4.5:1 on the
-     page, raised and soft surfaces in both themes. */
+     page, raised and soft surfaces. */
   :root {
     --text-success: oklch(0.44 0.12 150);
     --text-warning: oklch(0.46 0.1 70);
@@ -230,21 +186,6 @@
     --overlay: oklch(0.19 0.008 var(--brand-hue) / 0.55);
   }
 
-  [data-theme='dark'] {
-    --text-success: oklch(0.8 0.13 150);
-    --text-warning: oklch(0.84 0.12 80);
-    --text-danger: oklch(0.78 0.13 25);
-    --surface-success-soft: oklch(0.26 0.045 150);
-    --surface-warning-soft: oklch(0.27 0.045 80);
-    --surface-danger-soft: oklch(0.26 0.05 25);
-    --border-success: oklch(0.55 0.1 150);
-    --border-warning: oklch(0.6 0.1 75);
-    --border-danger: oklch(0.6 0.15 25);
-    --fill-danger: oklch(0.72 0.15 25);
-    --fill-danger-hover: oklch(0.78 0.13 25);
-    --text-on-danger: var(--color-ink-950);
-    --overlay: oklch(0.1 0.005 var(--brand-hue) / 0.7);
-  }
 
   * {
     border-color: var(--border-subtle);

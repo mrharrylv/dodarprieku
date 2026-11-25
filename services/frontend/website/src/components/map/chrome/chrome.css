@@ -37,5 +37,5 @@
 
 /* The row fades out at its right edge, the hint that there is more to scroll to. */
 .dp-fade-x {
-  mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 4.5rem), transparent);
 }

@@ -16,7 +16,7 @@ import type { SiteStyle } from './contract'
  *
  * A style is free in how it looks and constrained in what it must provide:
  * the landmarks a screen reader navigates by, the skip link, the navigation,
- * the register button, the theme control, the footer credit and the other
+ * the register button, the footer credit and the other
  * HA Group projects, and one `h1` per page. A style that drops any of these fails here, with its name
  * in the message, rather than shipping.
  *
@@ -110,12 +110,12 @@ describe.each(styles)('style "%s"', (id, style) => {
     expect(complete, 'no navigation landmark contains every NAV_LINKS entry').toBe(true)
   })
 
-  it('offers the theme toggle, and no language switcher for one language', async () => {
+  it('offers no theme toggle (light only), and no language switcher for one language', async () => {
     renderStyle(style)
     await screen.findByRole('banner')
 
     expect(screen.queryAllByRole('radiogroup', { name: lv('common')('language.label') })).toHaveLength(0)
-    expect(screen.getAllByRole('button', { name: /tēm/i }).length).toBeGreaterThan(0)
+    expect(screen.queryAllByRole('button', { name: /tēm/i })).toHaveLength(0)
   })
 
   it('puts the register button in the header', async () => {

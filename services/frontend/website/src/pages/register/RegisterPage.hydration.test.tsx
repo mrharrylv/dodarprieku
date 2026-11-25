@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { STORAGE_KEYS } from '@/config/site'
 import { VALID_FORM } from '@/components/profile-editor/fixtures'
-import { ThemeProvider } from '@/context/ThemeProvider'
 import i18n from '@/i18n'
 import { RegisterPage } from './RegisterPage'
 
@@ -20,11 +19,9 @@ import { RegisterPage } from './RegisterPage'
  */
 const tree = (): ReactNode => (
   <I18nextProvider i18n={i18n}>
-    <ThemeProvider>
-      <MemoryRouter initialEntries={['/registreties']}>
-        <RegisterPage />
-      </MemoryRouter>
-    </ThemeProvider>
+    <MemoryRouter initialEntries={['/registreties']}>
+      <RegisterPage />
+    </MemoryRouter>
   </I18nextProvider>
 )
 

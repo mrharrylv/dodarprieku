@@ -17,7 +17,7 @@ interface Row {
 const display = (url: string): string => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 
 /** The charity's public contacts: only what it chose to publish, every one a link. */
-export const CharityContacts = ({ charity }: { charity: PublicCharity }) => {
+export const CharityContacts = ({ charity, compact = false }: { charity: PublicCharity; compact?: boolean }) => {
   const { t } = useTranslation('charity')
   const { t: tc } = useTranslation('common')
   const org = charity.profile.organization
@@ -35,8 +35,10 @@ export const CharityContacts = ({ charity }: { charity: PublicCharity }) => {
     ...web('instagram', 'arrowRight'),
   ]
 
+  if (compact && rows.length === 0) return null
+
   return (
-    <SectionCard title={t('contacts.title')}>
+    <SectionCard title={t('contacts.title')} compact={compact}>
       <dl className="space-y-3">
         {rows.map((row) => (
           <div key={row.key} className="flex items-start gap-3">

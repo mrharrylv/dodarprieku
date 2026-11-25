@@ -23,7 +23,7 @@ describe('OtherProjects', () => {
       expect(link).toHaveAttribute('target', '_blank')
       expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
       expect(link).toHaveTextContent(common.a11y.opensInNewTab)
-      expect(link.querySelector('svg[aria-hidden="true"]')).not.toBeNull()
+      expect(within(link).getByRole('img', { name: `${project.name} logotips` })).toHaveAttribute('src', project.logo)
     }
   })
 })

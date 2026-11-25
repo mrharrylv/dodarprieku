@@ -4,19 +4,17 @@ import { categoryById, type CategoryId } from '@shared/catalog'
 import { cn } from '@/lib/cn'
 import type { CategoryCount } from '@/lib/snapshot'
 import { CategoryBadge } from '@/components/icons/CategoryBadge'
+import { GLASS, PILL } from './chrome/pill'
 import './chrome/chrome.css'
 
-const CHIP = cn(
-  'inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border py-1 pr-3.5 pl-1.5',
-  'text-(length:--text-sm) font-medium whitespace-nowrap transition-colors duration-150',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ring-accent)',
-)
-const OFF = 'border-(--border-subtle) bg-(--surface-raised) text-(--text-primary) hover:border-(--border-strong)'
-const ON = 'border-(--ring-accent) bg-(--surface-accent-soft) text-(--text-primary) shadow-(--shadow-subtle)'
+const CHIP = cn(PILL, 'gap-2 pr-3.5 pl-1.5')
+const OFF = cn(GLASS, 'border-(--border-subtle) text-(--text-primary) hover:border-(--border-strong) hover:bg-(--surface-raised)/90')
+const ON = 'border-(--ring-accent) bg-(--surface-accent-soft) text-(--text-primary) shadow-(--shadow-card)'
 
 /**
  * Category chips: toggle buttons with the icon, the plural name and how many
- * match, in one row that scrolls sideways when it does not fit.
+ * match, each floating on its own, in one row that scrolls sideways when it
+ * does not fit.
  */
 export const CategoryFilter = ({
   counts,
@@ -57,7 +55,7 @@ export const CategoryFilter = ({
 }
 
 const Count = ({ value }: { value: number }) => (
-  <span className="rounded-full bg-(--surface-sunken) px-2 text-(length:--text-xs) text-(--text-secondary) tabular-nums">
+  <span className="rounded-full bg-(--surface-sunken)/80 px-2 text-(length:--text-xs) text-(--text-secondary) tabular-nums">
     {value}
   </span>
 )

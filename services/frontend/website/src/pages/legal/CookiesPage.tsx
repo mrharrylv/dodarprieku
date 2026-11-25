@@ -16,7 +16,6 @@ import { ConsentSettingsButton } from '@/components/analytics/ConsentSettingsBut
  * change too, not just a line of TypeScript.
  */
 const ROWS = [
-  { key: STORAGE_KEYS.theme, purpose: 'themePurpose', duration: 'untilCleared' },
   { key: STORAGE_KEYS.locale, purpose: 'localePurpose', duration: 'untilCleared' },
   { key: STORAGE_KEYS.consent, purpose: 'consentPurpose', duration: 'oneYear' },
   { key: STORAGE_KEYS.viewedCharities, purpose: 'viewedPurpose', duration: 'untilTabClosed' },

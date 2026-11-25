@@ -7,6 +7,7 @@ import { renderWithProviders } from '@/test/render'
 import { AboutPage } from './AboutPage'
 
 const about = resources.lv.about
+const common = resources.lv.common
 
 describe('classic AboutPage', () => {
   it('has one h1 and a way back to the map', () => {
@@ -49,7 +50,8 @@ describe('classic AboutPage', () => {
       expect(link).toHaveAttribute('href', project.url)
       expect(link).toHaveAttribute('target', '_blank')
       expect(link).toHaveTextContent(project.name)
-      expect(link).toHaveTextContent(about.projects.items[project.id])
+      expect(link).toHaveTextContent(common.projects[project.id])
+      expect(within(link).getByRole('img', { name: `${project.name} logotips` })).toHaveAttribute('src', project.logo)
     })
   })
 

@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import i18n from '@/i18n'
 import { ROUTES } from '@/config/site'
-import { ThemeProvider } from '@/context/ThemeProvider'
 import { resetSnapshotCache } from '@/hooks/useSnapshot'
 import { fakeFetch, snapshotFixture } from '@/lib/snapshot.fixtures'
 import { renderWithProviders } from '@/test/render'
@@ -30,11 +29,9 @@ describe('MapPage', () => {
     vi.stubGlobal('fetch', fetchSpy)
     const html = renderToString(
       <I18nextProvider i18n={i18n}>
-        <ThemeProvider>
-          <MemoryRouter>
-            <MapPage />
-          </MemoryRouter>
-        </ThemeProvider>
+        <MemoryRouter>
+          <MapPage />
+        </MemoryRouter>
       </I18nextProvider>,
     )
     expect(html.match(/<h1/g)).toHaveLength(1)
@@ -43,7 +40,8 @@ describe('MapPage', () => {
     expect(html).toContain('type="search"')
     expect(html).toContain('Kartes rīki')
     expect(html).toContain('href="/registreties"')
-    expect(html).toContain(`href="${ROUTES.about}"`)
+    // The info button opens a panel; nothing on the map links to the project page any more.
+    expect(html).not.toContain(`href="${ROUTES.about}"`)
     expect(html).not.toContain('id="map-panel-')
     expect(html).not.toContain('aria-expanded="true"')
     expect(html).not.toContain('maplibregl')
@@ -153,11 +151,67 @@ describe('MapPage', () => {
     expect(railButton('Organizācijas')).toHaveFocus()
   })
 
-  it('links the rail to the project page and the account', () => {
+  it('links the rail to the account, and opens the info as a panel rather than a page', () => {
     vi.stubGlobal('fetch', fakeFetch({}))
     renderWithProviders(<MapPage />)
-    expect(within(rail()).getByRole('link', { name: 'Par projektu' })).toHaveAttribute('href', ROUTES.about)
     expect(within(rail()).getByRole('link', { name: 'Mans konts' })).toHaveAttribute('href', ROUTES.account)
+    expect(within(rail()).queryByRole('link', { name: 'Par projektu' })).toBeNull()
+    expect(railButton('Par projektu')).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('shows the info panel in three tabs, moved through with the arrow keys', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', fakeFetch({}))
+    renderWithProviders(<MapPage />)
+
+    await user.click(railButton('Par projektu'))
+    const panel = screen.getByRole('region', { name: 'Par Dod ar prieku' })
+    expect(panel).toHaveFocus()
+    const tabs = within(panel).getAllByRole('tab')
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['Par projektu', 'Kā palīdzēt', 'Par mums'])
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    expect(within(panel).getByRole('tabpanel', { name: 'Par projektu' })).toHaveTextContent('Kā tas darbojas')
+
+    tabs[0]?.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(tabs[1]).toHaveFocus()
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'true')
+    expect(tabs[0]).toHaveAttribute('tabindex', '-1')
+    const help = within(panel).getByRole('tabpanel', { name: 'Kā palīdzēt' })
+    expect(within(help).getByRole('link', { name: /Kļūt par saņēmēju/ })).toHaveAttribute('href', ROUTES.register)
+    expect(help).toHaveTextContent('Mēs pārbaudām')
+
+    await user.keyboard('{End}')
+    const us = within(panel).getByRole('tabpanel', { name: 'Par mums' })
+    expect(us).toHaveTextContent('Uzturētājs: SIA HA Group')
+    expect(us).toHaveTextContent('Reģ. Nr. 40203724866')
+    expect(within(us).getByRole('link', { name: 'info@hagroup.lv' })).toHaveAttribute('href', 'mailto:info@hagroup.lv')
+    expect(within(us).getByRole('img', { name: 'Unveil logotips' })).toHaveAttribute('src', '/projects/unveil.png')
+    expect(within(us).getByRole('link', { name: /Event App/ })).toHaveAttribute('href', 'https://eventapp.lv')
+
+    await user.keyboard('{Home}')
+    expect(tabs[0]).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(tabs[2]).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Par Dod ar prieku' })).toBeNull()
+    expect(railButton('Par projektu')).toHaveFocus()
+  })
+
+  it('renders the first hundred organisations, then more on request', async () => {
+    const many = Array.from({ length: 230 }, (_, i) => ({ ...snapshotFixture.charities[0]!, id: `c-${i}`, slug: `org-${i}` }))
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: { ...snapshotFixture, charities: many } } }))
+    renderWithProviders(<MapPage />)
+    await screen.findByRole('group', { name: 'Kategorijas' })
+    fireEvent.click(railButton('Organizācijas'))
+    const panel = screen.getByRole('region', { name: 'Organizācijas' })
+    expect(within(panel).getAllByRole('button', { name: /^Rādīt kartē/ })).toHaveLength(100)
+    expect(within(panel).getByText('Parādītas 100 no 230')).toBeInTheDocument()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Rādīt vēl 100' }))
+    fireEvent.click(within(panel).getByRole('button', { name: 'Rādīt vēl 30' }))
+    expect(within(panel).getAllByRole('button', { name: /^Rādīt kartē/ })).toHaveLength(230)
+    expect(within(panel).queryByRole('button', { name: /^Rādīt vēl/ })).toBeNull()
   })
 
   it('shows the empty state, with the way to register, when no charity is published yet', async () => {

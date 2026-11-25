@@ -60,6 +60,14 @@ describe('CharityPage', () => {
     expect(screen.getByRole('button', { name: 'Atvērt attēlu 1 no 2' })).toBeInTheDocument()
   })
 
+  it('says plainly when no needs are listed yet, and that the institution can add them', async () => {
+    vi.stubGlobal('fetch', routes())
+    renderAt('/organizacija/cesu-bernu-nams')
+    expect(await screen.findByText('Vajadzības vēl nav norādītas.')).toBeInTheDocument()
+    expect(screen.getByText(/varēs pievienot, tiklīdz būs reģistrējusies/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Es ziedošu/ })).toBeNull()
+  })
+
   it('counts the view once per tab', async () => {
     const fetcher = routes()
     vi.stubGlobal('fetch', fetcher)

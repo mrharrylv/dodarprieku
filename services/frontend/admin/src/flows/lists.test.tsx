@@ -114,14 +114,11 @@ describe('list requests', () => {
 })
 
 describe('shell', () => {
-  it('toggles the theme and shows a not-found page', async () => {
+  it('shows a not-found page and opens the menu', async () => {
     renderApp('/nav-tadas')
     const user = userEvent.setup()
     expect(await screen.findByText('Šī lapa netika atrasta.')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Tumšais režīms' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
-    await user.click(screen.getByRole('button', { name: 'Gaišais režīms' }))
-    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+    expect(screen.queryByRole('button', { name: /režīms/ })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Izvēlne' }))
     expect(screen.getByRole('button', { name: 'Izvēlne' })).toHaveAttribute('aria-expanded', 'true')
   })

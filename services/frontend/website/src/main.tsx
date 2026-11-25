@@ -7,7 +7,6 @@ import '@/index.css'
 import i18n from '@/i18n'
 
 import { App } from '@/App'
-import { ThemeProvider } from '@/context/ThemeProvider'
 import { PRERENDER_ATTR, REDIRECTING_ATTR, startupPlan } from '@/lib/prerender'
 
 const container = document.getElementById('root')
@@ -36,11 +35,9 @@ const plan = startupPlan({
 // hydration.test.tsx, or hydration cannot reuse the prerendered markup.
 const app = (
   <StrictMode>
-    <ThemeProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>
 )
 

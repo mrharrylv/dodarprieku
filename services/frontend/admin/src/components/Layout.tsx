@@ -1,14 +1,13 @@
-/** The signed-in shell: a sidebar with counts, the page in <main>, logout and theme. */
+/** The signed-in shell: a sidebar with counts, the page in <main>, and logout. */
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/auth'
 import { useCounts } from '../context/counts'
 import { lv } from '../i18n/lv'
-import { applyTheme, readTheme, type Theme } from '../lib/theme'
 import type { Counts } from '../lib/dashboard'
 import { PATHS } from '../paths'
 import {
-  IconBuilding, IconDashboard, IconDiff, IconGift, IconInbox, IconList, IconLogout, IconMenu, IconMoon, IconSun, IconUsers,
+  IconBuilding, IconDashboard, IconDiff, IconGift, IconInbox, IconList, IconLogout, IconMenu, IconUsers,
 } from './Icon'
 import { BrandMark } from './BrandMark'
 import { Badge } from './ui'
@@ -41,12 +40,6 @@ export const Layout = () => {
   const { state, logout } = useAuth()
   const { counts } = useCounts()
   const [open, setOpen] = useState(false)
-  const [theme, setTheme] = useState<Theme>(readTheme)
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    applyTheme(next)
-    setTheme(next)
-  }
 
   return (
     <div className="min-h-screen md:flex">
@@ -103,10 +96,6 @@ export const Layout = () => {
               {lv.nav.loggedInAs} {state.me.email}
             </p>
           )}
-          <button type="button" onClick={toggleTheme} className={linkClass({ isActive: false }) + ' w-full'}>
-            {theme === 'dark' ? <IconSun /> : <IconMoon />}
-            {theme === 'dark' ? lv.app.themeLight : lv.app.themeDark}
-          </button>
           <button type="button" onClick={() => void logout()} className={linkClass({ isActive: false }) + ' w-full'}>
             <IconLogout />
             {lv.nav.logout}

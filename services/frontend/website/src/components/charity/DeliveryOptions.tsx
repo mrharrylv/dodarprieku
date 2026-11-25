@@ -16,7 +16,7 @@ interface Way {
 }
 
 /** Every way to bring things, as the charity listed them, each address one tap to copy. */
-export const DeliveryOptions = ({ delivery }: { delivery: Delivery }) => {
+export const DeliveryOptions = ({ delivery, compact = false }: { delivery: Delivery; compact?: boolean }) => {
   const { t } = useTranslation('charity')
   const ways: readonly Way[] = [
     ...(delivery.inPerson !== undefined
@@ -35,7 +35,7 @@ export const DeliveryOptions = ({ delivery }: { delivery: Delivery }) => {
   ].filter((way) => way.address.trim() !== '')
 
   return (
-    <SectionCard title={t('delivery.title')}>
+    <SectionCard title={t('delivery.title')} compact={compact}>
       {ways.length === 0 ? (
         <p className="text-(--text-secondary)">{t('delivery.none')}</p>
       ) : (

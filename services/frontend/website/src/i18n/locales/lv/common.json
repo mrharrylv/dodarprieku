@@ -29,12 +29,6 @@
     "rights": "Visas tiesības aizsargātas.",
     "developedBy": "Mājaslapas izstrāde: <1>{{developer}}</1>"
   },
-  "theme": {
-    "label": "Tēma",
-    "light": "Gaišā",
-    "dark": "Tumšā",
-    "toggle": "Pārslēgt tēmu: {{mode}}"
-  },
   "language": {
     "label": "Valoda",
     "switchTo": "Pārslēgt valodu: {{language}}"
@@ -71,5 +65,12 @@
     "accept": "Piekrītu",
     "reject": "Nepiekrītu",
     "change": "Mainīt piekrišanas izvēli"
+  },
+  "projects": {
+    "logoAlt": "{{name}} logotips",
+    "unveil": "Iepazīšanās lietotne bez swipe: vispirms stāsti, foto tikai tad, kad abi saka „tiekamies”.",
+    "eventapp": "Visi pasākumi Latvijā vienuviet.",
+    "balticgp": "Motosporta sacīkstes Baltijā.",
+    "hagroup": "Latvijā veidotas mājaslapas un lietotnes."
   }
 }

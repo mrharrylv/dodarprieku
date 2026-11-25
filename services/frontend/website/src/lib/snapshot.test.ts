@@ -68,6 +68,7 @@ describe('media and links', () => {
   it('lets only http(s) links through', () => {
     expect(safeHref('https://a.test/x')).toBe('https://a.test/x')
     expect(safeHref('http://a.test')).toBe('http://a.test/')
+    expect(safeHref('http://nav')).toBeUndefined()
     expect(safeHref('javascript:alert(1)')).toBeUndefined()
     expect(safeHref('not a url')).toBeUndefined()
     expect(safeHref('')).toBeUndefined()

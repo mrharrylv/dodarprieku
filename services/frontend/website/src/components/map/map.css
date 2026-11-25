@@ -1,6 +1,10 @@
-/* MapLibre's popup, restyled onto the site's surfaces (both themes). */
+/* MapLibre's popup, restyled onto the site's surfaces. */
 .dp-popup .maplibregl-popup-content {
   padding: 0;
+  /* MapLibre sets 12px Helvetica here; the card is the site's own type. */
+  font: inherit;
+  font-size: var(--text-base);
+  line-height: 1.5;
   overflow: hidden;
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
@@ -55,4 +59,21 @@
   .dp-pin[aria-pressed='true'] {
     transform: none;
   }
+}
+
+/* The popup card grows into its expanded form in place: its width eases, and
+   the details below the header open from no height to their own (a grid row
+   going from 0fr to 1fr, which a browser animates without measuring). The
+   base layer's reduced-motion rule zeroes both durations. */
+.dp-card {
+  transition: width 260ms var(--ease-out-soft);
+}
+
+.dp-card-grow {
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 320ms var(--ease-out-soft);
+}
+
+.dp-card-grow[data-open='true'] {
+  grid-template-rows: 1fr;
 }

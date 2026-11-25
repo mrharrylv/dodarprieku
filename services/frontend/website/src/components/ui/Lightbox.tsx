@@ -21,8 +21,7 @@ export const wrapIndex = (index: number, step: number, length: number): number =
  * makes the page behind it inert, and closes it on Escape; focus returns to
  * whatever opened it. Clicking the dark backdrop closes it too.
  *
- * Scoped to the dark theme: photos read best on near-black, whatever theme
- * the page is in.
+ * Always near-black, with light ink text on it: photos read best there.
  */
 export const Lightbox = ({
   title,
@@ -92,7 +91,6 @@ export const Lightbox = ({
   return (
     <dialog
       ref={dialogRef}
-      data-theme="dark"
       aria-labelledby="lightbox-title"
       onCancel={(event) => {
         event.preventDefault()
@@ -104,15 +102,15 @@ export const Lightbox = ({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="lightbox fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-(--color-ink-950)/95 p-0 text-(--text-primary) backdrop:bg-(--color-ink-950)/80 backdrop:backdrop-blur-sm"
+      className="lightbox fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-(--color-ink-950)/95 p-0 text-(--color-ink-50) backdrop:bg-(--color-ink-950)/80 backdrop:backdrop-blur-sm"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <h2 id="lightbox-title" className="truncate text-(length:--text-lg) text-(--text-primary)">
+            <h2 id="lightbox-title" className="truncate text-(length:--text-lg) text-(--color-ink-50)">
               {title}
             </h2>
-            <p className="text-(length:--text-sm) text-(--text-secondary) tabular-nums" aria-live="polite">
+            <p className="text-(length:--text-sm) text-(--color-ink-300) tabular-nums" aria-live="polite">
               {t('lightbox.counter', { current: index + 1, total: count })}
             </p>
           </div>
@@ -120,7 +118,7 @@ export const Lightbox = ({
             type="button"
             onClick={onClose}
             aria-label={t('lightbox.close')}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-(--color-ink-50)/10 text-(--text-primary) transition-colors hover:bg-(--color-ink-50)/20"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-(--color-ink-50)/10 text-(--color-ink-50) transition-colors hover:bg-(--color-ink-50)/20"
           >
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true" focusable="false">
               <path d="M6 6l12 12M18 6L6 18" />

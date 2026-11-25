@@ -1,10 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { createElement, useContext } from 'react'
-import { act } from '@testing-library/react'
-import { hydrateRoot } from 'react-dom/client'
-import { renderToString } from 'react-dom/server'
 import { afterEach, describe, it, expect, vi } from 'vitest'
 
 import i18n from '@/i18n'
@@ -13,17 +9,15 @@ import { DEFAULT_LOCALE, LOCALES, LOCALE_CODES, STORAGE_KEYS } from '@/config/si
 import { startupRedirect } from '@/lib/locale-path'
 import { PRERENDER_ATTR, REDIRECTING_ATTR, pageKey, startupPlan } from '@/lib/prerender'
 import { staticDocument } from '@/test/static-head'
-import { ThemeProvider } from './ThemeProvider'
-import { ThemeContext, resolveTheme, themePreference, type ResolvedTheme } from './theme-context'
 
 /**
  * `public/theme-init.js`, the decisions a page makes before its first paint:
- * the theme, whether it is in the wrong language to be shown yet, and where
+ * whether it is in the wrong language to be shown yet, and where
  * the bare root goes.
  *
  * It cannot import anything (it runs before the bundle exists), so it repeats
- * the storage keys, the attribute names, the locale list and the rules that
- * ThemeProvider and i18next apply later. These tests are what keep the copies
+ * the storage key, the attribute names, the locale list and the rules that
+ * i18next applies later. These tests are what keep the copies
  * equal: every case is run through the script AND through the app's own code.
  */
 const SOURCE = readFileSync(join(__dirname, '..', '..', 'public', 'theme-init.js'), 'utf8')
@@ -32,7 +26,6 @@ type Storage = 'blocked' | Readonly<Record<string, string>>
 
 interface Visit {
   readonly storage?: Storage
-  readonly dark?: boolean
   readonly pathname?: string
   readonly search?: string
   readonly hash?: string
@@ -55,11 +48,10 @@ interface Timer {
 /**
  * The script only ever reaches the page through `window`, so a test hands it
  * a window of its own: storage that throws on access as Safari's does with
- * site data blocked, an OS setting, an address, the browser's languages.
+ * site data blocked, an address, the browser's languages.
  */
 const visit = ({
   storage = {},
-  dark = false,
   pathname = '/en',
   search = '',
   hash = '',
@@ -78,13 +70,12 @@ const visit = ({
       if (storage === 'blocked') throw new DOMException('The operation is insecure.', 'SecurityError')
       return { getItem: (key: string) => storage[key] ?? null }
     },
-    matchMedia: (query: string) => ({ matches: dark && query.includes('dark'), media: query }),
     location: { pathname, search, hash, replace },
     navigator: { languages, language: languages[0] },
     setTimeout: (run: () => void, ms: number) => timers.push({ ms, run }),
   }
   new Function('window', SOURCE)(fakeWindow)
-  return { replace, timers, theme: document.documentElement.getAttribute('data-theme') }
+  return { replace, timers }
 }
 
 const root = document.documentElement
@@ -97,113 +88,16 @@ const OTHER = LOCALE_CODES.find((code) => code !== DEFAULT_LOCALE) ?? DEFAULT_LO
 
 afterEach(() => {
   root.removeAttribute('lang')
-  root.removeAttribute('data-theme')
   root.removeAttribute(REDIRECTING_ATTR)
   root.removeAttribute(PRERENDER_ATTR)
-  root.style.colorScheme = ''
   root.style.visibility = ''
 })
 
-describe('theme-init.js: the theme', () => {
-  it('reads the key ThemeProvider writes', () => {
-    expect(SOURCE).toContain(`'${STORAGE_KEYS.theme}'`)
-  })
-
-  it('applies a stored dark choice over a light OS', () => {
-    expect(visit({ storage: { [STORAGE_KEYS.theme]: 'dark' }, dark: false }).theme).toBe('dark')
-    expect(root.style.colorScheme).toBe('dark')
-  })
-
-  it('applies a stored light choice over a dark OS', () => {
-    expect(visit({ storage: { [STORAGE_KEYS.theme]: 'light' }, dark: true }).theme).toBe('light')
-  })
-
-  it('starts from the OS setting when nothing, or an old "system", is stored', () => {
-    expect(visit({ dark: true }).theme).toBe('dark')
-    expect(visit({ storage: { [STORAGE_KEYS.theme]: 'system' }, dark: false }).theme).toBe('light')
-  })
-
-  // ThemeProvider reads blocked storage as "nothing stored" and follows the
-  // OS. Forcing light here made the two disagree on a dark machine, and the
-  // provider's correction just after hydration blanked the lazy legal pages.
-  it('follows the OS when storage throws, instead of stopping the page', () => {
-    expect(() => visit({ storage: 'blocked', dark: true })).not.toThrow()
-    expect(root.getAttribute('data-theme')).toBe('dark')
-    expect(root.style.colorScheme).toBe('dark')
-  })
-
-  it('reads a value it does not recognise as no choice, as ThemeProvider does', () => {
-    expect(visit({ storage: { [STORAGE_KEYS.theme]: 'blue' }, dark: true }).theme).toBe('dark')
-  })
-
-  const STORED: readonly Storage[] = [
-    'blocked',
-    {},
-    { [STORAGE_KEYS.theme]: 'light' },
-    { [STORAGE_KEYS.theme]: 'dark' },
-    { [STORAGE_KEYS.theme]: 'system' },
-    { [STORAGE_KEYS.theme]: 'blue' },
-    { [STORAGE_KEYS.theme]: '' },
-    { [STORAGE_KEYS.theme]: 'DARK' },
-  ]
-
-  it.each(STORED.flatMap((storage) => [true, false].map((dark) => [storage, dark] as const)))(
-    'resolves storage %j with a dark OS %s exactly as ThemeProvider does',
-    (storage, dark) => {
-      const stored = storage === 'blocked' ? null : (storage[STORAGE_KEYS.theme] ?? null)
-      expect(visit({ storage, dark }).theme).toBe(resolveTheme(themePreference(stored), dark))
-    },
-  )
-})
-
-describe('theme-init.js and ThemeProvider, hydrating', () => {
-  /** Every value the provider puts in context, by identity. */
-  const Recorder = ({ seen }: { seen: ResolvedTheme[] }) => {
-    const context = useContext(ThemeContext)
-    if (context !== undefined) seen.push(context.resolved)
-    return createElement('span', null, 'page')
-  }
-
-  const stubOs = (dark: boolean) =>
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: dark && query.includes('dark'),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    }))
-
-  /** Runs the real script against the real window, then hydrates the provider. */
-  const hydrateAfterScript = async () => {
-    new Function('window', SOURCE)(window)
-    const container = document.createElement('div')
-    container.innerHTML = renderToString(createElement(ThemeProvider, null, createElement(Recorder, { seen: [] })))
-    document.body.appendChild(container)
-    const seen: ResolvedTheme[] = []
-    await act(async () => {
-      hydrateRoot(container, createElement(ThemeProvider, null, createElement(Recorder, { seen })))
-    })
-    container.remove()
-    return seen
-  }
-
-  // A context change right after hydration throws away the server markup of
-  // every Suspense boundary still waiting for its chunk: the legal pages go
-  // blank until their code arrives. The two scripts agreeing is what stops it.
-  it.each([
-    ['a value it does not recognise', () => window.localStorage.setItem(STORAGE_KEYS.theme, 'blue')],
-    [
-      'storage that throws',
-      () =>
-        vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
-          throw new DOMException('The operation is insecure.', 'SecurityError')
-        }),
-    ],
-  ])('never changes the context after hydration on a dark OS with %s', async (_, arrange) => {
-    stubOs(true)
-    arrange()
-    const seen = await hydrateAfterScript()
-    expect(root.getAttribute('data-theme')).toBe('dark')
-    expect(new Set(seen)).toEqual(new Set(['dark']))
+describe('theme-init.js: light only', () => {
+  it('sets no theme and reads no theme key: the site has no dark mode', () => {
+    expect(SOURCE).not.toMatch(/data-theme|prefers-color-scheme|\.theme'/)
+    visit({})
+    expect(root.hasAttribute('data-theme')).toBe(false)
   })
 })
 

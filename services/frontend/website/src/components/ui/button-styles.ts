@@ -25,9 +25,8 @@ const BASE = cn(
 
 const VARIANTS: Record<ButtonVariant, string> = {
   // The label colour comes from --text-on-accent, not from a hardcoded
-  // `text-white`. Light mode fills with brand-700 and labels in white; dark
-  // mode fills with brand-400 and labels in ink-950. Hardcoding white here
-  // would put a 1.6:1 label on the dark-mode button.
+  // `text-white`: a brand-700 fill with a white label today, and one token
+  // to change if a re-theme ever needs a dark label.
   primary: cn(
     'bg-(--fill-accent) text-(--text-on-accent)',
     'shadow-(--shadow-subtle)',

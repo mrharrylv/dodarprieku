@@ -147,18 +147,19 @@ export const COMPANY = {
  * ========================================================================== */
 
 /**
- * The footer's "Citi HA Group projekti" row. `icon` names an inline SVG in
- * `components/ui/Icon.tsx`; the names are proper nouns and stay as
- * written.
+ * "Citi HA Group projekti": the footer row, the project page and the map's
+ * info panel. `logo` is the project's own logo in `public/projects/` (a
+ * 96-128px PNG); its one line is `projects.<id>` in `common.json`. The names
+ * are proper nouns and stay as written.
  */
 export const HA_GROUP_PROJECTS = [
-  { id: 'unveil', name: 'Unveil', url: 'https://unveil.hagroup.lv', icon: 'sparkle' },
-  { id: 'eventapp', name: 'Event App', url: 'https://eventapp.lv', icon: 'ticket' },
-  { id: 'balticgp', name: 'Baltic GP', url: 'https://balticgp.hagroup.lv', icon: 'flag' },
-  { id: 'hagroup', name: 'HA Group', url: 'https://www.hagroup.lv', icon: 'building' },
+  { id: 'unveil', name: 'Unveil', url: 'https://unveil.hagroup.lv', logo: '/projects/unveil.png' },
+  { id: 'eventapp', name: 'Event App', url: 'https://eventapp.lv', logo: '/projects/eventapp.png' },
+  { id: 'balticgp', name: 'Baltic GP', url: 'https://balticgp.hagroup.lv', logo: '/projects/balticgp.png' },
+  { id: 'hagroup', name: 'HA Group', url: 'https://www.hagroup.lv', logo: '/projects/hagroup.png' },
 ] as const
 
-export type ProjectIconName = (typeof HA_GROUP_PROJECTS)[number]['icon']
+export type HaGroupProject = (typeof HA_GROUP_PROJECTS)[number]
 
 /* =============================================================================
  * Routes
@@ -224,7 +225,6 @@ export const LEGAL_LINKS = [
  * of TypeScript.
  */
 export const STORAGE_KEYS = {
-  theme: 'dodarprieku.theme',
   locale: 'dodarprieku.locale',
   consent: 'dodarprieku.consent',
   /** Session storage: the charity pages already counted as viewed in this tab. */

@@ -11,8 +11,21 @@ import { PledgeDialog } from '@/components/pledge/PledgeDialog'
 import { SectionCard } from './SectionCard'
 import { UrgentBadge } from './UrgentBadge'
 
-/** The needs as the catalog groups them, each a tick box, then "Es ziedošu". */
-export const NeedsSection = ({ charity, stats, onPledged }: { charity: PublicCharity; stats: StatsState & { reload: () => void }; onPledged: () => void }) => {
+/**
+ * The needs as the catalog groups them, each a tick box, then "Es ziedošu".
+ * `compact`: one column and no sticky bar, inside the map's expanded popup.
+ */
+export const NeedsSection = ({
+  charity,
+  stats,
+  onPledged,
+  compact = false,
+}: {
+  charity: PublicCharity
+  stats: StatsState & { reload: () => void }
+  onPledged: () => void
+  compact?: boolean
+}) => {
   const { t } = useTranslation('charity')
   const [picked, setPicked] = useState<readonly string[]>([])
   const [open, setOpen] = useState(false)
@@ -29,17 +42,17 @@ export const NeedsSection = ({ charity, stats, onPledged }: { charity: PublicCha
   const start = () => (picked.length === 0 ? setNudge(true) : setOpen(true))
 
   return (
-    <SectionCard title={t('needs.title')}>
+    <SectionCard title={t('needs.title')} compact={compact}>
       {all.length === 0 ? (
-        <p className="text-(--text-secondary)">{t('needs.empty')}</p>
+        <NoNeeds />
       ) : (
         <>
-          <p className="-mt-2 mb-5 text-(--text-secondary)">{t('needs.intro')}</p>
-          <div className="space-y-6">
+          <p className={cn('text-(--text-secondary)', compact ? '-mt-1 mb-4 text-(length:--text-sm)' : '-mt-2 mb-5')}>{t('needs.intro')}</p>
+          <div className={compact ? 'space-y-4' : 'space-y-6'}>
             {groups.map((group) => (
               <fieldset key={group.id}>
                 <legend className="mb-2 text-(length:--text-sm) font-semibold tracking-wide text-(--text-muted) uppercase">{group.label}</legend>
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className={cn('grid gap-2', !compact && 'sm:grid-cols-2')}>
                   {group.needs.map((need) => (
                     <li key={need.key}>
                       <NeedRow need={need} checked={picked.includes(need.key)} count={counts?.[need.key] ?? 0} showCount={counts !== null} onToggle={() => toggle(need.key)} />
@@ -50,11 +63,16 @@ export const NeedsSection = ({ charity, stats, onPledged }: { charity: PublicCha
             ))}
           </div>
           <StatsNote stats={stats} />
-          <div className="sticky bottom-4 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-(--radius-xl) border border-(--border-subtle) bg-(--surface-raised)/95 p-3 shadow-(--shadow-lifted) backdrop-blur">
+          <div
+            className={cn(
+              'z-10 flex flex-wrap items-center justify-between gap-3 rounded-(--radius-xl) border border-(--border-subtle) bg-(--surface-raised)/95 p-3 shadow-(--shadow-lifted) backdrop-blur',
+              compact ? 'mt-4' : 'sticky bottom-4 mt-6',
+            )}
+          >
             <p className="pl-2 text-(length:--text-sm) text-(--text-secondary)" aria-live="polite">
               {nudge ? t('needs.selectFirst') : t('needs.selected', { count: picked.length })}
             </p>
-            <Button onClick={start} size="lg">
+            <Button onClick={start} size={compact ? 'md' : 'lg'}>
               <Icon name="heart" />
               {t('needs.cta')}
             </Button>
@@ -74,6 +92,17 @@ export const NeedsSection = ({ charity, stats, onPledged }: { charity: PublicCha
         />
       )}
     </SectionCard>
+  )
+}
+
+/** No needs listed yet: most imported institutions, until they register or claim their profile. */
+const NoNeeds = () => {
+  const { t } = useTranslation('charity')
+  return (
+    <div className="rounded-(--radius-lg) border border-dashed border-(--border-strong) bg-(--surface-sunken) p-4">
+      <p className="font-medium text-(--text-primary)">{t('needs.empty')}</p>
+      <p className="mt-1 text-(length:--text-sm) text-(--text-secondary)">{t('needs.emptyHint')}</p>
+    </div>
   )
 }
 

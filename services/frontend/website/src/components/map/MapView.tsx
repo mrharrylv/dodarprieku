@@ -1,28 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import type { GeoJSONSource, Map as MlMap, Marker, Popup } from 'maplibre-gl'
+import type { Map as MlMap, MapMouseEvent, MapSourceDataEvent, Marker } from 'maplibre-gl'
 
 import { LATVIA_BOUNDS, type PublicCharity } from '@shared/contracts'
 import { toFeatureCollection } from '@/lib/snapshot'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Spinner } from '@/components/ui/Spinner'
-import { MapPopupCard } from './MapPopupCard'
-import { CharityPin, ClusterPin } from './MapPins'
+import { CharitySheet } from './CharitySheet'
+import { MapPopupCard, type CardFocus } from './MapPopupCard'
+import { CharityPin, ClusterPin, SmallClusterPin } from './MapPins'
 import {
-  CLUSTER_MAX_ZOOM,
-  CLUSTER_RADIUS,
+  CLUSTER_ZOOM_EXTRA,
   FLY_DURATION_MS,
   FOCUS_ZOOM,
-  HIT_LAYER_ID,
+  popupPanOffset,
   MAP_BOUNDS,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_STYLE_URL,
-  POPUP_OFFSET,
-  SOURCE_ID,
+  MOVE_SYNC_MS,
+  PANEL_SHEET_QUERY,
+  SMALL_CLUSTER_MAX,
+  SOURCES,
+  type SourceKey,
 } from './map-config'
+import { addCharitySources, applyLatvianLabels, markersInView, setCharityData, sourceOf } from './map-setup'
 import { MAPLIBRE_ENGINE, prefersReducedMotion, type MapEngine, type MaplibreModule } from './maplibre-engine'
-import { pinItems, pinSignature, type PinItem, type SourceFeature } from './marker-sync'
+import { pinSignature, type PinItem } from './marker-sync'
+import { createSyncThrottle } from './sync-throttle'
+import { useCharityPopup } from './useCharityPopup'
 import './map.css'
 
 type Phase = 'loading' | 'ready' | 'unavailable'
@@ -38,31 +45,40 @@ export interface MapFocus {
   readonly nonce: number
 }
 
-/**
- * The MapLibre map, mounted only in the browser after hydration. Pins are
- * HTML markers rendered by React through portals, so each one is a real,
- * focusable button; the panel's list remains the main accessible path.
- */
 const LATVIA_BOX: [[number, number], [number, number]] = [
   [LATVIA_BOUNDS.minLng, LATVIA_BOUNDS.minLat],
   [LATVIA_BOUNDS.maxLng, LATVIA_BOUNDS.maxLat],
 ]
 const FIT_PADDING = 24
-/** How far below the map's centre a selected pin settles, in pixels. */
-const POPUP_PAN_OFFSET_PX = 170
 
-/**
- * OpenFreeMap's style labels places in English ("Latvia", "Lithuania"). Where
- * OpenStreetMap has a Latvian name, show that instead, falling back to the
- * local name.
- */
-const applyLatvianLabels = (map: MlMap): void => {
-  for (const layer of map.getStyle().layers) {
-    if (layer.type !== 'symbol' || map.getLayoutProperty(layer.id, 'text-field') === undefined) continue
-    map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:lv'], ['get', 'name']])
-  }
+const OUR_SOURCES: ReadonlySet<string> = new Set(Object.values(SOURCES).map((s) => s.id))
+
+/** Where the camera is, to the pixel: a sync for the same camera and the same data changes nothing. */
+const cameraKey = (map: MlMap): string => {
+  const { lng, lat } = map.getCenter()
+  const box = map.getContainer()
+  return `${map.getZoom().toFixed(3)}|${lng.toFixed(5)}|${lat.toFixed(5)}|${box.clientWidth}x${box.clientHeight}`
 }
 
+interface SyncRequest {
+  /** `changed`: the data or tiles changed, so work the markers out again on the next frame. */
+  readonly request: (changed?: boolean) => void
+}
+const IDLE_SYNC: SyncRequest = { request: () => undefined }
+
+/** A click on a marker or inside the card is not a click on the map. */
+const onChrome = (event: MapMouseEvent | undefined): boolean => {
+  const target = event?.originalEvent?.target
+  return target instanceof Element && target.closest('.maplibregl-popup, .dp-marker') !== null
+}
+
+/**
+ * The MapLibre map, mounted only in the browser after hydration. Pins are
+ * HTML markers rendered by React through portals, so each one is a real,
+ * focusable button; only the clusters and charities in or just around the
+ * view become markers, so a thousand charities cost a few dozen elements.
+ * The panel's list remains the main accessible path.
+ */
 export const MapView = ({
   charities,
   selectedId,
@@ -82,9 +98,22 @@ export const MapView = ({
   const libRef = useRef<MaplibreModule | null>(null)
   const markers = useRef(new Map<string, Marker>())
   const signature = useRef('')
+  const throttleRef = useRef<SyncRequest>(IDLE_SYNC)
   const [phase, setPhase] = useState<Phase>('loading')
   const [placed, setPlaced] = useState<readonly Placed[]>([])
-  const [popupNode, setPopupNode] = useState<HTMLElement | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  /** Which of the card's buttons takes focus next: the collapse button after expanding, "Skatīt vajadzības" after collapsing. */
+  const [focusTarget, setFocusTarget] = useState<CardFocus | null>(null)
+  /** The selection the expanded state belongs to: a new selection, or none, starts small. */
+  const [expandedFor, setExpandedFor] = useState(selectedId)
+  if (expandedFor !== selectedId) {
+    setExpandedFor(selectedId)
+    setExpandedId(null)
+    setFocusTarget(null)
+  }
+  const phone = useMediaQuery(PANEL_SHEET_QUERY)
+  /** The charity a fly-to is taking the map to: the popup's own pan must not cut that flight short. */
+  const flyingToRef = useRef<string | null>(null)
   const onSelectRef = useRef(onSelect)
   const data = useMemo(() => toFeatureCollection(charities), [charities])
   const dataRef = useRef(data)
@@ -100,11 +129,20 @@ export const MapView = ({
     let cancelled = false
     const markerMap = markers.current
 
+    /** The camera the markers were last worked out for, and whether the data or tiles changed since. */
+    let synced = ''
+    let dirty = true
+
     const sync = () => {
       const map = mapRef.current
       const lib = libRef.current
-      if (map === null || lib === null || !map.getSource(SOURCE_ID) || !map.isSourceLoaded(SOURCE_ID)) return
-      const items = pinItems(map.querySourceFeatures(SOURCE_ID) as unknown as SourceFeature[])
+      if (map === null || lib === null) return
+      const camera = cameraKey(map)
+      if (!dirty && camera === synced) return
+      const items = markersInView(map)
+      if (items === null) return
+      synced = camera
+      dirty = false
       const next = pinSignature(items)
       if (next === signature.current) return
       signature.current = next
@@ -115,16 +153,24 @@ export const MapView = ({
           markerMap.delete(key)
         }
       }
-      const nextPlaced = items.map((item) => {
-        const existing = markerMap.get(item.key)
-        if (existing !== undefined) return { item, element: existing.getElement() }
-        const element = document.createElement('div')
-        element.className = 'dp-marker'
-        const marker = new lib.Marker({ element }).setLngLat([item.lngLat[0], item.lngLat[1]]).addTo(map)
-        markerMap.set(item.key, marker)
-        return { item, element }
-      })
-      setPlaced(nextPlaced)
+      setPlaced(
+        items.map((item) => {
+          const existing = markerMap.get(item.key)
+          if (existing !== undefined) return { item, element: existing.getElement() }
+          const element = document.createElement('div')
+          element.className = 'dp-marker'
+          const marker = new lib.Marker({ element }).setLngLat([item.lngLat[0], item.lngLat[1]]).addTo(map)
+          markerMap.set(item.key, marker)
+          return { item, element }
+        }),
+      )
+    }
+    const throttle = createSyncThrottle(sync, MOVE_SYNC_MS)
+    throttleRef.current = {
+      request: (changed = false) => {
+        if (changed) dirty = true
+        throttle.request(changed)
+      },
     }
 
     const start = async () => {
@@ -163,24 +209,27 @@ export const MapView = ({
         map.resize()
         map.fitBounds(LATVIA_BOX, { padding: FIT_PADDING, animate: false })
         applyLatvianLabels(map)
-        map.addSource(SOURCE_ID, {
-          type: 'geojson',
-          data: dataRef.current,
-          cluster: true,
-          clusterRadius: CLUSTER_RADIUS,
-          clusterMaxZoom: CLUSTER_MAX_ZOOM,
-        })
-        map.addLayer({ id: HIT_LAYER_ID, type: 'circle', source: SOURCE_ID, paint: { 'circle-radius': 1, 'circle-opacity': 0 } })
+        addCharitySources(map, dataRef.current)
         setPhase('ready')
         sync()
       })
-      map.on('render', sync)
-      map.on('click', () => onSelectRef.current(null))
+      // Moving: at most every MOVE_SYNC_MS. Settled, or new tiles or data: on the next frame.
+      map.on('move', () => throttle.request())
+      map.on('moveend', () => throttle.request(true))
+      map.on('resize', () => throttleRef.current.request(true))
+      map.on('sourcedata', (event?: MapSourceDataEvent) => {
+        if (event?.sourceId !== undefined && OUR_SOURCES.has(event.sourceId)) throttleRef.current.request(true)
+      })
+      map.on('idle', () => throttle.request(true))
+      map.on('click', (event?: MapMouseEvent) => {
+        if (!onChrome(event)) onSelectRef.current(null)
+      })
     }
     void start()
 
     return () => {
       cancelled = true
+      throttle.cancel()
       for (const marker of markerMap.values()) marker.remove()
       markerMap.clear()
       mapRef.current?.remove()
@@ -190,9 +239,9 @@ export const MapView = ({
 
   // New data: the filters changed.
   useEffect(() => {
-    if (phase !== 'ready') return
-    const source = mapRef.current?.getSource(SOURCE_ID) as GeoJSONSource | undefined
-    source?.setData(data)
+    if (phase !== 'ready' || mapRef.current === null) return
+    setCharityData(mapRef.current, data)
+    throttleRef.current.request(true)
   }, [data, phase])
 
   // Fly to a charity chosen in the list.
@@ -200,9 +249,11 @@ export const MapView = ({
     const map = mapRef.current
     const target = focus === null ? undefined : byId.get(focus.id)
     if (phase !== 'ready' || map === null || target === undefined) return
+    flyingToRef.current = target.id
     map.flyTo({
       center: [target.profile.location.lng, target.profile.location.lat],
       zoom: Math.max(map.getZoom(), FOCUS_ZOOM),
+      offset: popupPanOffset(),
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS,
       essential: true,
     })
@@ -210,56 +261,57 @@ export const MapView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus, phase])
 
-  // The popup of the selected charity.
   const selected = selectedId === null ? undefined : byId.get(selectedId)
-  useEffect(() => {
-    const map = mapRef.current
-    const lib = libRef.current
-    if (phase !== 'ready' || map === null || lib === null || selected === undefined) return
-    // Bring the pin to the lower middle of the map, so the card (anchored
-    // automatically) opens above it with room to spare instead of running off
-    // the bottom edge.
-    map.easeTo({
-      center: [selected.profile.location.lng, selected.profile.location.lat],
-      offset: [0, POPUP_PAN_OFFSET_PX],
-      duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS / 2,
-    })
-    const node = document.createElement('div')
-    const popup: Popup = new lib.Popup({ closeButton: false, offset: POPUP_OFFSET, maxWidth: 'none', className: 'dp-popup', focusAfterOpen: false })
-      .setLngLat([selected.profile.location.lng, selected.profile.location.lat])
-      .setDOMContent(node)
-      .addTo(map)
-    let removing = false
-    popup.on('close', () => {
-      if (!removing) onSelectRef.current(null)
-    })
-    // Rendered into on the next frame, through a portal.
-    const frame = requestAnimationFrame(() => setPopupNode(node))
-    return () => {
-      cancelAnimationFrame(frame)
-      removing = true
-      popup.remove()
-      setPopupNode(null)
-    }
-  }, [phase, selected])
+  const expanded = selected !== undefined && expandedId === selected.id
+  const sheet = expanded && phone
+  const expand = (id: string) => {
+    setExpandedId(id)
+    setFocusTarget('collapse')
+  }
+  const collapse = () => {
+    setExpandedId(null)
+    setFocusTarget('view')
+  }
+  const popupNode = useCharityPopup({ ready: phase === 'ready', mapRef, libRef, flyingToRef, selected, expanded, sheet, onClosed: () => onSelect(null) })
 
-  const zoomCluster = (clusterId: number, lngLat: readonly [number, number]) => {
+  const zoomCluster = (source: SourceKey, clusterId: number, lngLat: readonly [number, number]) => {
     const map = mapRef.current
-    const source = map?.getSource(SOURCE_ID) as GeoJSONSource | undefined
-    if (map === null || map === undefined || source === undefined) return
-    void source.getClusterExpansionZoom(clusterId).then(
-      (zoom) => map.easeTo({ center: [lngLat[0], lngLat[1]], zoom, duration: prefersReducedMotion() ? 0 : 600 }),
+    const clustered = map === null ? undefined : sourceOf(map, source)
+    if (map === null || clustered === undefined) return
+    void clustered.getClusterExpansionZoom(clusterId).then(
+      (zoom) =>
+        map.easeTo({
+          center: [lngLat[0], lngLat[1]],
+          zoom: Math.min(zoom + CLUSTER_ZOOM_EXTRA, MAP_MAX_ZOOM),
+          duration: prefersReducedMotion() ? 0 : 600,
+        }),
       (error: unknown) => console.warn('[map] cluster zoom failed', error),
     )
   }
 
+  const onKeyDown = (event: KeyboardEvent) => {
+    // The pledge dialog handles its own Escape.
+    if (event.key !== 'Escape' || selectedId === null || (event.target instanceof Element && event.target.closest('dialog') !== null)) return
+    if (expanded) collapse()
+    else onSelect(null)
+  }
+
+  const card =
+    selected === undefined ? null : (
+      <MapPopupCard
+        charity={selected}
+        expanded={expanded}
+        sheet={sheet}
+        focusTarget={focusTarget}
+        onFocused={() => setFocusTarget(null)}
+        onExpand={() => expand(selected.id)}
+        onCollapse={collapse}
+        onClose={() => onSelect(null)}
+      />
+    )
+
   return (
-    <div
-      className="relative h-full w-full"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape' && selectedId !== null) onSelect(null)
-      }}
-    >
+    <div className="relative h-full w-full" onKeyDown={onKeyDown}>
       {/* MapLibre's stylesheet sets position: relative on its container, which
           would override absolute positioning and collapse it to zero height,
           so the container fills an absolutely positioned wrapper instead. */}
@@ -278,26 +330,35 @@ export const MapView = ({
           <p className="mt-1 text-(length:--text-sm) text-(--text-secondary)">{t('map.unavailableBody')}</p>
         </div>
       )}
-      {placed.map(({ item, element }) => {
-        if (item.kind === 'cluster') {
-          return createPortal(
-            <ClusterPin count={item.count} onZoom={() => zoomCluster(item.clusterId, item.lngLat)} />,
-            element,
-            item.key,
-          )
-        }
-        const charity = byId.get(item.id)
-        return charity === undefined
-          ? null
-          : createPortal(
-              <CharityPin charity={charity} selected={charity.id === selectedId} onSelect={onSelect} />,
-              element,
-              item.key,
-            )
-      })}
-      {popupNode !== null &&
-        selected !== undefined &&
-        createPortal(<MapPopupCard charity={selected} onClose={() => onSelect(null)} />, popupNode)}
+      {placed.map(({ item, element }) => createPortal(<Pin item={item} byId={byId} selectedId={selectedId} onSelect={onSelect} onZoom={zoomCluster} />, element, item.key))}
+      {popupNode !== null && card !== null && !sheet && createPortal(card, popupNode)}
+      {sheet && selected !== undefined && <CharitySheet title={selected.profile.organization.name} onDismiss={collapse}>{card}</CharitySheet>}
     </div>
   )
+}
+
+/** One marker: a heart for a cluster, a category pin with a count for two or three, the charity's own pin. */
+const Pin = ({
+  item,
+  byId,
+  selectedId,
+  onSelect,
+  onZoom,
+}: {
+  item: PinItem
+  byId: ReadonlyMap<string, PublicCharity>
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onZoom: (source: SourceKey, clusterId: number, lngLat: readonly [number, number]) => void
+}) => {
+  if (item.kind === 'cluster') {
+    const zoom = () => onZoom(item.source, item.clusterId, item.lngLat)
+    return item.count <= SMALL_CLUSTER_MAX && item.majority !== null ? (
+      <SmallClusterPin count={item.count} category={item.majority} onZoom={zoom} />
+    ) : (
+      <ClusterPin count={item.count} onZoom={zoom} />
+    )
+  }
+  const charity = byId.get(item.id)
+  return charity === undefined ? null : <CharityPin charity={charity} selected={charity.id === selectedId} onSelect={onSelect} />
 }

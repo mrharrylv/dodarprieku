@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn'
  * The Dod ar prieku mark: a heart inside a map pin, the same drawing as
  * `public/favicon.svg`. Decorative: it always sits beside the brand name.
  * The pin takes the accent fill and the heart the label colour on it, so it
- * keeps its contrast in both themes.
+ * keeps its contrast.
  */
 export const BrandMark = ({ className }: { className?: string }) => (
   <svg

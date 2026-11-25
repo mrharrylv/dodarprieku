@@ -1,24 +1,40 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 
-import { RegisterButton } from '@/components/layout/RegisterButton'
-import { ThemeToggle } from '@/components/layout/ThemeToggle'
+import { REGISTER_CTA } from '@/config/site'
+import { useLocale } from '@/hooks/useLocale'
+import { cn } from '@/lib/cn'
+import { localePath } from '@/lib/locale-path'
+import { Icon } from '@/components/ui/Icon'
+import { PILL } from './pill'
 
 /**
- * "+ Kļūt par saņēmēju" and the theme switch, floating in the map's top right
- * corner; on a phone, where the top bar takes the width, centred at the
- * bottom, clear of the zoom buttons.
+ * "+ Kļūt par saņēmēju", floating in the map's top right corner as the same
+ * oval pill as the category chips, in the accent fill; on a phone, where the
+ * top bar takes the width, centred at the bottom, clear of the zoom buttons.
  */
 export const MapActions = () => {
   const { t } = useTranslation('map')
+  const { t: tc } = useTranslation('common')
+  const { locale } = useLocale()
 
   return (
     <div
       role="group"
       aria-label={t('chrome.actions')}
-      className="pointer-events-none absolute inset-x-0 bottom-9 z-30 flex items-center justify-center gap-2 md:inset-x-auto md:top-4 md:right-4 md:bottom-auto"
+      className="pointer-events-none absolute inset-x-0 bottom-9 z-30 flex items-center justify-center md:inset-x-auto md:top-4 md:right-4 md:bottom-auto"
     >
-      <ThemeToggle className="pointer-events-auto rounded-(--radius-md) border border-(--border-subtle) bg-(--surface-raised)/95 shadow-(--shadow-card) backdrop-blur-md hover:bg-(--surface-raised)" />
-      <RegisterButton size="md" className="pointer-events-auto" />
+      <Link
+        to={localePath(REGISTER_CTA.to, locale)}
+        className={cn(
+          PILL,
+          'pointer-events-auto gap-1.5 px-4 font-semibold',
+          'border-transparent bg-(--fill-accent) text-(--text-on-accent) shadow-(--shadow-card) hover:bg-(--fill-accent-hover) hover:shadow-(--shadow-lifted)',
+        )}
+      >
+        <Icon name="plus" />
+        <span>{tc(REGISTER_CTA.labelKey)}</span>
+      </Link>
     </div>
   )
 }

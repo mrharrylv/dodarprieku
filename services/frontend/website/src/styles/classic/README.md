@@ -8,7 +8,7 @@ The conventional, trust-first company website: a slim sticky header with logo, f
 | | |
 |---|---|
 | **Layout** | Multi-page. |
-| **Navigation** | Sticky top header, 64px desktop and 56px mobile, page surface with a subtle bottom border, logo left, 4 to 5 text links centre or right, one filled accent CTA (Contact or Get a quote), then the utility cluster (language switcher, theme toggle). |
+| **Navigation** | Sticky top header, 64px desktop and 56px mobile, page surface with a subtle bottom border, logo left, 4 to 5 text links centre or right, one filled accent CTA (Contact or Get a quote), then the utility cluster (language switcher). |
 | **Type** | Two-family system: --font-display (Outfit) for h1 to h3 and stat numerals at semibold, --font-sans (Inter) for everything else. |
 | **Colour** | Light-first, low-drama. |
 | **Suits** | Local service businesses (HVAC, installers, repair, trades) whose customers want the phone number, the services list and proof of competence within two scrolls. Professional services and B2B firms where familiarity signals reliability (consulting, legal, accounting, logistics). Sites that must work well for older or less web-fluent audiences and for search engines: predictable landmarks, crawlable multi-page structure. |

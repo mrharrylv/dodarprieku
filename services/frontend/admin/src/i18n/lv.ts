@@ -18,8 +18,6 @@ export const lv = {
     empty: 'Nav norādīts',
     notFound: 'Šī lapa netika atrasta.',
     toHome: 'Uz sākumu',
-    themeDark: 'Tumšais režīms',
-    themeLight: 'Gaišais režīms',
     menu: 'Izvēlne',
   },
   nav: {

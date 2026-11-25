@@ -176,7 +176,9 @@ describe('the document head', () => {
 
   it('holds exactly one description and one og:title after navigating', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<App />, { route: ROUTES.home })
+    // From a legal page: the map itself no longer links to the project page
+    // (its info button opens a panel), the header and footer still do.
+    renderWithProviders(<App />, { route: ROUTES.privacy })
     await screen.findByRole('heading', { level: 1 })
 
     const link = document.querySelector<HTMLAnchorElement>(`a[href="${ROUTES.about}"]`)

@@ -4,7 +4,6 @@ import { ApiError } from './api'
 import { errorMessage, fieldErrorMessage, messageForCode } from './errors'
 import { nameLookup } from './names'
 import { fileSlug, filterSubscribers, subscribersOf } from './subscribers'
-import { THEME_KEY, applyTheme, readTheme } from './theme'
 
 describe('errors', () => {
   it('maps codes, unknown throwables and field codes to copy', () => {
@@ -43,12 +42,3 @@ describe('subscribers', () => {
   })
 })
 
-describe('theme', () => {
-  it('applies and remembers the theme', () => {
-    applyTheme('dark')
-    expect(readTheme()).toBe('dark')
-    expect(window.localStorage.getItem(THEME_KEY)).toBe('dark')
-    applyTheme('light')
-    expect(readTheme()).toBe('light')
-  })
-})

@@ -1,10 +1,22 @@
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { cn } from '@/lib/cn'
 import { Icon } from '@/components/ui/Icon'
 
 /** Search by name or city. Filters as the visitor types; there is nothing to submit. */
-export const SearchBox = ({ value, onChange, className }: { value: string; onChange: (next: string) => void; className?: string }) => {
+export const SearchBox = ({
+  value,
+  onChange,
+  className,
+  inputClassName = 'bg-(--surface-page)',
+}: {
+  value: string
+  onChange: (next: string) => void
+  className?: string
+  /** The field's own surface; the map floats it, see-through. */
+  inputClassName?: string
+}) => {
   const { t } = useTranslation('map')
   const id = useId()
 
@@ -14,7 +26,7 @@ export const SearchBox = ({ value, onChange, className }: { value: string; onCha
         {t('search.label')}
       </label>
       <div className="relative">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="pointer-events-none absolute top-1/2 left-3.5 h-5 w-5 -translate-y-1/2 text-(--text-muted)">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="pointer-events-none absolute top-1/2 left-3.5 z-10 h-5 w-5 -translate-y-1/2 text-(--text-muted)">
           <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4" />
         </svg>
         <input
@@ -24,7 +36,10 @@ export const SearchBox = ({ value, onChange, className }: { value: string; onCha
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('search.placeholder')}
           autoComplete="off"
-          className="min-h-11 w-full rounded-full border border-(--border-strong) bg-(--surface-page) py-2.5 pr-12 pl-11 text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--ring-accent) focus:outline-none focus:ring-2 focus:ring-(--ring-accent)/30 [&::-webkit-search-cancel-button]:hidden"
+          className={cn(
+            inputClassName,
+            'h-11 w-full rounded-full border border-(--border-strong) py-2 pr-12 pl-11 text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--ring-accent) focus:outline-none focus:ring-2 focus:ring-(--ring-accent)/30 [&::-webkit-search-cancel-button]:hidden',
+          )}
         />
         {value !== '' && (
           <button

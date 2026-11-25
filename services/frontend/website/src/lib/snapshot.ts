@@ -192,12 +192,17 @@ export const topSponsors = (
     .sort((a, b) => b.charities - a.charities || a.name.localeCompare(b.name, 'lv'))
     .slice(0, limit)
 
-/** Whether a URL may be put in an href: http(s) only. */
+/**
+ * Whether a URL may be put in an href: http(s) only, to a host with a dot in
+ * it. Imported register data writes "nav" ("none") where there is no site,
+ * which would otherwise show as a link to http://nav/.
+ */
 export const safeHref = (url: string | undefined): string | undefined => {
   if (url === undefined || url === '') return undefined
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.toString() : undefined
+    const web = parsed.protocol === 'https:' || parsed.protocol === 'http:'
+    return web && parsed.hostname.includes('.') ? parsed.toString() : undefined
   } catch {
     return undefined
   }

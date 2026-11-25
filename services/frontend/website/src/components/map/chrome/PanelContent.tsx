@@ -40,7 +40,7 @@ export const OrganisationsContent = ({
         {t('list.count', { count: visible.length })}
       </p>
       {visible.length > 0 ? (
-        <CharityList charities={visible} selectedId={selectedId} onChoose={onChoose} />
+        <CharityList key={`${filter.query}|${filter.category ?? ''}`} charities={visible} selectedId={selectedId} onChoose={onChoose} />
       ) : (
         <div className="rounded-(--radius-lg) border border-dashed border-(--border-strong) p-5 text-center">
           <p className="text-(--text-secondary)">{t('list.noMatch')}</p>

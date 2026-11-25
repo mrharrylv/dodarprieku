@@ -10,7 +10,6 @@ import { Container } from '@/components/ui/Container'
 import { BrandMark } from '@/components/layout/BrandMark'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { RegisterButton } from '@/components/layout/RegisterButton'
-import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { MobileMenu } from './MobileMenu'
 
 export const Header = () => {
@@ -46,7 +45,6 @@ export const Header = () => {
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher className="hidden sm:inline-flex" />
-            <ThemeToggle />
             {/* Wrapped: the button's own inline-flex would fight a `hidden` passed to it. */}
             <span className="hidden sm:inline-flex">
               <RegisterButton />
