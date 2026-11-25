@@ -18,9 +18,17 @@ locals {
   api_built            = fileexists("${local.api_dist_dir}/index.mjs")
   origin_verify_header = "x-dodar-origin-verify"
 
-  # Mail goes out as one address of one verified SES identity, and the role
-  # may send as nothing else.
-  ses_identity_arn = "arn:aws:ses:${var.region}:${data.aws_caller_identity.current.account_id}:identity/${var.ses_identity_domain}"
+  # Mail goes out as one address (the FromAddress condition below), and the
+  # role may send as nothing else. The resource is every identity in this
+  # account and region, not just the sending domain: while the SES account is
+  # in the sandbox, SES also authorises the send against the RECIPIENT's
+  # verified identity, and a policy naming only hagroup.lv is refused with
+  # AccessDenied on identity/<recipient> (seen 2026-11-25).
+  ses_sending_domain_arn = "arn:aws:ses:${var.region}:${data.aws_caller_identity.current.account_id}:identity/${var.ses_identity_domain}"
+  ses_identity_arns = [
+    local.ses_sending_domain_arn,
+    "arn:aws:ses:${var.region}:${data.aws_caller_identity.current.account_id}:identity/*",
+  ]
   ssm_param_arns = [
     aws_ssm_parameter.session_secret.arn,
     aws_ssm_parameter.admin_notify_email.arn,
@@ -130,7 +138,7 @@ resource "aws_iam_role_policy" "api" {
         Sid      = "SendAsInfo"
         Effect   = "Allow"
         Action   = ["ses:SendEmail"]
-        Resource = local.ses_identity_arn
+        Resource = local.ses_identity_arns
         Condition = {
           StringEquals = { "ses:FromAddress" = var.mail_from }
         }

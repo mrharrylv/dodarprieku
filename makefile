@@ -65,7 +65,7 @@ admin-invite:
 	@FN="$$(terraform -chdir=$(TF_DIR) output -raw api_function_name 2>/dev/null | grep -E '^[a-z0-9-]+$$' || true)"; \
 	  case "$$FN" in $(ENV)-*) ;; *) FN="$(ENV)-$(PROJECT)-api" ;; esac; \
 	  echo "Inviting $(EMAIL) through $$FN"; \
-	  FUNCTION_NAME="$$FN" EMAIL="$(EMAIL)" AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/admin-invite.sh
+	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/admin-invite.sh "$$FN" "$(EMAIL)"
 
 ## Production build
 build:
