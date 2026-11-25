@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -11,36 +12,48 @@ import { BrandMark } from '@/components/layout/BrandMark'
 import { CategoryFilter } from '../CategoryFilter'
 import { SearchBox } from '../SearchBox'
 import { GLASS } from './pill'
+import { OrganisationsContent } from './PanelContent'
+import { SearchResults } from './SearchResults'
 
 /**
  * What floats over the top of the map: the brand (home), the search and the
  * category chips, each on its own see-through surface rather than one bar.
  * One row on a wide screen, the chips scrolling inside it; on a phone the
  * brand and the search sit on top and the chips scroll beneath. The search
- * works from the first frame; the chips appear with the snapshot.
+ * works from the first frame; the chips appear with the snapshot. Typing
+ * opens the matching organisations under the field; choosing one flies there.
  */
 export const MapTopBar = ({
   state,
   filter,
   onFilter,
+  selectedId,
+  onChoose,
+  onRetry,
 }: {
   state: SnapshotState
   filter: MapFilter
   onFilter: (next: MapFilter) => void
+  selectedId: string | null
+  onChoose: (id: string) => void
+  onRetry: () => void
 }) => {
   const { t } = useTranslation('map')
   const { locale } = useLocale()
+  const row = useRef<HTMLDivElement>(null)
+  const [resultsOpen, setResultsOpen] = useState(false)
+  const showResults = resultsOpen && filter.query.trim() !== ''
 
   return (
     <div
       role="region"
       aria-label={t('chrome.label')}
       className={cn(
-        'pointer-events-none absolute inset-x-3 top-3 z-30 flex flex-col gap-2',
+        'pointer-events-none absolute inset-x-3 top-3 z-40 flex flex-col gap-2',
         'md:inset-x-auto md:top-4 md:left-4 md:max-w-[calc(100%-19rem)] md:flex-row md:items-center md:gap-2.5',
       )}
     >
-      <div className="pointer-events-auto flex min-w-0 items-center gap-2 md:shrink-0">
+      <div ref={row} className="pointer-events-auto relative flex min-w-0 items-center gap-2 md:shrink-0">
         <Link
           to={localePath(ROUTES.home, locale)}
           aria-label={t('chrome.home')}
@@ -55,10 +68,34 @@ export const MapTopBar = ({
         </Link>
         <SearchBox
           value={filter.query}
-          onChange={(query) => onFilter({ ...filter, query })}
+          onChange={(query) => {
+            onFilter({ ...filter, query })
+            setResultsOpen(true)
+          }}
           className="min-w-0 flex-1 md:w-72 md:flex-none lg:w-80"
           inputClassName={cn(GLASS, 'focus:bg-(--surface-raised)/95')}
         />
+        {showResults && (
+          <SearchResults
+            within={row}
+            onDismiss={(restoreFocus) => {
+              setResultsOpen(false)
+              if (restoreFocus) row.current?.querySelector('input')?.focus()
+            }}
+          >
+            <OrganisationsContent
+              state={state}
+              filter={filter}
+              onFilter={onFilter}
+              selectedId={selectedId}
+              onChoose={(id) => {
+                setResultsOpen(false)
+                onChoose(id)
+              }}
+              onRetry={onRetry}
+            />
+          </SearchResults>
+        )}
       </div>
       <Chips state={state} filter={filter} onFilter={onFilter} />
     </div>

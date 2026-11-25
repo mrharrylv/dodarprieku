@@ -10,7 +10,6 @@ import { filterCharities, findBySlug, type CharityFilter } from '@/lib/snapshot'
 import { Seo } from '@/components/seo/Seo'
 import { ApiErrorNotice } from '@/components/charity/ApiErrorNotice'
 import type { MapFocus } from '@/components/map/MapView'
-import { PANEL_SHEET_QUERY } from '@/components/map/map-config'
 import { MapActions } from '@/components/map/chrome/MapActions'
 import { MapPanels } from '@/components/map/chrome/MapPanels'
 import { MapRail } from '@/components/map/chrome/MapRail'
@@ -23,11 +22,9 @@ const MapView = lazy(() => import('@/components/map/MapView').then((m) => ({ def
 
 const NO_FILTER: CharityFilter = { query: '', category: null }
 
-const isSheet = (): boolean => typeof window.matchMedia === 'function' && window.matchMedia(PANEL_SHEET_QUERY).matches
-
 /**
  * The home page: the charity map, full screen, with floating chrome over it.
- * The top bar (brand, search, chips), the actions (register, theme), the rail
+ * The top bar (brand, search with its results, chips), the actions (register, theme), the rail
  * on the left and the one panel it has open.
  *
  * The prerendered HTML is that chrome, every panel closed, over a soft map
@@ -53,7 +50,8 @@ export const MapPage = () => {
   const choose = (id: string) => {
     setSelectedId(id)
     setFocus((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }))
-    if (isSheet()) panels.close({ restoreFocus: true })
+    // A search result: the map, not a panel, is what the visitor wants to see now.
+    panels.close()
   }
 
   // A press anywhere on the map closes the open panel, the way a sheet over a map does.
@@ -98,18 +96,10 @@ export const MapPage = () => {
             </Suspense>
           )}
         </div>
-        <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} />
+        <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} selectedId={selectedId} onChoose={choose} onRetry={snapshot.retry} />
         <MapActions />
         <MapRail panels={panels} />
-        <MapPanels
-          panels={panels}
-          state={snapshot}
-          filter={filter}
-          onFilter={setFilter}
-          selectedId={selectedId}
-          onChoose={choose}
-          onRetry={snapshot.retry}
-        />
+        <MapPanels panels={panels} state={snapshot} onRetry={snapshot.retry} />
         {snapshot.status === 'error' && panels.open === null && (
           <div className="absolute inset-x-3 bottom-20 z-20 md:right-auto md:bottom-6 md:left-20 md:w-96">
             <ApiErrorNotice error={snapshot.error} title={t('loadError')} onRetry={snapshot.retry} />

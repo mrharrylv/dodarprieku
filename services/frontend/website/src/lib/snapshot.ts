@@ -214,11 +214,20 @@ export interface CharityFeatureProps {
   readonly category: CategoryId
 }
 
-export const toFeatureCollection = (charities: readonly PublicCharity[]) => ({
+/** Longitude, latitude where a charity is drawn, by id; a charity missing from it is drawn at its own location. */
+export type DrawnAt = ReadonlyMap<string, readonly [number, number]>
+
+/** Where a charity is drawn: `at`'s position for it, or its own location. */
+export const drawnAt = (charity: PublicCharity, at?: DrawnAt): [number, number] => {
+  const moved = at?.get(charity.id)
+  return moved === undefined ? [charity.profile.location.lng, charity.profile.location.lat] : [moved[0], moved[1]]
+}
+
+export const toFeatureCollection = (charities: readonly PublicCharity[], at?: DrawnAt) => ({
   type: 'FeatureCollection' as const,
   features: charities.map((c) => ({
     type: 'Feature' as const,
     properties: { id: c.id, category: c.profile.category } satisfies CharityFeatureProps,
-    geometry: { type: 'Point' as const, coordinates: [c.profile.location.lng, c.profile.location.lat] },
+    geometry: { type: 'Point' as const, coordinates: drawnAt(c, at) },
   })),
 })

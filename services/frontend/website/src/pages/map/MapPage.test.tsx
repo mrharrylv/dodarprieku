@@ -20,6 +20,8 @@ vi.mock('maplibre-gl', () => {
 const SNAPSHOT_URL = '/data/charities.json'
 const rail = () => screen.getByRole('navigation', { name: 'Kartes rīki' })
 const railButton = (name: string) => within(rail()).getByRole('button', { name })
+const search = (query: string) => fireEvent.change(screen.getByRole('searchbox'), { target: { value: query } })
+const results = () => screen.getByRole('region', { name: 'Meklēšanas rezultāti' })
 
 describe('MapPage', () => {
   beforeEach(() => resetSnapshotCache())
@@ -48,30 +50,63 @@ describe('MapPage', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('loads the snapshot, filters with the chips and the search, and flies to a charity from the list', async () => {
+  it('has no organisations button on the rail: the list is the search results', async () => {
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
+    renderWithProviders(<MapPage />)
+    await screen.findByRole('group', { name: 'Kategorijas' })
+    expect(within(rail()).queryByRole('button', { name: 'Organizācijas' })).toBeNull()
+    expect(within(rail()).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Lielākie atbalstītāji', 'Jaunumi', 'Par projektu'])
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
+  })
+
+  it('loads the snapshot, filters with the chips, and shows the search results to fly to', async () => {
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
     renderWithProviders(<MapPage />)
     expect(await screen.findByText('Karti nevar parādīt')).toBeInTheDocument()
     const chips = await screen.findByRole('group', { name: 'Kategorijas' })
     expect(within(chips).getByRole('button', { name: /Visas/ })).toHaveTextContent('2')
 
-    fireEvent.click(railButton('Organizācijas'))
-    const panel = screen.getByRole('region', { name: 'Organizācijas' })
-    expect(within(panel).getByText('2 organizācijas')).toBeInTheDocument()
-
+    search('a')
+    expect(within(results()).getByText('2 organizācijas')).toBeInTheDocument()
     fireEvent.click(within(chips).getByRole('button', { name: /Bērnu nami/ }))
-    expect(within(panel).getByText('1 organizācija')).toBeInTheDocument()
+    expect(within(results()).getByText('1 organizācija')).toBeInTheDocument()
     fireEvent.click(within(chips).getByRole('button', { name: /Visas/ }))
 
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'ulubele' } })
-    expect(within(panel).getByText('1 organizācija')).toBeInTheDocument()
-    fireEvent.click(within(panel).getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' }))
-    expect(within(panel).getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' })).toHaveAttribute('aria-current', 'true')
+    search('ulubele')
+    expect(within(results()).getByText('1 organizācija')).toBeInTheDocument()
+    fireEvent.click(within(results()).getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' }))
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
 
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'nekas' } })
-    expect(within(panel).getByText('Neviena organizācija neatbilst meklējumam.')).toBeInTheDocument()
-    fireEvent.click(within(panel).getByRole('button', { name: 'Rādīt visas' }))
-    expect(within(panel).getByText('2 organizācijas')).toBeInTheDocument()
+    search('ulubel')
+    expect(within(results()).getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' })).toHaveAttribute('aria-current', 'true')
+
+    search('nekas')
+    expect(within(results()).getByText('Neviena organizācija neatbilst meklējumam.')).toBeInTheDocument()
+    fireEvent.click(within(results()).getByRole('button', { name: 'Rādīt visas' }))
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+  })
+
+  it('closes the search results on Escape, focus back in the field, and on a press outside', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
+    const { container } = renderWithProviders(<MapPage />)
+    await screen.findByRole('group', { name: 'Kategorijas' })
+
+    await user.type(screen.getByRole('searchbox'), 'ul')
+    await user.click(within(results()).getByRole('button', { name: /Ulubele/ }))
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
+
+    await user.type(screen.getByRole('searchbox'), 'e')
+    within(results()).getAllByRole('button')[0]?.focus()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
+    expect(screen.getByRole('searchbox')).toHaveFocus()
+
+    await user.type(screen.getByRole('searchbox'), 'b')
+    expect(results()).toBeInTheDocument()
+    fireEvent.pointerDown(container.querySelector('section > div.absolute.inset-0')!)
+    expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
   })
 
   it('opens one panel at a time, moves focus into it, and returns focus on Escape and on close', async () => {
@@ -80,23 +115,21 @@ describe('MapPage', () => {
     renderWithProviders(<MapPage />)
     await screen.findByRole('group', { name: 'Kategorijas' })
 
-    const list = railButton('Organizācijas')
+    const info = railButton('Par projektu')
     const board = railButton('Lielākie atbalstītāji')
-    expect(list).toHaveAttribute('aria-expanded', 'false')
-    expect(list).not.toHaveAttribute('aria-controls')
+    expect(board).toHaveAttribute('aria-expanded', 'false')
+    expect(board).not.toHaveAttribute('aria-controls')
 
-    await user.click(list)
-    const listPanel = screen.getByRole('region', { name: 'Organizācijas' })
-    expect(listPanel).toHaveAttribute('id', 'map-panel-list')
-    expect(list).toHaveAttribute('aria-controls', 'map-panel-list')
-    expect(listPanel).toHaveFocus()
-    expect(list).toHaveAttribute('aria-expanded', 'true')
+    await user.click(info)
+    expect(screen.getByRole('region', { name: 'Par Dod ar prieku' })).toHaveAttribute('id', 'map-panel-info')
+    expect(info).toHaveAttribute('aria-controls', 'map-panel-info')
 
     await user.click(board)
-    expect(screen.queryByRole('region', { name: 'Organizācijas' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Par Dod ar prieku' })).toBeNull()
     const boardPanel = screen.getByRole('region', { name: 'Lielākie atbalstītāji' })
+    expect(boardPanel).toHaveFocus()
     expect(within(boardPanel).getAllByRole('listitem')[0]).toHaveTextContent('SIA Labie')
-    expect(list).toHaveAttribute('aria-expanded', 'false')
+    expect(info).toHaveAttribute('aria-expanded', 'false')
     expect(board).toHaveAttribute('aria-expanded', 'true')
 
     await user.keyboard('{Escape}')
@@ -107,6 +140,15 @@ describe('MapPage', () => {
     const news = screen.getByRole('region', { name: 'Jaunumi' })
     expect(within(news).getByText(/steidzami vajadzīgs, mēs jums uzrakstīsim/)).toBeInTheDocument()
     expect(within(news).getByRole('textbox', { name: /E-pasts/ })).toBeInTheDocument()
+    // The rail's sign-up is the general one: no charity attached.
+    const posted = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, data: {} })))
+    vi.stubGlobal('fetch', posted)
+    await user.type(within(news).getByRole('textbox', { name: /E-pasts/ }), 'ilze@example.lv')
+    await user.click(within(news).getByRole('checkbox', { name: /Piekrītu saņemt/ }))
+    await user.click(within(news).getByRole('button', { name: 'Pierakstīties' }))
+    await waitFor(() => expect(posted).toHaveBeenCalled())
+    expect(JSON.parse(String(posted.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true })
+    await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')
     await user.click(within(news).getByRole('button', { name: 'Aizvērt' }))
     expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
     expect(railButton('Jaunumi')).toHaveFocus()
@@ -117,15 +159,15 @@ describe('MapPage', () => {
     const { container } = renderWithProviders(<MapPage />)
     await screen.findByRole('group', { name: 'Kategorijas' })
 
-    fireEvent.click(railButton('Organizācijas'))
-    fireEvent.click(railButton('Organizācijas'))
-    expect(screen.queryByRole('region', { name: 'Organizācijas' })).toBeNull()
+    fireEvent.click(railButton('Jaunumi'))
+    fireEvent.click(railButton('Jaunumi'))
+    expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
 
-    fireEvent.click(railButton('Organizācijas'))
+    fireEvent.click(railButton('Jaunumi'))
     const mapArea = container.querySelector('section > div.absolute.inset-0')
     expect(mapArea).not.toBeNull()
     fireEvent.pointerDown(mapArea!)
-    expect(screen.queryByRole('region', { name: 'Organizācijas' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
   })
 
   it('returns focus to the rail when the map is pressed while focus is in the panel', async () => {
@@ -133,22 +175,21 @@ describe('MapPage', () => {
     const { container } = renderWithProviders(<MapPage />)
     await screen.findByRole('group', { name: 'Kategorijas' })
 
-    fireEvent.click(railButton('Organizācijas'))
-    expect(screen.getByRole('region', { name: 'Organizācijas' })).toHaveFocus()
+    fireEvent.click(railButton('Jaunumi'))
+    expect(screen.getByRole('region', { name: 'Jaunumi' })).toHaveFocus()
     fireEvent.pointerDown(container.querySelector('section > div.absolute.inset-0')!)
-    expect(railButton('Organizācijas')).toHaveFocus()
+    expect(railButton('Jaunumi')).toHaveFocus()
   })
 
-  it('closes the sheet on a phone when an organisation is chosen, focus back on the rail', async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }))
+  it('closes an open panel when an organisation is chosen from the search', async () => {
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
     renderWithProviders(<MapPage />)
     await screen.findByRole('group', { name: 'Kategorijas' })
 
-    fireEvent.click(railButton('Organizācijas'))
-    fireEvent.click(screen.getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' }))
-    expect(screen.queryByRole('region', { name: 'Organizācijas' })).toBeNull()
-    expect(railButton('Organizācijas')).toHaveFocus()
+    fireEvent.click(railButton('Lielākie atbalstītāji'))
+    search('ulubele')
+    fireEvent.click(within(results()).getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' }))
+    expect(screen.queryByRole('region', { name: 'Lielākie atbalstītāji' })).toBeNull()
   })
 
   it('links the rail to the account, and opens the info as a panel rather than a page', () => {
@@ -204,8 +245,8 @@ describe('MapPage', () => {
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: { ...snapshotFixture, charities: many } } }))
     renderWithProviders(<MapPage />)
     await screen.findByRole('group', { name: 'Kategorijas' })
-    fireEvent.click(railButton('Organizācijas'))
-    const panel = screen.getByRole('region', { name: 'Organizācijas' })
+    search('patversme')
+    const panel = results()
     expect(within(panel).getAllByRole('button', { name: /^Rādīt kartē/ })).toHaveLength(100)
     expect(within(panel).getByText('Parādītas 100 no 230')).toBeInTheDocument()
     fireEvent.click(within(panel).getByRole('button', { name: 'Rādīt vēl 100' }))
@@ -218,7 +259,7 @@ describe('MapPage', () => {
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: { ...snapshotFixture, charities: [], sponsorLeaderboard: [] } } }))
     renderWithProviders(<MapPage />)
     await waitFor(() => expect(screen.queryByRole('group', { name: 'Kategorijas' })).toBeNull())
-    fireEvent.click(railButton('Organizācijas'))
+    search('x')
     expect(await screen.findByRole('heading', { name: 'Kartē vēl nav nevienas organizācijas' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Pieteikt savu iestādi/ })).toHaveAttribute('href', ROUTES.register)
   })
@@ -227,21 +268,21 @@ describe('MapPage', () => {
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
     renderWithProviders(<MapPage />, { route: '/?org=ulubele' })
     await screen.findByRole('group', { name: 'Kategorijas' })
-    fireEvent.click(railButton('Organizācijas'))
+    search('ulubele')
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Rādīt kartē: Dzīvnieku patversme Ulubele' })).toHaveAttribute('aria-current', 'true'),
     )
   })
 
-  it('shows the error over the map and in the list, and retries', async () => {
+  it('shows the error over the map and in the search results, and retries', async () => {
     const fetcher = vi.fn().mockRejectedValueOnce(new TypeError('offline'))
     vi.stubGlobal('fetch', fetcher)
     renderWithProviders(<MapPage />)
     expect(await screen.findByText('Neizdevās ielādēt organizācijas')).toBeInTheDocument()
-    fireEvent.click(railButton('Organizācijas'))
-    expect(within(screen.getByRole('region', { name: 'Organizācijas' })).getByText('Neizdevās ielādēt organizācijas')).toBeInTheDocument()
+    search('a')
+    expect(within(results()).getByText('Neizdevās ielādēt organizācijas')).toBeInTheDocument()
     fetcher.mockImplementation(fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
-    fireEvent.click(screen.getByRole('button', { name: 'Mēģināt vēlreiz' }))
+    fireEvent.click(within(results()).getByRole('button', { name: 'Mēģināt vēlreiz' }))
     expect(await screen.findByText('2 organizācijas')).toBeInTheDocument()
   })
 

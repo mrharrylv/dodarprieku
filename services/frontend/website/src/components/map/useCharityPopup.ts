@@ -1,7 +1,8 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Map as MlMap, Popup } from 'maplibre-gl'
 
 import type { PublicCharity } from '@shared/contracts'
+import { drawnAt, type DrawnAt } from '@/lib/snapshot'
 import { EXPANDED_PIN_FROM_BOTTOM_PX, FLY_DURATION_MS, POPUP_OFFSET, POPUP_PAN_OFFSET_PX, popupPanOffset } from './map-config'
 import { prefersReducedMotion, type MaplibreModule } from './maplibre-engine'
 
@@ -12,13 +13,13 @@ interface Options {
   /** Set by a fly-to from the list or ?org=: it already lands the pin where the small card wants it. */
   readonly flyingToRef: RefObject<string | null>
   readonly selected: PublicCharity | undefined
+  /** Where charities sharing an address are drawn, so the popup sits on the pin. */
+  readonly at: DrawnAt
   readonly expanded: boolean
   /** The expanded card is a bottom sheet on a phone, not a popup: no popup then. */
   readonly sheet: boolean
   readonly onClosed: () => void
 }
-
-const lngLat = (charity: PublicCharity): [number, number] => [charity.profile.location.lng, charity.profile.location.lat]
 
 /**
  * The popup of the selected charity: a MapLibre popup anchored above its pin,
@@ -26,8 +27,13 @@ const lngLat = (charity: PublicCharity): [number, number] => [charity.profile.lo
  * the pin with room to spare, and, when the card expands, so the pin sits
  * near the bottom edge and the card can grow upwards in place.
  */
-export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, expanded, sheet, onClosed }: Options): HTMLElement | null => {
+export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, at, expanded, sheet, onClosed }: Options): HTMLElement | null => {
   const [node, setNode] = useState<HTMLElement | null>(null)
+  // Read when the popup opens or the map eases, never a reason to do either again.
+  const atRef = useRef(at)
+  useEffect(() => {
+    atRef.current = at
+  })
 
   useEffect(() => {
     const map = mapRef.current
@@ -43,7 +49,7 @@ export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, 
       className: 'dp-popup',
       focusAfterOpen: false,
     })
-      .setLngLat(lngLat(selected))
+      .setLngLat(drawnAt(selected, atRef.current))
       .setDOMContent(element)
       .addTo(map)
     let removing = false
@@ -73,7 +79,7 @@ export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, 
     flyingToRef.current = null
     const below = expanded ? map.getContainer().clientHeight / 2 - EXPANDED_PIN_FROM_BOTTOM_PX : POPUP_PAN_OFFSET_PX
     map.easeTo({
-      center: lngLat(selected),
+      center: drawnAt(selected, atRef.current),
       offset: [popupPanOffset()[0], Math.max(POPUP_PAN_OFFSET_PX, below)],
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS / 2,
     })

@@ -200,16 +200,42 @@ allows exactly that origin (`connect-src`, `img-src`, `worker-src blob:`).
 Address search in the wizard uses Nominatim (`https://nominatim.openstreetmap.org`,
 countrycodes=lv), only when the user presses search.
 
-Clusters are small accent hearts with the count inside; a group of two or
-three is one pin of its majority category with a count. Two clustered copies
-of the data: a coarse one for the country view and a fine one (60px) from
-zoom 9, or whenever the coarse one leaves fewer than 5 markers on screen.
-The coarse radius is the map's width over 9, between 56px and 160px, wider
-than the 80-100px first asked for (Harry, 2026-11-26): with the 1024 imported
-charities a 90px radius still left about 40 markers at country zoom, and the
-aim is roughly 7-15 (15 on a 1440px desktop, 8 on a 390px phone). Only the
-markers in or just around the view are drawn, worked out at most every 120ms
-while the map moves.
+Every cluster knows its composition exactly (MapLibre `clusterProperties`,
+one count per category). A cluster whose charities all share one category is
+that category's badge, a little larger than a pin, with the count on it; only
+a cluster that mixes categories is an accent heart with the count inside,
+clearly larger than a pin (52px for two, growing gently to 68px). There is no
+majority guess: a 1-1 pair is mixed (Harry, 2026-11-26: a soup kitchen and an
+"other" 40 m apart in Grobiņa showed as a soup kitchen "2"). Charities at the
+same address (within 2 m of each other) are drawn on a small ring (12 m, wider
+for a crowd so neighbours stay 15 m apart, a pin at zoom 17) round it, so
+each becomes its own pin when the map is close, and clusters last until zoom
+16. Two clustered copies of the data: a coarse one for the country view and a
+fine one (60px) from zoom 9, or whenever the coarse one leaves fewer than 5
+markers on screen. The coarse radius is a distance: 45 km on the ground at the
+zoom the country view opens on, converted to pixels for that zoom (135px on a
+1440px desktop), never under 48px so a phone's markers do not overlap, and
+halving in distance with each zoom in. With the 1024 imported charities that
+is about 21 groups on a 1440px desktop and 10 on a 390px phone (Harry,
+2026-11-26: "about 50 km", roughly 12-25 groups; the earlier width-based 160px
+left five hearts). The radius is worked out again when the map changes size
+(a phone turned, a window resized), and the coarse source rebuilt when it
+moves by more than 15%. A group of more than 150 is drawn as its children one
+zoom further in, as long as those stay at least 56px apart on screen: on a
+desktop that splits Riga's 353 into central Riga (296), Jūrmala (19) and two
+groups south of it. Central Riga cannot split further at the country view
+without its hearts overlapping (it is about 10 km, some 30px, across), so it
+stays one heart there, and on a phone (397, where no split fits) until the
+visitor zooms in. It splits from zoom 9. Only the markers in
+or just around the view are drawn, worked out at most every 120ms while the
+map moves.
+
+The left rail holds the leaderboard, the newsletter, the project info and the
+account; there is no organisations panel (Harry, 2026-11-26). Typing in the
+search opens the matching organisations under the field, each one a fly-to.
+The newsletter sign-up in the expanded charity card sends that charity's id,
+like the charity page and the box after a pledge; the rail's sign-up is
+general.
 
 ## Packages and ownership
 

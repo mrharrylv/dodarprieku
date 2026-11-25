@@ -15,7 +15,8 @@
   "search": {
     "label": "Meklēt pēc nosaukuma vai pilsētas",
     "placeholder": "Meklēt iestādi vai pilsētu",
-    "clear": "Notīrīt meklēšanu"
+    "clear": "Notīrīt meklēšanu",
+    "results": "Meklēšanas rezultāti"
   },
   "filters": {
     "label": "Kategorijas",
@@ -56,6 +57,9 @@
     "cluster_zero": "{{count}} organizāciju šajā apgabalā. Pietuvināt",
     "cluster_one": "{{count}} organizācija šajā apgabalā. Pietuvināt",
     "cluster_other": "{{count}} organizācijas šajā apgabalā. Pietuvināt",
+    "categoryCluster_zero": "{{count}} organizāciju šajā apgabalā, visas: {{category}}. Pietuvināt",
+    "categoryCluster_one": "{{count}} organizācija šajā apgabalā: {{category}}. Pietuvināt",
+    "categoryCluster_other": "{{count}} organizācijas šajā apgabalā, visas: {{category}}. Pietuvināt",
     "pin": "{{name}}, {{category}}"
   },
   "popup": {
@@ -76,7 +80,6 @@
   },
   "rail": {
     "label": "Kartes rīki",
-    "list": "Organizācijas",
     "leaderboard": "Lielākie atbalstītāji",
     "news": "Jaunumi",
     "info": "Par projektu",

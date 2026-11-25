@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import type { Map as MlMap, MapMouseEvent, MapSourceDataEvent, Marker } from 'maplibre-gl'
 
 import { LATVIA_BOUNDS, type PublicCharity } from '@shared/contracts'
-import { toFeatureCollection } from '@/lib/snapshot'
+import { drawnAt, toFeatureCollection } from '@/lib/snapshot'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { Spinner } from '@/components/ui/Spinner'
 import { CharitySheet } from './CharitySheet'
 import { MapPopupCard, type CardFocus } from './MapPopupCard'
-import { CharityPin, ClusterPin, SmallClusterPin } from './MapPins'
+import { CategoryClusterPin, CharityPin, ClusterPin } from './MapPins'
 import {
   CLUSTER_ZOOM_EXTRA,
   FLY_DURATION_MS,
@@ -21,11 +21,12 @@ import {
   MAP_STYLE_URL,
   MOVE_SYNC_MS,
   PANEL_SHEET_QUERY,
-  SMALL_CLUSTER_MAX,
   SOURCES,
   type SourceKey,
 } from './map-config'
-import { addCharitySources, applyLatvianLabels, markersInView, setCharityData, sourceOf } from './map-setup'
+import { spreadColocated } from './colocated'
+import { createClusterSplitter, type ClusterSplitter } from './cluster-split'
+import { addCharitySources, applyLatvianLabels, childrenOf, markersInView, refitCoarseSource, setCharityData, sourceOf } from './map-setup'
 import { MAPLIBRE_ENGINE, prefersReducedMotion, type MapEngine, type MaplibreModule } from './maplibre-engine'
 import { pinSignature, type PinItem } from './marker-sync'
 import { createSyncThrottle } from './sync-throttle'
@@ -50,6 +51,9 @@ const LATVIA_BOX: [[number, number], [number, number]] = [
   [LATVIA_BOUNDS.maxLng, LATVIA_BOUNDS.maxLat],
 ]
 const FIT_PADDING = 24
+
+/** The zoom that fits the whole country in the map as it is sized now. */
+const countryZoom = (map: MlMap): number => map.cameraForBounds(LATVIA_BOX, { padding: FIT_PADDING })?.zoom ?? map.getZoom()
 
 const OUR_SOURCES: ReadonlySet<string> = new Set(Object.values(SOURCES).map((s) => s.id))
 
@@ -77,7 +81,7 @@ const onChrome = (event: MapMouseEvent | undefined): boolean => {
  * HTML markers rendered by React through portals, so each one is a real,
  * focusable button; only the clusters and charities in or just around the
  * view become markers, so a thousand charities cost a few dozen elements.
- * The panel's list remains the main accessible path.
+ * The search's results list remains the main accessible path.
  */
 export const MapView = ({
   charities,
@@ -99,6 +103,8 @@ export const MapView = ({
   const markers = useRef(new Map<string, Marker>())
   const signature = useRef('')
   const throttleRef = useRef<SyncRequest>(IDLE_SYNC)
+  /** Splits of the biggest clusters; forgotten whenever the clusters change. */
+  const splitterRef = useRef<ClusterSplitter | null>(null)
   const [phase, setPhase] = useState<Phase>('loading')
   const [placed, setPlaced] = useState<readonly Placed[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -115,7 +121,8 @@ export const MapView = ({
   /** The charity a fly-to is taking the map to: the popup's own pan must not cut that flight short. */
   const flyingToRef = useRef<string | null>(null)
   const onSelectRef = useRef(onSelect)
-  const data = useMemo(() => toFeatureCollection(charities), [charities])
+  const positions = useMemo(() => spreadColocated(charities), [charities])
+  const data = useMemo(() => toFeatureCollection(charities, positions), [charities, positions])
   const dataRef = useRef(data)
   const byId = useMemo(() => new Map(charities.map((c) => [c.id, c])), [charities])
 
@@ -139,7 +146,7 @@ export const MapView = ({
       if (map === null || lib === null) return
       const camera = cameraKey(map)
       if (!dirty && camera === synced) return
-      const items = markersInView(map)
+      const items = markersInView(map, splitterRef.current ?? undefined)
       if (items === null) return
       synced = camera
       dirty = false
@@ -156,7 +163,8 @@ export const MapView = ({
       setPlaced(
         items.map((item) => {
           const existing = markerMap.get(item.key)
-          if (existing !== undefined) return { item, element: existing.getElement() }
+          // The same key can come back for a different group after new data: move it.
+          if (existing !== undefined) return { item, element: existing.setLngLat([item.lngLat[0], item.lngLat[1]]).getElement() }
           const element = document.createElement('div')
           element.className = 'dp-marker'
           const marker = new lib.Marker({ element }).setLngLat([item.lngLat[0], item.lngLat[1]]).addTo(map)
@@ -202,6 +210,7 @@ export const MapView = ({
         attributionControl: { compact: true },
       })
       mapRef.current = map
+      splitterRef.current = createClusterSplitter(childrenOf(map), () => throttleRef.current.request(true))
       map.addControl(new lib.NavigationControl({ showCompass: false }), 'bottom-right')
       map.on('load', () => {
         // The panel settles its width after the map is created; fit again
@@ -209,14 +218,18 @@ export const MapView = ({
         map.resize()
         map.fitBounds(LATVIA_BOX, { padding: FIT_PADDING, animate: false })
         applyLatvianLabels(map)
-        addCharitySources(map, dataRef.current)
+        addCharitySources(map, dataRef.current, countryZoom(map))
         setPhase('ready')
         sync()
       })
       // Moving: at most every MOVE_SYNC_MS. Settled, or new tiles or data: on the next frame.
       map.on('move', () => throttle.request())
       map.on('moveend', () => throttle.request(true))
-      map.on('resize', () => throttleRef.current.request(true))
+      map.on('resize', () => {
+        // A phone turned or a window resized: the country view's distance is another number of pixels now.
+        if (refitCoarseSource(map, dataRef.current, countryZoom(map))) splitterRef.current?.reset()
+        throttleRef.current.request(true)
+      })
       map.on('sourcedata', (event?: MapSourceDataEvent) => {
         if (event?.sourceId !== undefined && OUR_SOURCES.has(event.sourceId)) throttleRef.current.request(true)
       })
@@ -241,6 +254,7 @@ export const MapView = ({
   useEffect(() => {
     if (phase !== 'ready' || mapRef.current === null) return
     setCharityData(mapRef.current, data)
+    splitterRef.current?.reset()
     throttleRef.current.request(true)
   }, [data, phase])
 
@@ -251,7 +265,7 @@ export const MapView = ({
     if (phase !== 'ready' || map === null || target === undefined) return
     flyingToRef.current = target.id
     map.flyTo({
-      center: [target.profile.location.lng, target.profile.location.lat],
+      center: drawnAt(target, positions),
       zoom: Math.max(map.getZoom(), FOCUS_ZOOM),
       offset: popupPanOffset(),
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS,
@@ -272,7 +286,7 @@ export const MapView = ({
     setExpandedId(null)
     setFocusTarget('view')
   }
-  const popupNode = useCharityPopup({ ready: phase === 'ready', mapRef, libRef, flyingToRef, selected, expanded, sheet, onClosed: () => onSelect(null) })
+  const popupNode = useCharityPopup({ ready: phase === 'ready', mapRef, libRef, flyingToRef, selected, at: positions, expanded, sheet, onClosed: () => onSelect(null) })
 
   const zoomCluster = (source: SourceKey, clusterId: number, lngLat: readonly [number, number]) => {
     const map = mapRef.current
@@ -337,7 +351,7 @@ export const MapView = ({
   )
 }
 
-/** One marker: a heart for a cluster, a category pin with a count for two or three, the charity's own pin. */
+/** One marker: a heart for a mixed cluster, the category's badge with a count for a cluster of one category, the charity's own pin. */
 const Pin = ({
   item,
   byId,
@@ -353,8 +367,8 @@ const Pin = ({
 }) => {
   if (item.kind === 'cluster') {
     const zoom = () => onZoom(item.source, item.clusterId, item.lngLat)
-    return item.count <= SMALL_CLUSTER_MAX && item.majority !== null ? (
-      <SmallClusterPin count={item.count} category={item.majority} onZoom={zoom} />
+    return item.category !== null ? (
+      <CategoryClusterPin count={item.count} category={item.category} onZoom={zoom} />
     ) : (
       <ClusterPin count={item.count} onZoom={zoom} />
     )

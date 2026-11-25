@@ -12,10 +12,11 @@ import { Icon } from '@/components/ui/Icon'
 import { CharityContacts } from '@/components/charity/CharityContacts'
 import { DeliveryOptions } from '@/components/charity/DeliveryOptions'
 import { NeedsSection } from '@/components/charity/NeedsSection'
+import { SubscribeBox } from '@/components/pledge/SubscribeBox'
 
 /**
  * The expanded popup's body: the charity page's own needs, pledge flow,
- * delivery and contacts, compact, and the way to the full, shareable page.
+ * delivery, contacts and newsletter sign-up (tied to this charity), compact, and the way to the full, shareable page.
  * Mounted only while the card is expanded, so the live counts are fetched
  * (and the view counted) only for a charity someone actually opened.
  */
@@ -30,6 +31,9 @@ export const MapPopupDetails = ({ charity }: { charity: PublicCharity }) => {
       <NeedsSection charity={charity} stats={stats} onPledged={stats.reload} compact />
       <DeliveryOptions delivery={charity.profile.delivery} compact />
       <CharityContacts charity={charity} compact />
+      <div className="border-t border-(--border-subtle) p-4">
+        <SubscribeBox charityId={charity.id} className="shadow-none" />
+      </div>
       <div className="border-t border-(--border-subtle) p-4">
         <Link to={localePath(charityPath(charity.slug), locale)} className={buttonClasses('secondary', 'sm', 'w-full')}>
           {t('popup.openPage')}

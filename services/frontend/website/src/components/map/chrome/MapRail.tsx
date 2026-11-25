@@ -10,7 +10,6 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import { panelDomId, type MapPanels, type PanelId } from './useMapPanels'
 
 const RAIL_PANELS: ReadonlyArray<{ readonly id: PanelId; readonly icon: IconName }> = [
-  { id: 'list', icon: 'list' },
   { id: 'leaderboard', icon: 'trophy' },
   { id: 'news', icon: 'mail' },
   { id: 'info', icon: 'info' },
@@ -26,8 +25,8 @@ const ROUND = cn(
 const ACTIVE = 'border-(--ring-accent) bg-(--surface-accent-soft) text-(--text-accent) hover:text-(--text-accent)'
 
 /**
- * The floating icon rail on the map's left edge: the list, the leaderboard,
- * the newsletter and the project's info (each opens a panel), and the
+ * The floating icon rail on the map's left edge: the leaderboard, the
+ * newsletter and the project's info (each opens a panel), and the
  * charities' account. Every button carries its name as `aria-label` and as a tooltip
  * that shows on hover and on keyboard focus.
  */

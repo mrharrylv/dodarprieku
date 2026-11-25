@@ -13,7 +13,7 @@ import { SubscribeBox } from '@/components/pledge/SubscribeBox'
 import { CharityList } from '../CharityList'
 import { SponsorLeaderboard } from '../SponsorLeaderboard'
 
-/** "Organizācijas": the list that matches the search and the chip, each one a fly-to. */
+/** The organisations that match the search and the chip, each one a fly-to: the search's results. */
 export const OrganisationsContent = ({
   state,
   filter,

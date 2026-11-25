@@ -26,7 +26,6 @@ export type IconName =
   | 'flag'
   | 'heart'
   | 'info'
-  | 'list'
   | 'mail'
   | 'menu'
   | 'moon'
@@ -50,7 +49,6 @@ const STROKES: Record<Exclude<IconName, 'whatsapp'>, string> = {
   flag: 'M5 21V4m0 0h11l-2 4 2 4H5',
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v5m0-8.5v.5',
-  list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
   mail: 'M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm-.6.4 8.6 6.4 8.6-6.4',
   menu: 'M4 7h16M4 12h16M4 17h16',
   moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z',

@@ -23,30 +23,62 @@ export const MAP_BOUNDS: readonly [[number, number], [number, number]] = [
 ]
 
 /**
- * Two clustered copies of the same points. The coarse one groups widely, so
- * the whole country reads as about ten hearts rather than forty bubbles
- * (its radius is wider than the 80-100px first suggested: with the 1024
- * imported charities 90px still left about 40 markers at country zoom); the
- * fine one takes over once the view is close (FINE_FROM_ZOOM) or the coarse
- * one leaves fewer than MIN_VISIBLE_MARKERS on screen (Harry, 2026-11-26).
- * Each has an invisible layer: MapLibre only tiles a source some layer uses,
- * and the markers read those tiles.
+ * Two clustered copies of the same points. The coarse one groups by distance:
+ * about COARSE_RADIUS.km on the ground at the zoom the country view opens on,
+ * so a desktop shows a couple of dozen groups and Riga splits into several
+ * (Harry, 2026-11-26: a width-based 160px radius left five hearts). The fine
+ * one takes over once the view is close (FINE_FROM_ZOOM) or the coarse one
+ * leaves fewer than MIN_VISIBLE_MARKERS on screen. Each has an invisible
+ * layer: MapLibre only tiles a source some layer uses, and the markers read
+ * those tiles.
  */
 export const SOURCES = {
-  /** Its radius follows the map's width (coarseRadius), at most this. */
-  coarse: { id: 'charities', layer: 'charities-hit', radius: 160 },
+  /** Its radius is worked out from the country view's zoom (coarseRadius). */
+  coarse: { id: 'charities', layer: 'charities-hit' },
   fine: { id: 'charities-fine', layer: 'charities-fine-hit', radius: 60 },
 } as const
 export type SourceKey = keyof typeof SOURCES
-/** The coarse radius is the map's width over this, between the two bounds: a phone groups less widely. */
-export const COARSE_RADIUS = { divisor: 9, min: 56 } as const
-export const CLUSTER_MAX_ZOOM = 13
+/** The coarse radius: this many kilometres at the country view, in pixels between the two bounds. */
+export const COARSE_RADIUS = { km: 45, min: 48, max: 200 } as const
+/**
+ * The coarse radius is worked out again when the map's size changes (a phone
+ * turned, a window resized), and the source rebuilt only when the new radius
+ * differs from the one in use by more than this share: a rebuild re-tiles
+ * every cluster, so a few pixels are not worth it.
+ */
+export const COARSE_REBUILD_CHANGE = 0.15
+/**
+ * A cluster of more than `over` charities is drawn as its children one zoom
+ * further in (cluster-split.ts), as long as they stay `minGapPx` apart on
+ * screen: Riga was one heart of 353 at the country view.
+ */
+export const SPLIT_CLUSTERS = { over: 150, minGapPx: 56 } as const
+/**
+ * Clusters last until this zoom, so two charities a few doors apart stay one
+ * marker until they are far enough apart on screen not to cover each other.
+ */
+export const CLUSTER_MAX_ZOOM = 16
 /** From this zoom (roughly a 100 km wide view) the fine clustering is used. */
 export const FINE_FROM_ZOOM = 9
 /** Fewer markers than this on screen and the clusters split further. */
 export const MIN_VISIBLE_MARKERS = 5
-/** A cluster this small is drawn as one category pin with a count, never a lone "2". */
-export const SMALL_CLUSTER_MAX = 3
+/** A mixed cluster's heart, in pixels: from `min` for two, `perDecade` more for every tenfold, at most `max`. A pin is 44px. */
+export const HEART_PX = { min: 52, max: 68, perDecade: 6 } as const
+/**
+ * Charities at the same address (one building, or one organisation listed
+ * twice) are drawn on a small ring this many metres round it, so each is its
+ * own pin once the map is close; stacked, one hid the other and a "2" opened
+ * onto a single pin.
+ */
+export const COLOCATED_SPREAD_M = 12
+/**
+ * Neighbours on that ring stay at least this far apart, in metres: a 44px pin
+ * at zoom 17, where the clusters have all opened (about 0.33 m a pixel at
+ * Latvia's latitude). The ring grows for a crowd to keep it.
+ */
+export const COLOCATED_GAP_M = 15
+/** Two charities closer than this, in metres, are at the same place. */
+export const COLOCATED_WITHIN_M = 2
 /** How far past a cluster's expansion zoom a click goes, so it really opens. */
 export const CLUSTER_ZOOM_EXTRA = 0.5
 /** While the map moves, the markers are worked out at most this often, in milliseconds; once it stops, at once. */
