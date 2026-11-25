@@ -84,7 +84,8 @@ function handler(event) {
   /* A browser's URL parser drops tabs and line breaks, so a Location built
      around one ("/\t/evil.com") could name another host. No page has one in
      its address: the request goes on to the bucket, which has no such key. */
-  if (/[\t\n\r]/.test(uri)) return request
+  // indexOf, not a regex: see segmentsOf on the runtime's regex limit.
+  if (uri.indexOf('\t') !== -1 || uri.indexOf('\n') !== -1 || uri.indexOf('\r') !== -1) return request
 
   var segments = segmentsOf(uri)
   if (PASS_THROUGH.indexOf(segments[0]) !== -1) return request
@@ -136,9 +137,13 @@ function notFound() {
 }
 
 /* The path's segments. A backslash counts as a slash, as it does to a
-   browser, so no segment can start a Location that names another host. */
+   browser, so no segment can start a Location that names another host.
+   Plain string splits, not split(/[\/\\]/): CloudFront's runtime caps the
+   regex engine's instruction count, and that split threw "Regex execute
+   instruction limit exceeded" on 50-character asset paths, answering them
+   503 (seen live on the font files, 2026-11-25). */
 function segmentsOf(uri) {
-  var parts = uri.split(/[\/\\]/)
+  var parts = uri.split('\\').join('/').split('/')
   var segments = []
   for (var i = 0; i < parts.length; i++) {
     if (parts[i] !== '') segments.push(parts[i])
