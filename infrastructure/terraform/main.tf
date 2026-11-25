@@ -5,6 +5,16 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    # The API's session secret (app_data.tf).
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    # The API's first code upload (api.tf).
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
   }
 
   # Partial backend: the state key is supplied at init time so one configuration
@@ -66,6 +76,14 @@ locals {
   # ACM rejects a subject alternative name that repeats the certificate's own
   # domain_name, so the SAN list is the extra hosts only.
   certificate_sans = [for host in local.domain_hosts : host if host != var.domain_name]
+
+  # CloudFront's managed policies: fixed IDs, the same in every account.
+  managed_cache_policy_disabled          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
+  managed_cache_policy_optimized         = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+  managed_origin_request_all_except_host = "b689b0a8-53d0-40ab-baf2-68738e2966ac" # AllViewerExceptHostHeader
+
+  media_origin_id = "S3-${local.name_prefix}-${var.project}-media"
+  api_origin_id   = "API-${local.name_prefix}-${var.project}"
 
   # Phase 2 of the rollout: the alias list and the validated certificate are
   # attached to CloudFront together, never one without the other.
@@ -242,10 +260,9 @@ resource "aws_cloudfront_function" "rewrite" {
 # response headers itself, so without this the site ships no HSTS, no
 # clickjacking defence and no MIME-sniffing defence.
 #
-# The CSP is deliberately strict and matches what the template's code actually
-# does: everything is same-origin, fonts are self-hosted, and no third party is
-# contacted. Adding an embed (a map, an analytics tag) means widening this
-# policy in the same commit: see doc/operations.md.
+# The CSP is deliberately strict: everything is same-origin except the map's
+# tiles and address search, and Google Analytics in prod (csp.tf). Adding an
+# embed means widening it there in the same commit: see doc/operations.md.
 resource "aws_cloudfront_response_headers_policy" "website" {
   name    = "${local.name_prefix}-${var.project}-security-headers"
   comment = "Security headers for ${var.environment} ${var.project}"
@@ -272,29 +289,10 @@ resource "aws_cloudfront_response_headers_policy" "website" {
       override                   = true
     }
 
+    # The directives, and why each origin is there: csp.tf.
     content_security_policy {
-      content_security_policy = join("; ", [
-        "default-src 'self'",
-        # Tailwind v4 injects a style element at runtime, so 'unsafe-inline' is
-        # required for styles. Scripts do not need it.
-        "style-src 'self' 'unsafe-inline'",
-        "script-src 'self'",
-        # image_origins: photos hotlinked from a client's existing site
-        # (MEDIA_ORIGIN in src/config/site.ts). Empty by default.
-        join(" ", concat(["img-src 'self' data:"], var.image_origins)),
-        "font-src 'self'",
-        # frame_origins: the contact page's map (MAP in src/config/site.ts)
-        # needs https://www.google.com. Empty by default: no frames at all.
-        join(" ", concat(["frame-src 'self'"], var.frame_origins)),
-        # analytics_origin: HA Group's CRM, which receives the visit
-        # statistics (doc/visit-tracking.md). Empty: nothing leaves the page.
-        join(" ", compact(["connect-src 'self'", var.analytics_origin])),
-        "frame-ancestors 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-        "object-src 'none'",
-      ])
-      override = true
+      content_security_policy = local.content_security_policy
+      override                = true
     }
   }
 
@@ -327,10 +325,113 @@ resource "aws_cloudfront_distribution" "website" {
     origin_access_control_id = aws_cloudfront_origin_access_control.website.id
   }
 
+  # Photos, logos and the public snapshot (app_data.tf). One OAC signs for
+  # both buckets.
+  origin {
+    domain_name              = aws_s3_bucket.media.bucket_regional_domain_name
+    origin_id                = local.media_origin_id
+    origin_access_control_id = aws_cloudfront_origin_access_control.website.id
+  }
+
+  # The website's 404 page (not_found.tf): the bucket's fallback in the
+  # origin group below. Host is not forwarded on the default behaviour, so the
+  # function URL's own host reaches it, as OAC requires.
+  origin {
+    domain_name              = replace(replace(aws_lambda_function_url.not_found.function_url, "https://", ""), "/", "")
+    origin_id                = local.not_found_origin_id
+    origin_access_control_id = aws_cloudfront_origin_access_control.not_found.id
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # The website: the bucket, and on a missing key (403, or 404) the 404 page.
+  # Only the default behaviour uses it, so no other origin's 403 or 404 is
+  # ever replaced.
+  origin_group {
+    origin_id = local.website_origin_group_id
+
+    failover_criteria {
+      status_codes = [403, 404]
+    }
+
+    member {
+      origin_id = "S3-${local.bucket_name}"
+    }
+
+    member {
+      origin_id = local.not_found_origin_id
+    }
+  }
+
+  # The HTTP API (api.tf). HTTPS only, and the viewer's Host is replaced by the
+  # API's own, which API Gateway requires.
+  origin {
+    domain_name = replace(aws_apigatewayv2_api.api.api_endpoint, "https://", "")
+    origin_id   = local.api_origin_id
+
+    # Proves a request came through CloudFront: the execute-api URL is
+    # public, and a caller going around the edge could forge the
+    # CloudFront-Viewer-Address header the API rate-limits on (api.tf).
+    custom_header {
+      name  = local.origin_verify_header
+      value = random_password.origin_verify.result
+    }
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # /api/*: never cached; every header but Host, every cookie and query
+  # string forwarded. No function: the API answers both hosts the same.
+  ordered_cache_behavior {
+    path_pattern               = "/api/*"
+    target_origin_id           = local.api_origin_id
+    allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods             = ["GET", "HEAD"]
+    viewer_protocol_policy     = "https-only"
+    compress                   = true
+    cache_policy_id            = local.managed_cache_policy_disabled
+    origin_request_policy_id   = local.managed_origin_request_all_except_host
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.website.id
+  }
+
+  # /media/*: object keys are immutable, so cached as long as CloudFront will.
+  ordered_cache_behavior {
+    path_pattern               = "/media/*"
+    target_origin_id           = local.media_origin_id
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    cache_policy_id            = local.managed_cache_policy_optimized
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.website.id
+  }
+
+  # /data/*: the public snapshot and the parcel lockers, one minute.
+  ordered_cache_behavior {
+    path_pattern               = "/data/*"
+    target_origin_id           = local.media_origin_id
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    viewer_protocol_policy     = "redirect-to-https"
+    compress                   = true
+    cache_policy_id            = aws_cloudfront_cache_policy.data_snapshot.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.website.id
+  }
+
   default_cache_behavior {
     allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
-    target_origin_id           = "S3-${local.bucket_name}"
+    target_origin_id           = local.website_origin_group_id
     viewer_protocol_policy     = "redirect-to-https"
     compress                   = true
     response_headers_policy_id = aws_cloudfront_response_headers_policy.website.id
@@ -352,33 +453,27 @@ resource "aws_cloudfront_distribution" "website" {
     max_ttl     = 31536000
   }
 
-  # A missing key is a real 404, answered with the prerendered not-found page.
+  # A missing key is a real 404, answered with the prerendered not-found page
+  # by the origin group's fallback (not_found.tf), on the default behaviour
+  # only. There is deliberately no response_page_path here: a custom error
+  # page applies to the whole distribution, and turned the API's own 403 and
+  # 404 (with their JSON error codes) into this HTML page.
   #
-  # This used to map both codes to 200 /index.html, the usual single-page-app
-  # arrangement, because the router owned every path and index.html was the
-  # only page there was. It is safe to stop only now that the build writes a
-  # file for every route in every language and the function above points each
-  # page's URL at it: a missing key really is a page that does not exist, and
-  # a 200 for it would get every mistyped URL indexed as a copy of the home
-  # page. S3 behind OAC answers a missing key with 403 (the distribution may
-  # not list the bucket), so 403 is mapped the same way.
+  # The bucket's 403 for a missing key is that page with 404 by the time it
+  # gets here. An address that only needed tidying never gets that far: the
+  # viewer-request function has already answered it with a 301.
   #
-  # An address that only needed tidying never gets here: the function above
-  # has already answered /services, /de/services and /en/about/ with a 301 to
-  # the page. What does is a page that does not exist, and the app, running
-  # on the 404 page, shows the not-found page in the language of the URL.
+  # What stays is the error TTL: 0, so no 403 or 404 (an admin's 403 from the
+  # API, say, or a charity that was just approved) is kept at the edge and
+  # handed to the next caller. CloudFront's default would be 10 s.
   custom_error_response {
     error_code            = 403
-    response_code         = 404
-    response_page_path    = "/404.html"
-    error_caching_min_ttl = 10
+    error_caching_min_ttl = 0
   }
 
   custom_error_response {
     error_code            = 404
-    response_code         = 404
-    response_page_path    = "/404.html"
-    error_caching_min_ttl = 10
+    error_caching_min_ttl = 0
   }
 
   restrictions {

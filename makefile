@@ -1,10 +1,19 @@
 FRONTEND_DIR := services/frontend/website
+ADMIN_DIR    := services/frontend/admin
+API_DIR      := services/api
+SHARED_DIR   := services/shared
 TF_DIR       := infrastructure/terraform
+# One package's checks, skipped with a loud warning while the package does not
+# exist yet. The same script CI and the deploy run (REQUIRE_PACKAGES=1 there).
+PKG          := bash .github/scripts/package-checks.sh
+ENV          ?= dev
+PROJECT      := dodarprieku
 
 # What `verify-styles` runs against each style, before building it.
 STYLE_TESTS  := src/App.test.tsx src/entry-server.test.tsx src/hydration.test.tsx
 
 .PHONY: install dev run build lint typecheck test coverage test-pipeline verify verify-styles \
+        verify-shared verify-api verify-admin dev-api dev-admin admin-invite \
         preview a11y sitemap images tf-fmt tf-validate clean help
 
 ## Show this help
@@ -19,9 +28,12 @@ help:
 	  { desc = "" } \
 	' $(MAKEFILE_LIST)
 
-## Install dependencies (run this first)
+## Install every package's dependencies (run this first)
 install:
 	cd $(FRONTEND_DIR) && npm install
+	@$(PKG) $(SHARED_DIR) install
+	@$(PKG) $(API_DIR) install
+	@$(PKG) $(ADMIN_DIR) install
 
 ## Start the dev server on http://localhost:5173
 dev:
@@ -29,6 +41,31 @@ dev:
 
 ## Alias for dev
 run: dev
+
+## The API locally (services/api, its own dev server)
+dev-api:
+	@test -f $(API_DIR)/package.json || { echo "$(API_DIR) does not exist yet"; exit 1; }
+	cd $(API_DIR) && npm run dev
+
+## The admin portal locally (services/frontend/admin)
+dev-admin:
+	@test -f $(ADMIN_DIR)/package.json || { echo "$(ADMIN_DIR) does not exist yet"; exit 1; }
+	cd $(ADMIN_DIR) && npm run dev
+
+## Invokes the API Lambda directly ({"task":"invite-admin"}), which only an IAM
+## principal can do, so it needs AWS credentials for the account. The function
+## name comes from the Terraform output when the state is reachable and is for
+## ENV, else from the naming convention <env>-dodarprieku-api.
+##
+## Invite an admin: make admin-invite EMAIL=you@example.lv ENV=dev
+admin-invite:
+	@test -n "$(EMAIL)" || { echo 'Usage: make admin-invite EMAIL=you@example.lv ENV=dev'; exit 1; }
+	@case "$(ENV)" in dev|prod) ;; *) echo "ENV must be dev or prod, not $(ENV)"; exit 1 ;; esac
+	@test -f $(API_DIR)/scripts/admin-invite.sh || { echo "$(API_DIR)/scripts/admin-invite.sh is missing: the API package provides it."; exit 1; }
+	@FN="$$(terraform -chdir=$(TF_DIR) output -raw api_function_name 2>/dev/null | grep -E '^[a-z0-9-]+$$' || true)"; \
+	  case "$$FN" in $(ENV)-*) ;; *) FN="$(ENV)-$(PROJECT)-api" ;; esac; \
+	  echo "Inviting $(EMAIL) through $$FN"; \
+	  FUNCTION_NAME="$$FN" EMAIL="$(EMAIL)" AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/admin-invite.sh
 
 ## Production build
 build:
@@ -59,13 +96,27 @@ coverage:
 test-pipeline:
 	bash .github/tests/run.sh
 
+## The shared contracts: types and tests
+verify-shared:
+	@$(PKG) $(SHARED_DIR) typecheck test
+
+## The API: lint, types, tests with coverage, the bundle
+verify-api:
+	@$(PKG) $(API_DIR) lint typecheck test:coverage build
+
+## The admin portal: lint, types, tests with coverage, the build
+verify-admin:
+	@$(PKG) $(ADMIN_DIR) lint typecheck test:coverage build
+
 ## Everything CI runs, in CI order: its verify job (lint, tests with the
-## coverage thresholds, types, build), its pipeline job and its terraform job.
-## `verify-styles` is the one CI step left out; run it when a style changes.
+## coverage thresholds, types, build), its packages job (shared, API, admin;
+## a package that does not exist yet is skipped with a warning), its pipeline
+## job and its terraform job. `verify-styles` is the one CI step left out;
+## run it when a style changes.
 ##
 ## Everything CI runs, in CI order. Run this before every commit.
-verify: lint coverage typecheck build test-pipeline tf-fmt tf-validate
-	@printf '\n\033[1;32m✓ verify passed\033[0m  lint, tests + coverage, types, build, pipeline, terraform\n\n'
+verify: lint coverage typecheck build verify-shared verify-api verify-admin test-pipeline tf-fmt tf-validate
+	@printf '\n\033[1;32m✓ verify passed\033[0m  website, shared, api, admin, pipeline, terraform\n\n'
 
 ## `verify` compiles and routes ONE style, whichever site.config.json names, so
 ## two classes of defect hide from it: a style that does not build at all, and

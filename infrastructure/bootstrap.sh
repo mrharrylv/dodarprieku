@@ -13,12 +13,14 @@
 #      an origin that is already attached is used as it is, and the roles
 #      trust THAT repository
 #   2. infrastructure/aws/setup.sh: state bucket, OIDC provider, the two roles,
-#      plus Lambda/SES (contact.tf) and DynamoDB (consent.tf) grants when those
-#      optional modules are present
+#      plus Lambda/SES (contact.tf), DynamoDB (consent.tf) and the API's
+#      DynamoDB, Lambda, API Gateway, SSM and media bucket (api.tf) grants
+#      when those files are present
 #   3. an empty "[skip ci]" commit, pushed, so the workflows exist on main
 #      without triggering a deploy that would fail for lack of infrastructure
-#   3b. the Zone.ee API secrets (ZONE_USERNAME, ZONE_API_KEY) on the repo, from
-#      the macOS Keychain, when dev.tfvars sets zone_dns_zone
+#   3b. the Zone.ee API secrets (ZONE_USERNAME, ZONE_API_KEY) on the dev
+#      ENVIRONMENT, from the macOS Keychain, through
+#      ~/Dev/Unveil/scripts/zone-secrets.sh, when dev.tfvars sets zone_dns_zone
 #   4. the Terraform Infrastructure workflow, dev, apply=true; waits for it.
 #      With zone_dns_zone set it also creates the DNS records at Zone.ee
 #   4b. VITE_SITE_URL = https://<domain> on the dev Environment, when the
@@ -31,8 +33,9 @@
 # Needs: gh (logged in), aws (ADMIN credentials, for step 2 only), git.
 # Zone.ee key, once per Mac (the Keychain item every site reads):
 #   security add-generic-password -U -s zone.eu-api -a '<ZoneID username>' -w
-# (prompts for the key, so it never lands in the shell history). Or export
-# ZONE_USERNAME and ZONE_API_KEY before running.
+# (prompts for the key, so it never lands in the shell history). The secrets
+# are only ever set by ZONE_SECRETS_SCRIPT (default
+# ~/Dev/Unveil/scripts/zone-secrets.sh), which cleans the values first.
 # Costs: a bucket, a distribution, two roles. Cents per month while idle.
 #
 # It never touches prod. Prod is a manual workflow_dispatch and stays that way.
@@ -50,7 +53,7 @@ while [ $# -gt 0 ]; do
     --yes|-y)   YES=1; shift ;;
     --env)      ENVIRONMENT="${2:-dev}"; shift 2 ;;
     --features) FEATURES="${2:-}"; shift 2 ;;
-    -h|--help) sed -n '3,38p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '3,41p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -95,7 +98,9 @@ fi
 if [ -z "$FEATURES" ]; then
   [ -f infrastructure/terraform/contact.tf ] && FEATURES="contact"
   [ -f infrastructure/terraform/consent.tf ] && FEATURES="${FEATURES:+$FEATURES,}consent"
+  [ -f infrastructure/terraform/api.tf ] && FEATURES="${FEATURES:+$FEATURES,}app"
 fi
+ZONE_SECRETS_SCRIPT="${ZONE_SECRETS_SCRIPT:-$HOME/Dev/Unveil/scripts/zone-secrets.sh}"
 DOMAIN="$(sed -n 's/^domain_name *= *"\(.*\)"/\1/p' infrastructure/terraform/environments/${ENVIRONMENT}.tfvars | head -1)"
 ZONE_DNS_ZONE="$(sed -n 's/^zone_dns_zone *= *"\(.*\)"/\1/p' infrastructure/terraform/environments/${ENVIRONMENT}.tfvars | head -1)"
 
@@ -167,34 +172,25 @@ fi
 
 # ── 3b. Zone.ee secrets ────────────────────────────────────────────────────
 # Terraform creates the DNS records in zone_dns_zone itself, and needs the
-# ZoneID login and API key to do it. They live in this Mac's Keychain, once for
-# every site, and go to the repo as Actions secrets. The key is piped to gh, so
-# it is never on a command line.
+# ZoneID login and API key to do it. They are GitHub ENVIRONMENT secrets on
+# the environment the infra job runs in, and are only ever written by
+# zone-secrets.sh: it reads the Keychain item zone.eu-api, cleans both values
+# (the account is known to carry typographic quotes) and pipes them to gh, so
+# they are never on a command line, in a log or typed by hand.
 if [ -n "$ZONE_DNS_ZONE" ]; then
-  section "3b. Zone.ee secrets ($ZONE_DNS_ZONE)"
-  ZONE_USERNAME="${ZONE_USERNAME:-}"
-  ZONE_API_KEY="${ZONE_API_KEY:-}"
-  if [ -z "$ZONE_API_KEY" ] && command -v security >/dev/null 2>&1; then
-    ZONE_API_KEY="$(security find-generic-password -s zone.eu-api -w 2>/dev/null || true)"
-    [ -n "$ZONE_USERNAME" ] || ZONE_USERNAME="$(security find-generic-password -s zone.eu-api 2>/dev/null \
-      | sed -n 's/^ *"acct"<blob>="\(.*\)"$/\1/p' | head -1 || true)"
-  fi
-  if [ -n "$ZONE_USERNAME" ] && [ -n "$ZONE_API_KEY" ]; then
-    gh secret set ZONE_USERNAME --repo "${GITHUB_OWNER}/${REPO}" --body "$ZONE_USERNAME" >/dev/null
-    printf '%s' "$ZONE_API_KEY" | gh secret set ZONE_API_KEY --repo "${GITHUB_OWNER}/${REPO}" >/dev/null
-    ok "ZONE_USERNAME and ZONE_API_KEY set on ${GITHUB_OWNER}/${REPO}"
-  else
-    # No key on this Mac. The repository may already hold the secrets (set by
-    # hand, or by an earlier run from another Mac); then there is nothing to add.
-    EXISTING_SECRETS="$(gh secret list --repo "${GITHUB_OWNER}/${REPO}" 2>/dev/null | cut -f1 || true)"
-    if grep -qx ZONE_USERNAME <<<"$EXISTING_SECRETS" && grep -qx ZONE_API_KEY <<<"$EXISTING_SECRETS"; then
-      warn "no Zone.ee key on this Mac; ${GITHUB_OWNER}/${REPO} already has ZONE_USERNAME and ZONE_API_KEY, using those"
-    else
-      die "No Zone.ee key found. Add it once:
-    security add-generic-password -U -s zone.eu-api -a '<ZoneID username>' -w
-  (it asks for the key), or export ZONE_USERNAME and ZONE_API_KEY, then re-run."
-    fi
-  fi
+  section "3b. Zone.ee secrets ($ZONE_DNS_ZONE, environment $ENVIRONMENT)"
+  [ -x "$ZONE_SECRETS_SCRIPT" ] || [ -f "$ZONE_SECRETS_SCRIPT" ] || die "$ZONE_SECRETS_SCRIPT is missing.
+  It is the one way the Zone.ee secrets are set (it lives in the Unveil checkout).
+  Clone mrharrylv/Unveil to ~/Dev/Unveil, or point ZONE_SECRETS_SCRIPT at it, then re-run."
+  # gh cannot put a secret on an environment that does not exist yet.
+  gh api -X PUT "repos/${GITHUB_OWNER}/${REPO}/environments/${ENVIRONMENT}" >/dev/null \
+    || die "Could not create the $ENVIRONMENT environment on ${GITHUB_OWNER}/${REPO}."
+  bash "$ZONE_SECRETS_SCRIPT" "$ENVIRONMENT" "${GITHUB_OWNER}/${REPO}" \
+    || die "zone-secrets.sh failed; nothing was applied. Fix the Keychain item it names and re-run."
+  SECRETS_NOW="$(gh secret list --env "$ENVIRONMENT" --repo "${GITHUB_OWNER}/${REPO}" 2>/dev/null | cut -f1 || true)"
+  grep -qx ZONE_USERNAME <<<"$SECRETS_NOW" && grep -qx ZONE_API_KEY <<<"$SECRETS_NOW" \
+    || die "ZONE_USERNAME and ZONE_API_KEY are not both on the $ENVIRONMENT environment after zone-secrets.sh."
+  ok "ZONE_USERNAME and ZONE_API_KEY set on ${GITHUB_OWNER}/${REPO}, environment $ENVIRONMENT"
 fi
 
 # ── 4. Infrastructure ──────────────────────────────────────────────────────

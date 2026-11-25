@@ -24,18 +24,50 @@ waits for it, then the CloudFront CNAME. One infra run takes the site from
 nothing to `https://<site>.hagroup.lv`. There is no phase 1 and nothing to
 copy into My Zone.
 
-What it needs, once per repository: the Actions secrets `ZONE_USERNAME` (the
-ZoneID login) and `ZONE_API_KEY` (My Zone, your name, Account settings,
-Security, API keys). `infrastructure/bootstrap.sh` sets both from the Mac's
-Keychain item `zone.eu-api`:
+What it needs, once per environment: the GitHub **environment** secrets
+`ZONE_USERNAME` (the ZoneID login) and `ZONE_API_KEY` (My Zone, your name,
+Account settings, Security, API keys) on `dev`, never repository secrets.
+They are set in exactly one way, from the Mac's Keychain item `zone.eu-api`,
+by the script every HA Group repository uses (`infrastructure/bootstrap.sh`
+calls it, and stops if it is missing):
 
 ```bash
 security add-generic-password -U -s zone.eu-api -a '<ZoneID username>' -w
 # asks for the key, so it never lands in the shell history
+
+~/Dev/Unveil/scripts/zone-secrets.sh dev mrharrylv/dodarprieku
+gh secret list --env dev --repo mrharrylv/dodarprieku   # both names, today's date
 ```
 
-The infra workflow fails in its first seconds, with that instruction, if the
-tfvars ask for Zone.ee records and the secrets are missing.
+Never `gh secret set` them by hand: the script cleans the typographic quotes
+the Keychain account is known to carry. The job that writes DNS runs in the
+`dev` environment, maps both secrets explicitly and fails in its first seconds
+(`.github/scripts/check-zone-secrets.sh`) when either is empty. In a run log
+the step's `env:` block must show `ZONE_USERNAME: ***`; a blank value means
+nothing was written at Zone.ee, whatever the tick says.
+
+### Dodar prieku: two hosts on one distribution
+
+`dev.tfvars` lists the admin portal as an alias, so the one certificate covers
+both names and Terraform creates four records at Zone.ee in the same apply:
+
+| Host | Record | Value | Created by |
+| --- | --- | --- | --- |
+| `dodarprieku.hagroup.lv` | CNAME (ACM validation) | `_<hash>.acm-validations.aws.` | `terraform_data.zone_dns_acm_validation["dodarprieku.hagroup.lv"]` |
+| `admin.dodarprieku.hagroup.lv` | CNAME (ACM validation) | `_<hash>.acm-validations.aws.` | `terraform_data.zone_dns_acm_validation["admin.dodarprieku.hagroup.lv"]` |
+| `dodarprieku.hagroup.lv` | CNAME | `<dist>.cloudfront.net` | `terraform_data.zone_dns_site["dodarprieku.hagroup.lv"]` |
+| `admin.dodarprieku.hagroup.lv` | CNAME | `<dist>.cloudfront.net` | `terraform_data.zone_dns_site["admin.dodarprieku.hagroup.lv"]` |
+
+The validation names are `_<hash>.<host>`; the run's `dns_records_required`
+output prints the exact values. Check them at the zone's own nameserver:
+
+```bash
+dig @ns.zone.eu +short dodarprieku.hagroup.lv CNAME
+dig @ns.zone.eu +short admin.dodarprieku.hagroup.lv CNAME
+```
+
+Adding or removing a host edits the certificate's names, which replaces it:
+the new validation records are created before the old certificate goes.
 
 How it behaves:
 

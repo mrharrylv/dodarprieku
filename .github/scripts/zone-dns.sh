@@ -9,8 +9,8 @@
 #   zone-dns.sh delete   remove every record of TYPE at NAME (none is fine)
 #
 # Inputs (environment):
-#   ZONE_USERNAME   ZoneID username             (GitHub Actions secret)
-#   ZONE_API_KEY    ZoneID API key              (GitHub Actions secret)
+#   ZONE_USERNAME   ZoneID username             (GitHub environment secret)
+#   ZONE_API_KEY    ZoneID API key              (GitHub environment secret)
 #   ZONE_DNS_ZONE   the zone, e.g. hagroup.lv
 #   RECORD_TYPE     cname or txt
 #   RECORD_NAME     full name, e.g. westamarine.hagroup.lv (trailing dot ok)
@@ -32,7 +32,7 @@ die() { printf '::error title=Zone.ee DNS::%s\n' "$1" >&2; exit 1; }
 case "$ACTION" in upsert|delete) ;; *) die "usage: zone-dns.sh upsert|delete" ;; esac
 
 [ -n "${ZONE_USERNAME:-}" ] && [ -n "${ZONE_API_KEY:-}" ] ||
-  die "ZONE_USERNAME and ZONE_API_KEY must be set. In GitHub: Settings, Secrets and variables, Actions, add both as repository secrets."
+  die "ZONE_USERNAME and ZONE_API_KEY must be set. They are secrets on the GitHub environment the job runs in, set from the Keychain by: ~/Dev/Unveil/scripts/zone-secrets.sh <env> <owner>/<repo>"
 : "${ZONE_DNS_ZONE:?ZONE_DNS_ZONE is required}" "${RECORD_TYPE:?RECORD_TYPE is required}" "${RECORD_NAME:?RECORD_NAME is required}"
 
 lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }

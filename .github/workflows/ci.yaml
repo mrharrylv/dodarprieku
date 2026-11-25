@@ -6,8 +6,8 @@ name: CI
 # need: building every style, not only the active one.
 #
 # `make verify` runs the same set locally: the verify job's steps (all but the
-# per-style one, which is `make verify-styles`), then the pipeline job, then
-# the terraform job. A check added to one of the three belongs in the other.
+# per-style one, which is `make verify-styles`), the packages job, then the
+# pipeline job, then the terraform job. A check added to one of the three belongs in the other.
 #
 # Deliberately has no AWS credentials and no id-token permission: a pull request
 # from a fork must never be able to reach the account.
@@ -108,6 +108,46 @@ jobs:
                 "$(awk "BEGIN{printf \"%.1f\", $gz/1024}")"
             done
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The other three packages, with the checks deploy.yaml runs before it
+  # ships them (and `make verify` runs locally): the shared contracts, the API
+  # and the admin portal. One job per package so a failure names it.
+  packages:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dir: services/shared
+            steps: install typecheck test
+            lock: services/shared/package-lock.json
+          - dir: services/api
+            steps: install lint typecheck test:coverage build
+            lock: services/api/package-lock.json
+          - dir: services/frontend/admin
+            steps: install lint typecheck test:coverage build
+            lock: services/frontend/admin/package-lock.json
+    name: packages (${{ matrix.dir }})
+    env:
+      REQUIRE_PACKAGES: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.lock }}
+
+      - name: Checks
+        env:
+          PKG_DIR: ${{ matrix.dir }}
+          PKG_STEPS: ${{ matrix.steps }}
+        # PKG_STEPS is a fixed list from the matrix above, split on purpose.
+        # shellcheck disable=SC2086
+        run: bash .github/scripts/package-checks.sh "$PKG_DIR" $PKG_STEPS
 
   # The deploy pipeline's own shell, which the website's test suite does not
   # reach: the canonical-origin check deploy.yaml runs before it builds, the

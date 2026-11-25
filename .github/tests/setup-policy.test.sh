@@ -143,7 +143,82 @@ assert_status "$ST" 0 "setup.sh runs against the stub"
 check_project shop shop-eu
 
 run shop "contact,consent"
+assert_status "$ST" 0 "setup.sh runs with contact and consent"
+check_project shop shop-eu
+
+# ── The app feature: Dodar prieku's API (api.tf, app_data.tf) ──────────────
+
+# The names Terraform gives the app's resources, read from the .tf files, so a
+# rename there fails here until setup.sh follows.
+echo " the names api.tf and app_data.tf use"
+# Runs of spaces squeezed, so terraform fmt's alignment does not matter.
+APP_TF="$(cat "$TF_DIR/api.tf" "$TF_DIR/app_data.tf" "$TF_DIR/not_found.tf" 2>/dev/null | tr -s ' ')"
+assert_says "$APP_TF" 'app_name = "${local.name_prefix}-${var.project}"' "app resources are <prefix>-<project>-*"
+assert_says "$APP_TF" 'api_function_name = "${local.app_name}-api"' "the function and its role are <prefix>-<project>-api"
+assert_says "$APP_TF" 'not_found_function_name = "${local.app_name}-not-found"' "the 404 function and its role are <prefix>-<project>-not-found"
+assert_says "$APP_TF" 'table_name = "${local.app_name}-data"' "the table is <prefix>-<project>-data"
+assert_says "$APP_TF" 'media_bucket = "${local.app_name}-media"' "the media bucket is <prefix>-<project>-media"
+assert_says "$APP_TF" 'ssm_prefix = "/${local.name_prefix}/${var.project}"' "parameters live under /<prefix>/<project>/"
+
+# sid POLICY SID: one statement, compact JSON, or "null".
+sid() { jq -c --arg s "$2" '[.Statement[] | select(.Sid == $s)][0]' "$1"; }
+
+check_app() {
+  local project="$1" env policy stmt
+  for env in dev prod; do
+    policy="$CAPTURE/github-oidc-$project-$env.json"
+    echo " $project, $env, app"
+    if ! jq -e . "$policy" >/dev/null 2>&1; then bad "writes a valid policy" "no parseable $policy"; continue; fi
+    ok "writes a valid policy"
+    assert_eq "$(jq '[.Statement[].Sid] | length == (unique | length)' "$policy")" "true" "every Sid is unique"
+
+    stmt="$(sid "$policy" DenyOtherProjectsState)"
+    assert_says "$stmt" "arn:aws:s3:::$env-$project-media/*" "the state deny spares the media bucket"
+    stmt="$(sid "$policy" TerraformS3Website)"
+    assert_says "$stmt" "\"arn:aws:s3:::$env-$project-media\"" "the media bucket itself is granted"
+
+    assert_eq "$(sid "$policy" AppLambda | jq -r '.Resource | join(" ")')" \
+      "arn:aws:lambda:$REGION_UNDER_TEST:$ACCOUNT:function:$env-$project-api arn:aws:lambda:$REGION_UNDER_TEST:$ACCOUNT:function:$env-$project-not-found" \
+      "Lambda: the api and 404 functions only"
+    assert_says "$(sid "$policy" AppLambda)" "lambda:CreateFunctionUrlConfig" "the 404 function's URL may be created"
+    assert_says "$(sid "$policy" AppLambda)" "lambda:UpdateFunctionCode" "deploys may update its code"
+    assert_eq "$(sid "$policy" AppPassRoleToLambda | jq -r '.Resource | join(" ")')" \
+      "arn:aws:iam::$ACCOUNT:role/$env-$project-api arn:aws:iam::$ACCOUNT:role/$env-$project-not-found" \
+      "PassRole: the api and 404 roles only"
+    assert_eq "$(sid "$policy" AppPassRoleToLambda | jq -r '.Condition.StringEquals["iam:PassedToService"]')" \
+      "lambda.amazonaws.com" "PassRole: to Lambda only"
+    assert_silent "$(sid "$policy" AppLambdaRole)" "iam:PassRole" "the role statement grants no PassRole of its own"
+    assert_eq "$(sid "$policy" AppDynamoDB | jq -r '.Resource | join(" ")')" \
+      "arn:aws:dynamodb:$REGION_UNDER_TEST:$ACCOUNT:table/$env-$project-data arn:aws:dynamodb:$REGION_UNDER_TEST:$ACCOUNT:table/$env-$project-data/index/*" \
+      "DynamoDB: the data table and its indexes only"
+    assert_eq "$(sid "$policy" AppParameters | jq -r '.Resource')" \
+      "arn:aws:ssm:$REGION_UNDER_TEST:$ACCOUNT:parameter/$env/$project/*" "SSM: this project's parameters only"
+    assert_eq "$(sid "$policy" AppParametersKmsViaSsm | jq -r '.Condition.StringEquals["kms:ViaService"]')" \
+      "ssm.$REGION_UNDER_TEST.amazonaws.com" "KMS only through SSM"
+    assert_says "$(sid "$policy" AppApiGateway)" "apigateway:POST" "API Gateway v2 may be created"
+    assert_eq "$(sid "$policy" DenyChangingOtherProjectsApis | jq -r '.Condition.StringNotEqualsIfExists["aws:ResourceTag/Project"]')" \
+      "$project" "other projects' APIs are off limits"
+    assert_says "$(sid "$policy" AppCachePolicies)" "cloudfront:CreateCachePolicy" "the /data/* cache policy may be created"
+    assert_silent "$(jq -c '[.Statement[] | select(.Effect == "Allow") | .Action] | flatten' "$policy")" '"*"' "no Allow grants every action"
+  done
+}
+
+REGION_UNDER_TEST=eu-north-1
+
+run shop "app"
+assert_status "$ST" 0 "setup.sh runs with the app feature"
+check_project shop shop-eu
+check_app shop
+
+run shop "contact,consent,app"
 assert_status "$ST" 0 "setup.sh runs with every feature"
 check_project shop shop-eu
+check_app shop
+
+run shop ""
+echo " shop, without app"
+assert_silent "$(cat "$CAPTURE/github-oidc-shop-dev.json")" "shop-media" "no media bucket grant"
+assert_silent "$(cat "$CAPTURE/github-oidc-shop-dev.json")" "apigateway:" "no API Gateway grant"
+assert_silent "$(cat "$CAPTURE/github-oidc-shop-dev.json")" "ssm:" "no SSM grant"
 
 finish

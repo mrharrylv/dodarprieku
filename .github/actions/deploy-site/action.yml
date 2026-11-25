@@ -20,6 +20,12 @@ inputs:
     description: Path to the build's file manifest
     required: false
     default: artifact/manifest.txt
+  keep-prefixes:
+    description: >-
+      Space-separated key prefixes Phase 4 never deletes, because another
+      build owns them (the admin portal under admin/).
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -213,25 +219,5 @@ runs:
       env:
         BUCKET: ${{ inputs.bucket }}
         MANIFEST: ${{ inputs.manifest-path }}
-      run: |
-        set -euo pipefail
-        echo "🧹 Removing files no longer in the build..."
-
-        aws s3api list-objects-v2 --bucket "$BUCKET" \
-          --query 'Contents[].Key' --output text \
-          | tr '\t' '\n' | sed '/^None$/d' | sed '/^$/d' | sort > /tmp/s3-files.txt
-
-        sed 's|^\./||' "$MANIFEST" | sort > /tmp/new-files.txt
-
-        ORPHANS=$(comm -23 /tmp/s3-files.txt /tmp/new-files.txt || true)
-
-        if [ -z "$ORPHANS" ]; then
-          echo "   No orphaned files to remove"
-        else
-          ORPHAN_COUNT=$(printf '%s\n' "$ORPHANS" | grep -c . || true)
-          echo "   Removing ${ORPHAN_COUNT} orphaned file(s)..."
-          printf '%s\n' "$ORPHANS" | while IFS= read -r key; do
-            [ -n "$key" ] && aws s3api delete-object --bucket "$BUCKET" --key "$key" >/dev/null
-          done
-          echo "✅ Phase 4 complete: ${ORPHAN_COUNT} orphaned file(s) removed"
-        fi
+        KEEP_PREFIXES: ${{ inputs.keep-prefixes }}
+      run: bash "$GITHUB_ACTION_PATH/cleanup.sh"

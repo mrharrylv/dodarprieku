@@ -121,3 +121,39 @@ output "zone_dns_managed" {
   description = "Hostnames whose DNS records Terraform creates at Zone.ee (zone_dns.tf); empty when zone_dns_zone is unset"
   value       = local.zone_dns_hosts
 }
+
+# =============================================================================
+# Dodar prieku API, data and media (api.tf, app_data.tf)
+# =============================================================================
+# Read by the Build & Deploy workflow and `make admin-invite`; the names also
+# follow <prefix>-<project>-{api,data,media}, which is what they fall back to.
+
+output "api_function_name" {
+  description = "The API Lambda (deploys update its code; admin-invite invokes it)"
+  value       = aws_lambda_function.api.function_name
+}
+
+output "api_endpoint" {
+  description = "The HTTP API's own endpoint. The site reaches it through CloudFront at /api/*."
+  value       = aws_apigatewayv2_api.api.api_endpoint
+}
+
+output "dynamodb_table_name" {
+  description = "The single data table"
+  value       = aws_dynamodb_table.data.name
+}
+
+output "media_bucket_name" {
+  description = "Photos, logos (media/*) and the public snapshot (data/*)"
+  value       = aws_s3_bucket.media.id
+}
+
+output "admin_url" {
+  description = "Where the admin portal answers"
+  value       = local.admin_origin != "" ? local.admin_origin : "https://${aws_cloudfront_distribution.website.domain_name}/admin/"
+}
+
+output "admin_notify_email_parameter" {
+  description = "SSM parameter to set to the address that hears of new applications (\"none\" = off)"
+  value       = aws_ssm_parameter.admin_notify_email.name
+}

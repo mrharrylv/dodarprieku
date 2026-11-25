@@ -1,5 +1,11 @@
 name: Build & Deploy Website
 
+# Four packages, one deploy: the public site (services/frontend/website), the
+# admin portal (services/frontend/admin, under admin/ in the same bucket), the
+# API Lambda (services/api) and the shared contracts (services/shared), whose
+# tests gate the other three. Infrastructure is NOT changed here: the API's
+# code is, the function's configuration is Terraform's.
+
 # Every push to main deploys to DEV. There is no paths filter, so a change to a
 # doc triggers a build too: do not push a half-finished change to main
 # expecting it to sit there quietly.
@@ -38,6 +44,12 @@ env:
   AWS_REGION: eu-north-1
   NODE_VERSION: "22"
   FRONTEND_DIR: services/frontend/website
+  ADMIN_DIR: services/frontend/admin
+  API_DIR: services/api
+  SHARED_DIR: services/shared
+  PARCEL_LOCKERS: services/shared/data/parcel-lockers.json
+  # A package directory that vanished fails the run instead of being skipped.
+  REQUIRE_PACKAGES: "1"
   PROJECT: dodarprieku
   AWS_ACCOUNT_ID: "561341419749"
 
@@ -141,6 +153,10 @@ jobs:
           # src/config/site.ts). "off" turns visit statistics off.
           VITE_ANALYTICS_ENDPOINT: ${{ vars.VITE_ANALYTICS_ENDPOINT }}
           VITE_SITE_STYLE: ${{ vars.VITE_SITE_STYLE }}
+          # Google Analytics: only ever from the prod Environment, whatever
+          # the dev Environment says, and the site loads it only after
+          # consent. The CSP allows it in prod only (ga_enabled in prod.tfvars).
+          VITE_GA_MEASUREMENT_ID: ${{ needs.resolve.outputs.environment == 'prod' && vars.VITE_GA_MEASUREMENT_ID || '' }}
           # The share guard (scripts/verify-share.mjs, the last step of the
           # build) treats the template's placeholder copy and placeholder
           # favicon as WARNINGS, so a template deploys for review. A real site
@@ -164,10 +180,85 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
+  # The shared contracts and the API: tests gate the bundle
+  # ---------------------------------------------------------------------------
+  build-api:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            ${{ env.SHARED_DIR }}/package-lock.json
+            ${{ env.API_DIR }}/package-lock.json
+
+      - name: Shared contracts (install, typecheck, test)
+        run: bash .github/scripts/package-checks.sh "$SHARED_DIR" install typecheck test
+
+      - name: API (install, lint, typecheck, test with coverage, build)
+        run: bash .github/scripts/package-checks.sh "$API_DIR" install lint typecheck test:coverage build
+
+      - name: Package the API
+        working-directory: ${{ env.API_DIR }}
+        run: |
+          set -euo pipefail
+          test -f dist/index.mjs || { echo "::error title=API build::$API_DIR/dist/index.mjs was not produced"; exit 1; }
+          (cd dist && zip -qr ../api.zip .)
+          unzip -l api.zip
+
+      - name: Upload API bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-${{ needs.resolve.outputs.environment }}
+          path: ${{ env.API_DIR }}/api.zip
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # The admin portal (Vite base /admin/)
+  # ---------------------------------------------------------------------------
+  build-admin:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.ADMIN_DIR }}/package-lock.json
+
+      - name: Admin (install, lint, typecheck, test with coverage, build)
+        run: bash .github/scripts/package-checks.sh "$ADMIN_DIR" install lint typecheck test:coverage build
+
+      - name: Generate file manifest
+        working-directory: ${{ env.ADMIN_DIR }}
+        run: cd dist && find . -type f | sort > ../manifest.txt
+
+      - name: Upload admin build
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist-${{ needs.resolve.outputs.environment }}
+          path: |
+            ${{ env.ADMIN_DIR }}/dist
+            ${{ env.ADMIN_DIR }}/manifest.txt
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
   # Deploy, one job for both environments; the target comes from `resolve`.
+  # Order: API code, the admin portal and the lockers first, then the
+  # website (whose invalidation covers all of them), then admin cleanup.
   # ---------------------------------------------------------------------------
   deploy:
-    needs: [resolve, build]
+    needs: [resolve, build, build-api, build-admin]
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve.outputs.environment }}
     steps:
@@ -179,6 +270,18 @@ jobs:
         with:
           name: website-dist-${{ needs.resolve.outputs.environment }}
           path: artifact
+
+      - name: Download admin build
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist-${{ needs.resolve.outputs.environment }}
+          path: admin-artifact
+
+      - name: Download API bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: api-${{ needs.resolve.outputs.environment }}
+          path: api-artifact
 
       - name: Configure AWS OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -208,14 +311,61 @@ jobs:
 
           echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
           echo "distribution_id=$DIST_ID" >> "$GITHUB_OUTPUT"
+          # Terraform names them <resource_prefix>-<project>-*, and the
+          # resource_prefix is the environment (environments/*.tfvars).
+          echo "media_bucket=${ENV}-${PROJECT}-media" >> "$GITHUB_OUTPUT"
+          echo "api_function=${ENV}-${PROJECT}-api" >> "$GITHUB_OUTPUT"
           echo "📦 S3 bucket:  $BUCKET"
           echo "🌐 CloudFront: $DIST_ID"
 
+      # The function's configuration (environment, role, memory) is
+      # Terraform's; only the code changes here. The wait returns once the new
+      # code serves, and fails the run if the update failed.
+      - name: Deploy the API code
+        env:
+          FUNCTION: ${{ steps.target.outputs.api_function }}
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "$FUNCTION" \
+            --zip-file fileb://api-artifact/api.zip \
+            --query '{version: Version, sha: CodeSha256}' --output text
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION"
+          echo "✅ $FUNCTION updated"
+
+      - name: Upload the admin portal
+        env:
+          BUCKET: ${{ steps.target.outputs.bucket }}
+          DIST: admin-artifact/dist
+          MANIFEST: admin-artifact/manifest.txt
+        run: bash .github/scripts/deploy-admin.sh upload
+
+      # The wizard's locker search reads /data/parcel-lockers.json, served
+      # from the media bucket by the /data/* behaviour.
+      - name: Publish the parcel lockers
+        env:
+          MEDIA_BUCKET: ${{ steps.target.outputs.media_bucket }}
+        run: |
+          set -euo pipefail
+          aws s3 cp "$PARCEL_LOCKERS" "s3://${MEDIA_BUCKET}/data/parcel-lockers.json" \
+            --content-type "application/json; charset=utf-8" \
+            --cache-control "public, max-age=86400"
+
+      # Its Phase 4 deletes what the website build does not contain, so it
+      # must keep admin/, which the admin build owns.
       - name: Deploy
         uses: ./.github/actions/deploy-site
         with:
           bucket: ${{ steps.target.outputs.bucket }}
           distribution-id: ${{ steps.target.outputs.distribution_id }}
+          keep-prefixes: admin/
+
+      - name: Clean up the admin portal
+        env:
+          BUCKET: ${{ steps.target.outputs.bucket }}
+          DIST: admin-artifact/dist
+          MANIFEST: admin-artifact/manifest.txt
+        run: bash .github/scripts/deploy-admin.sh cleanup
 
       - name: Summary
         env:
@@ -228,5 +378,7 @@ jobs:
             echo "|---|---|"
             echo "| Bucket | \`${{ steps.target.outputs.bucket }}\` |"
             echo "| Distribution | \`${{ steps.target.outputs.distribution_id }}\` |"
+            echo "| API | \`${{ steps.target.outputs.api_function }}\` |"
+            echo "| Media | \`${{ steps.target.outputs.media_bucket }}\` |"
             echo "| Commit | \`${{ github.sha }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"

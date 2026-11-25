@@ -36,8 +36,19 @@
        /og-image.png     ->  unchanged: the last segment has a dot, so it is a file
 
      The browser keeps the address it asked for; only the object key changes.
-     A key that does not exist is S3's 403, which the distribution answers
-     with 404.html and a real 404 status (main.tf).
+     A key that does not exist is S3's 403, on which the origin group fails
+     over to the 404 function: 404.html with a real 404 status (not_found.tf).
+
+  3. Dodar prieku's own paths (doc/specs/dodarprieku.md):
+
+       /api/*, /media/*, /data/*   never reach this function (their own
+                                   behaviours); if they do, left untouched
+       admin.<host>: /admin/<file.ext>  unchanged, the admin app's assets
+       admin.<host>: anything else      ->  /admin/index.html (the admin SPA)
+       public host:  /admin, /admin/*   ->  404, the admin app is not served here
+       /organizacija/<slug>             ->  /organizacija/index.html, the one
+                                            prerendered charity shell, which
+                                            fills itself from the URL
 
   LOCALES is src/config/site.ts's, the default first, as in public/
   theme-init.js. scripts/viewer-request.test.mjs fails until the two agree,
@@ -47,11 +58,21 @@
   same everywhere it is evaluated: at the edge, in the tests, and in front of
   `make preview` (the edge-preview plugin in vite.config.ts).
 */
-var LOCALES = ['lv', 'en', 'ru']
+var LOCALES = ['lv']
 
 /* How long a browser may keep a 301: bounded, so a later change to LOCALES
    or the default language reaches returning visitors within the hour. */
 var REDIRECT_CACHE = 'public, max-age=3600'
+
+/* First segments of the behaviours that are not the website bucket's. */
+var PASS_THROUGH = ['api', 'media', 'data']
+
+/* The admin app's folder in the bucket, and the host prefix that serves it. */
+var ADMIN_DIR = 'admin'
+var ADMIN_HOST_PREFIX = 'admin.'
+
+/* Pages whose every child is one prerendered shell: /organizacija/<slug>. */
+var SHELL_ROUTES = ['organizacija']
 
 /* Anything shaped like a language tag, de or pt-BR: fallbackPath's test. */
 var LOCALE_SHAPED = /^[a-z]{2}(-[A-Za-z0-9]{2,8})?$/
@@ -65,15 +86,53 @@ function handler(event) {
      its address: the request goes on to the bucket, which has no such key. */
   if (/[\t\n\r]/.test(uri)) return request
 
+  var segments = segmentsOf(uri)
+  if (PASS_THROUGH.indexOf(segments[0]) !== -1) return request
+  if (isAdminHost(request)) return adminRequest(request, uri)
+  if (segments[0] === ADMIN_DIR) return notFound()
+
   var address = addressOf(uri)
   if (address !== uri) return redirect(address, request.querystring)
 
   if (address === '/') {
     request.uri = '/index.html'
   } else if (!isFile(address)) {
-    request.uri = address + '/index.html'
+    request.uri = shellOf(address) + '/index.html'
   }
   return request
+}
+
+function isAdminHost(request) {
+  var host = request.headers && request.headers.host ? request.headers.host.value : ''
+  return String(host).toLowerCase().indexOf(ADMIN_HOST_PREFIX) === 0
+}
+
+/* The admin host serves only the admin SPA: its files as they are, and its
+   index for every other path, so the SPA's router decides. */
+function adminRequest(request, uri) {
+  var segments = segmentsOf(uri)
+  var path = '/' + segments.join('/')
+  request.uri = segments.length > 1 && segments[0] === ADMIN_DIR && isFile(path) ? path : '/' + ADMIN_DIR + '/index.html'
+  return request
+}
+
+/* /organizacija/<anything> is the /organizacija shell; any other page is
+   itself. */
+function shellOf(address) {
+  var segments = segmentsOf(address)
+  return segments.length > 1 && SHELL_ROUTES.indexOf(segments[0]) !== -1 ? '/' + segments[0] : address
+}
+
+function notFound() {
+  return {
+    statusCode: 404,
+    statusDescription: 'Not Found',
+    headers: {
+      'content-type': { value: 'text/plain; charset=utf-8' },
+      'cache-control': { value: REDIRECT_CACHE },
+    },
+    body: { encoding: 'text', data: 'Not Found' },
+  }
 }
 
 /* The path's segments. A backslash counts as a slash, as it does to a

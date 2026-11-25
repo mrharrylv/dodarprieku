@@ -24,6 +24,24 @@ loudly at best and silently at worst, so the order matters.
 No AWS keys exist anywhere. Both workflows assume an IAM role through GitHub's
 OIDC provider, scoped to this project by name and by resource tag.
 
+Dodar prieku adds, in the same Terraform and the same distribution: the
+DynamoDB table `<env>-dodarprieku-data`, the media bucket
+`<env>-dodarprieku-media` (`/media/*` and `/data/*`), the API function
+`<env>-dodarprieku-api` behind an HTTP API (`/api/*`), two SSM parameters, and
+the `admin.` host. The deploy roles need the `app` grants for them:
+`bootstrap.sh` detects `infrastructure/terraform/api.tf` and passes
+`FEATURES=app` to `setup.sh`. **An existing role must be re-run with it**
+(`FEATURES=app ./infrastructure/aws/setup.sh`, admin credentials) before the
+first infra apply that includes the API, or the apply stops at the table
+with AccessDenied.
+
+The same grants cover `<env>-dodarprieku-not-found`, a small function with a
+URL that serves the website's `404.html` with a real 404 status
+(`infrastructure/terraform/not_found.tf`). The default behaviour fails over to
+it from the bucket on 403 or 404; no other path does, so the API's own 403 and
+404 answers reach the browser with their JSON error codes. A role set up
+before this function existed needs the same re-run.
+
 ## First run
 
 ### 1. Create the repository

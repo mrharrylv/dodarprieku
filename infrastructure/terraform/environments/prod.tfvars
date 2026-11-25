@@ -51,3 +51,10 @@ project = "dodarprieku"
 # Cost guards (cost_guards.tf): hourly request and bandwidth spike alarms go to
 # this address. Empty turns them off. No WAF, by owner decision (cost).
 alert_email = "harijs.asenieks@gmail.com"
+
+# No embedded frames: the template's Google map is not on this site.
+frame_origins = []
+
+# Google Analytics in the CSP (csp.tf). Prod only, together with the prod
+# Environment's VITE_GA_MEASUREMENT_ID variable.
+ga_enabled = true

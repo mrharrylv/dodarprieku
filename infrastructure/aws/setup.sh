@@ -14,6 +14,8 @@
 #   ./setup.sh
 #   FEATURES=contact ./setup.sh          # also grant Lambda + SES + logs
 #   FEATURES=contact,consent ./setup.sh  # ... and DynamoDB
+#   FEATURES=app ./setup.sh              # Dodar prieku's API: DynamoDB, Lambda,
+#                                        # API Gateway, SSM, the media bucket
 #
 # Environment overrides:
 #   AWS_REGION        default eu-north-1
@@ -22,7 +24,7 @@
 #   PROJECT           default dodarprieku
 #   GITHUB_OWNER_ID   numeric owner id, if `gh` is unavailable
 #   GITHUB_REPO_ID    numeric repo id, if `gh` is unavailable
-#   FEATURES          comma list: contact, consent
+#   FEATURES          comma list: contact, consent, app
 #
 # Requires admin AWS credentials. See ../doc.md for the full procedure.
 
@@ -219,6 +221,17 @@ section "3. Deploy roles"
 for env in "${ENVIRONMENTS[@]}"; do
   role="github-oidc-${PROJECT}-${env}"
   bucket="${env}-${PROJECT}-website"
+  media_bucket="${env}-${PROJECT}-media"
+
+  # The buckets this role may touch besides the state. The media bucket only
+  # exists with the app feature (infrastructure/terraform/app_data.tf).
+  OWN_BUCKET_ARNS="\"arn:aws:s3:::${bucket}\",
+        \"arn:aws:s3:::${bucket}/*\""
+  if has_feature app; then
+    OWN_BUCKET_ARNS="${OWN_BUCKET_ARNS},
+        \"arn:aws:s3:::${media_bucket}\",
+        \"arn:aws:s3:::${media_bucket}/*\""
+  fi
 
   cat > "${TMP}/trust.json" <<EOF
 {
@@ -286,8 +299,7 @@ EOF
       "NotResource": [
         "arn:aws:s3:::${STATE_BUCKET}",
         "arn:aws:s3:::${STATE_BUCKET}/${PROJECT}/*",
-        "arn:aws:s3:::${bucket}",
-        "arn:aws:s3:::${bucket}/*"
+        ${OWN_BUCKET_ARNS}
       ]
     },
     {
@@ -295,8 +307,7 @@ EOF
       "Effect": "Allow",
       "Action": "s3:*",
       "Resource": [
-        "arn:aws:s3:::${bucket}",
-        "arn:aws:s3:::${bucket}/*"
+        ${OWN_BUCKET_ARNS}
       ]
     },
     {
@@ -488,6 +499,189 @@ EOF
         \"dynamodb:UpdateContinuousBackups\"
       ],
       \"Resource\": \"arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${env}-${PROJECT}-*\"
+    }"
+  fi
+
+  # ── Optional: Dodar prieku's API (infrastructure/terraform/api.tf) ────────
+  # Each grant names the one resource Terraform creates, by the
+  # <env>-<project>-<name> names api.tf and app_data.tf use. API Gateway IDs
+  # are random, so those grants cannot name the API; a Deny keeps the role off
+  # any API another project has tagged as its own.
+  if has_feature app; then
+    API_FN="arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:${env}-${PROJECT}-api"
+    API_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/${env}-${PROJECT}-api"
+    API_LOGS="arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/${env}-${PROJECT}-api"
+    # The website's 404 page (not_found.tf): a second function, with a URL
+    # CloudFront reaches through OAC.
+    NF_FN="arn:aws:lambda:${REGION}:${ACCOUNT_ID}:function:${env}-${PROJECT}-not-found"
+    NF_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/${env}-${PROJECT}-not-found"
+    NF_LOGS="arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/lambda/${env}-${PROJECT}-not-found"
+    APP_TABLE="arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${env}-${PROJECT}-data"
+    APP_PARAMS="arn:aws:ssm:${REGION}:${ACCOUNT_ID}:parameter/${env}/${PROJECT}/*"
+    STATEMENTS="${STATEMENTS},
+    {
+      \"Sid\": \"AppDynamoDB\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"dynamodb:CreateTable\",
+        \"dynamodb:DeleteTable\",
+        \"dynamodb:DescribeTable\",
+        \"dynamodb:UpdateTable\",
+        \"dynamodb:DescribeTimeToLive\",
+        \"dynamodb:UpdateTimeToLive\",
+        \"dynamodb:DescribeContinuousBackups\",
+        \"dynamodb:UpdateContinuousBackups\",
+        \"dynamodb:TagResource\",
+        \"dynamodb:UntagResource\",
+        \"dynamodb:ListTagsOfResource\"
+      ],
+      \"Resource\": [\"${APP_TABLE}\", \"${APP_TABLE}/index/*\"]
+    },
+    {
+      \"Sid\": \"AppLambda\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"lambda:CreateFunction\",
+        \"lambda:DeleteFunction\",
+        \"lambda:GetFunction\",
+        \"lambda:GetFunctionConfiguration\",
+        \"lambda:GetFunctionCodeSigningConfig\",
+        \"lambda:GetFunctionConcurrency\",
+        \"lambda:GetFunctionRecursionConfig\",
+        \"lambda:ListVersionsByFunction\",
+        \"lambda:UpdateFunctionCode\",
+        \"lambda:UpdateFunctionConfiguration\",
+        \"lambda:AddPermission\",
+        \"lambda:RemovePermission\",
+        \"lambda:GetPolicy\",
+        \"lambda:TagResource\",
+        \"lambda:UntagResource\",
+        \"lambda:ListTags\",
+        \"lambda:GetFunctionUrlConfig\",
+        \"lambda:CreateFunctionUrlConfig\",
+        \"lambda:UpdateFunctionUrlConfig\",
+        \"lambda:DeleteFunctionUrlConfig\"
+      ],
+      \"Resource\": [\"${API_FN}\", \"${NF_FN}\"]
+    },
+    {
+      \"Sid\": \"AppLambdaRole\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"iam:CreateRole\",
+        \"iam:DeleteRole\",
+        \"iam:GetRole\",
+        \"iam:TagRole\",
+        \"iam:UntagRole\",
+        \"iam:PutRolePolicy\",
+        \"iam:DeleteRolePolicy\",
+        \"iam:GetRolePolicy\",
+        \"iam:ListRolePolicies\",
+        \"iam:ListAttachedRolePolicies\",
+        \"iam:ListInstanceProfilesForRole\"
+      ],
+      \"Resource\": [\"${API_ROLE}\", \"${NF_ROLE}\"]
+    },
+    {
+      \"Sid\": \"AppPassRoleToLambda\",
+      \"Effect\": \"Allow\",
+      \"Action\": \"iam:PassRole\",
+      \"Resource\": [\"${API_ROLE}\", \"${NF_ROLE}\"],
+      \"Condition\": { \"StringEquals\": { \"iam:PassedToService\": \"lambda.amazonaws.com\" } }
+    },
+    {
+      \"Sid\": \"AppLogs\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"logs:CreateLogGroup\",
+        \"logs:DeleteLogGroup\",
+        \"logs:PutRetentionPolicy\",
+        \"logs:DeleteRetentionPolicy\",
+        \"logs:TagResource\",
+        \"logs:UntagResource\",
+        \"logs:ListTagsForResource\",
+        \"logs:TagLogGroup\",
+        \"logs:ListTagsLogGroup\"
+      ],
+      \"Resource\": [\"${API_LOGS}\", \"${API_LOGS}:*\", \"${NF_LOGS}\", \"${NF_LOGS}:*\"]
+    },
+    {
+      \"Sid\": \"AppLogsDescribe\",
+      \"Effect\": \"Allow\",
+      \"Action\": [\"logs:DescribeLogGroups\"],
+      \"Resource\": \"arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:*\"
+    },
+    {
+      \"Sid\": \"AppApiGateway\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"apigateway:GET\",
+        \"apigateway:POST\",
+        \"apigateway:PUT\",
+        \"apigateway:PATCH\",
+        \"apigateway:DELETE\",
+        \"apigateway:TagResource\",
+        \"apigateway:UntagResource\"
+      ],
+      \"Resource\": [
+        \"arn:aws:apigateway:${REGION}::/apis\",
+        \"arn:aws:apigateway:${REGION}::/apis/*\",
+        \"arn:aws:apigateway:${REGION}::/tags/*\"
+      ]
+    },
+    {
+      \"Sid\": \"DenyChangingOtherProjectsApis\",
+      \"Effect\": \"Deny\",
+      \"Action\": [\"apigateway:PUT\", \"apigateway:PATCH\", \"apigateway:DELETE\"],
+      \"Resource\": \"arn:aws:apigateway:${REGION}::/apis/*\",
+      \"Condition\": {
+        \"StringNotEqualsIfExists\": { \"aws:ResourceTag/Project\": \"${PROJECT}\" }
+      }
+    },
+    {
+      \"Sid\": \"AppParameters\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"ssm:PutParameter\",
+        \"ssm:GetParameter\",
+        \"ssm:GetParameters\",
+        \"ssm:DeleteParameter\",
+        \"ssm:AddTagsToResource\",
+        \"ssm:RemoveTagsFromResource\",
+        \"ssm:ListTagsForResource\"
+      ],
+      \"Resource\": \"${APP_PARAMS}\"
+    },
+    {
+      \"Sid\": \"AppParametersDescribe\",
+      \"Effect\": \"Allow\",
+      \"Action\": [\"ssm:DescribeParameters\"],
+      \"Resource\": \"*\"
+    },
+    {
+      \"Sid\": \"AppParametersKmsViaSsm\",
+      \"Effect\": \"Allow\",
+      \"Action\": [\"kms:Decrypt\", \"kms:Encrypt\", \"kms:GenerateDataKey\"],
+      \"Resource\": \"*\",
+      \"Condition\": {
+        \"StringEquals\": { \"kms:ViaService\": \"ssm.${REGION}.amazonaws.com\" },
+        \"StringLike\": { \"kms:EncryptionContext:PARAMETER_ARN\": \"${APP_PARAMS}\" }
+      }
+    },
+    {
+      \"Sid\": \"AppCachePolicies\",
+      \"Effect\": \"Allow\",
+      \"Action\": [
+        \"cloudfront:CreateCachePolicy\",
+        \"cloudfront:GetCachePolicy\",
+        \"cloudfront:GetCachePolicyConfig\",
+        \"cloudfront:UpdateCachePolicy\",
+        \"cloudfront:DeleteCachePolicy\",
+        \"cloudfront:ListCachePolicies\",
+        \"cloudfront:GetOriginRequestPolicy\",
+        \"cloudfront:ListOriginRequestPolicies\"
+      ],
+      \"Resource\": \"*\"
     }"
   fi
 
