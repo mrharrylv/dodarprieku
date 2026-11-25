@@ -8,7 +8,8 @@ infrastructure in Terraform.
 
 ```bash
 make install     # first time
-make dev         # http://localhost:5173
+make run         # API with sample data + map on :5180 + admin on :5181 (nothing touches AWS)
+make dev         # the website alone on http://localhost:5173
 make verify      # lint -> test + coverage -> typecheck -> build -> pipeline tests -> terraform
 ```
 

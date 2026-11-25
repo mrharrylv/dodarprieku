@@ -26,7 +26,8 @@ real cost, and so is a contact form that silently fails.
 
 ```bash
 make install     # first time
-make dev         # http://localhost:5173
+make run         # API with sample data + map on :5180 + admin on :5181 (nothing touches AWS)
+make dev         # the website alone on http://localhost:5173
 make verify      # lint → test + coverage → typecheck → build → pipeline tests → terraform fmt + validate
 make verify-styles  # every style in turn: routes, prerender, hydration, build
 make test-pipeline  # the deploy pipeline's shell tests alone (.github/tests)

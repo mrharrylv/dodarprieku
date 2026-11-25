@@ -39,8 +39,9 @@ install:
 dev:
 	cd $(FRONTEND_DIR) && npm run dev
 
-## Alias for dev
-run: dev
+## Everything locally with sample data: API (seeded, in memory), map on :5180, admin on :5181
+run:
+	@bash bin/run-local.sh
 
 ## The API locally (services/api, its own dev server)
 dev-api:
