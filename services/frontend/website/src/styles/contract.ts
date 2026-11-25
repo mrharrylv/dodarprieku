@@ -10,7 +10,7 @@ import type { ComponentType } from 'react'
  * from `src/config/`. That split is what lets a style be deleted with
  * `rm -rf src/styles/<id>` and nothing else change.
  *
- * Dodar prieku is an application, not a marketing site: the map (the home
+ * Dod ar prieku is an application, not a marketing site: the map (the home
  * page), the charity page, registration and the account pages are shared
  * pages under `src/pages/`, and like the legal pages and the 404 they render
  * inside whichever shell is active.
@@ -24,7 +24,9 @@ export interface SiteStyle {
   readonly id: string
   /**
    * Header, navigation, `<main id={MAIN_CONTENT_ID} tabIndex={-1}><Outlet /></main>`,
-   * footer, and `<SiteChrome />`.
+   * footer, and `<SiteChrome />`. On a page `isFullScreenPage()` names (the
+   * map) it leaves the header and the footer out and lets `main` fill the
+   * viewport; the skip link, `SiteChrome` and `main` stay.
    */
   readonly Shell: ComponentType
   readonly pages: {

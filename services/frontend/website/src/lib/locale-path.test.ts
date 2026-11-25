@@ -14,7 +14,7 @@ import {
 } from './locale-path'
 
 /**
- * Dodar prieku is Latvian only, so no URL carries a `/<lang>` prefix:
+ * Dod ar prieku is Latvian only, so no URL carries a `/<lang>` prefix:
  * `/par-projektu` is the page, never `/lv/par-projektu`. The guard below is
  * what tells you these expectations no longer describe the site if a second
  * language is ever added.

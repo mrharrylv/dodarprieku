@@ -1,6 +1,7 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 
 import { MAIN_CONTENT_ID } from '@/config/dom'
+import { isFullScreenPage } from '@/lib/full-screen'
 import { SiteChrome } from '@/components/layout/SiteChrome'
 import { SkipLink } from '@/components/layout/SkipLink'
 import { Header } from './Header'
@@ -15,15 +16,34 @@ import { Footer } from './Footer'
  * `tabIndex={-1}` is what lets the skip link actually move focus; without it
  * the link scrolls but focus stays in the header, and the next Tab goes back
  * to the navigation.
+ *
+ * The map (`isFullScreenPage`) has no header and no footer: it fills the
+ * viewport and carries its own floating brand, search and actions.
  */
-export const Shell = () => (
-  <div className="flex min-h-dvh flex-col">
-    <SkipLink />
-    <SiteChrome />
-    <Header />
-    <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 focus:outline-none">
-      <Outlet />
-    </main>
-    <Footer />
-  </div>
-)
+export const Shell = () => {
+  const { pathname } = useLocation()
+
+  if (isFullScreenPage(pathname)) {
+    return (
+      <div className="h-dvh overflow-hidden">
+        <SkipLink />
+        <SiteChrome />
+        <main id={MAIN_CONTENT_ID} tabIndex={-1} className="h-full focus:outline-none">
+          <Outlet />
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <SkipLink />
+      <SiteChrome />
+      <Header />
+      <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 focus:outline-none">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  )
+}

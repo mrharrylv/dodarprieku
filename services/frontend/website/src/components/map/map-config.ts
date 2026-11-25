@@ -33,3 +33,9 @@ export const FOCUS_ZOOM = 12.5
 export const FLY_DURATION_MS = 1600
 /** Pixels between a pin's centre and its popup's tip. */
 export const POPUP_OFFSET = 26
+
+/**
+ * Below this width the map's panels are a bottom sheet over the map (Tailwind's
+ * `md` breakpoint), so choosing a charity in the list closes the sheet to show it.
+ */
+export const PANEL_SHEET_QUERY = '(max-width: 47.99rem)'

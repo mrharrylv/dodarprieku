@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Organizācija",
-    "description": "Organizācijas lapa Dodar prieku kartē: ko tai vajag, kā to nogādāt un kas jau apsolījis palīdzēt.",
+    "description": "Organizācijas lapa Dod ar prieku kartē: ko tai vajag, kā to nogādāt un kas jau apsolījis palīdzēt.",
     "charityDescription": "{{name}}, {{city}}: apskatiet, kas šai organizācijai vajadzīgs, kā to nogādāt, un atzīmējiet, ko atnesīsiet."
   },
   "title": "Organizācija",
@@ -87,7 +87,7 @@
     "optional": "nav obligāts",
     "subscribe": "Pierakstīties jaunumiem",
     "subscribeHint": "Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
-    "consent": "Piekrītu, ka Dodar prieku izmanto manu e-pasta adresi, lai nosūtītu pateicību un, ja to izvēlējos, jaunumus.",
+    "consent": "Piekrītu, ka Dod ar prieku izmanto manu e-pasta adresi, lai nosūtītu pateicību un, ja to izvēlējos, jaunumus.",
     "privacy": "Privātuma politika",
     "honeypot": "Neaizpildiet šo lauku",
     "submit": "Apstiprināt",
@@ -128,7 +128,7 @@
     "body": "Kad kādai iestādei kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim. Atrakstīties var jebkurā brīdī.",
     "email": "E-pasts",
     "name": "Vārds",
-    "consent": "Piekrītu saņemt Dodar prieku e-pastus par steidzamām vajadzībām.",
+    "consent": "Piekrītu saņemt Dod ar prieku e-pastus par steidzamām vajadzībām.",
     "submit": "Pierakstīties",
     "submitting": "Pieraksta…",
     "success": "Paldies! Jūsu pieraksts ir saņemts.",

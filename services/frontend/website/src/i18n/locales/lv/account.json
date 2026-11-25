@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Mans konts",
-    "description": "Organizācijas konts Dodar prieku kartē: apmeklējumi, solījumi un profila labošana."
+    "description": "Organizācijas konts Dod ar prieku kartē: apmeklējumi, solījumi un profila labošana."
   },
   "title": "Mans konts",
   "loading": "Ielādē...",
@@ -181,7 +181,7 @@
   "setPassword": {
     "meta": {
       "title": "Paroles iestatīšana",
-      "description": "Iestatiet sava Dodar prieku konta paroli, lai pieteiktos un pārvaldītu savas iestādes lapu."
+      "description": "Iestatiet sava Dod ar prieku konta paroli, lai pieteiktos un pārvaldītu savas iestādes lapu."
     },
     "title": "Paroles iestatīšana",
     "intro": "Izvēlieties paroli ar vismaz {{min}} zīmēm. Pēc tam uzreiz nonāksiet savā kontā.",
@@ -213,7 +213,7 @@
   "forgotPassword": {
     "meta": {
       "title": "Aizmirsta parole",
-      "description": "Saņemiet e-pastā saiti, lai iestatītu jaunu Dodar prieku konta paroli."
+      "description": "Saņemiet e-pastā saiti, lai iestatītu jaunu Dod ar prieku konta paroli."
     },
     "title": "Aizmirsta parole",
     "intro": "Ierakstiet sava konta e-pastu, un mēs nosūtīsim saiti jaunas paroles iestatīšanai.",

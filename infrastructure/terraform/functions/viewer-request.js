@@ -39,7 +39,7 @@
      A key that does not exist is S3's 403, on which the origin group fails
      over to the 404 function: 404.html with a real 404 status (not_found.tf).
 
-  3. Dodar prieku's own paths (doc/specs/dodarprieku.md):
+  3. Dod ar prieku's own paths (doc/specs/dodarprieku.md):
 
        /api/*, /media/*, /data/*   never reach this function (their own
                                    behaviours); if they do, left untouched

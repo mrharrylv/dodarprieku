@@ -4,7 +4,7 @@
  */
 export const lv = {
   app: {
-    name: 'Dodar prieku',
+    name: 'Dod ar prieku',
     area: 'Administrēšana',
     skip: 'Pāriet uz saturu',
     loading: 'Ielādē…',
@@ -36,7 +36,7 @@ export const lv = {
   },
   auth: {
     title: 'Pieslēgties',
-    intro: 'Administratora pieeja Dodar prieku kartei.',
+    intro: 'Administratora pieeja Dod ar prieku kartei.',
     email: 'E-pasts',
     password: 'Parole',
     submit: 'Pieslēgties',

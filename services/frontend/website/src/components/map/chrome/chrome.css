@@ -1,0 +1,41 @@
+/* The map's floating panels: a bottom sheet rising on a phone, a card sliding
+   in beside the rail on a wider screen. The base layer's reduced-motion rule
+   zeroes the duration, so the panel simply appears. */
+@keyframes dp-panel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+
+@keyframes dp-panel-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+}
+
+.dp-panel {
+  animation: dp-panel-rise 220ms var(--ease-out-soft) both;
+}
+
+@media (min-width: 48rem) {
+  .dp-panel {
+    animation-name: dp-panel-slide;
+    animation-duration: 200ms;
+  }
+}
+
+/* The chip row scrolls sideways without a scrollbar track across the bar. */
+.dp-scroll-x {
+  scrollbar-width: none;
+}
+
+.dp-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* The row fades out at its right edge, the hint that there is more to scroll to. */
+.dp-fade-x {
+  mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent);
+}

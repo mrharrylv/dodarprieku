@@ -8,11 +8,9 @@
   },
   "title": "Labdarības karte",
   "intro": "Atrodiet iestādi sev tuvumā, apskatiet, kas tai vajadzīgs, un atnesiet to.",
-  "registerCta": "Kļūt par saņēmēju",
   "panel": {
-    "label": "Organizāciju saraksts un meklēšana",
-    "expand": "Rādīt sarakstu",
-    "collapse": "Paslēpt sarakstu"
+    "close": "Aizvērt",
+    "loading": "Ielādē…"
   },
   "search": {
     "label": "Meklēt pēc nosaukuma vai pilsētas",
@@ -24,7 +22,6 @@
     "all": "Visas"
   },
   "list": {
-    "heading": "Organizācijas",
     "count_zero": "{{count}} organizāciju",
     "count_one": "{{count}} organizācija",
     "count_other": "{{count}} organizācijas",
@@ -66,5 +63,22 @@
     "urgent": "Steidzami",
     "noNeeds": "Vajadzības vēl nav norādītas."
   },
-  "loadError": "Neizdevās ielādēt organizācijas"
+  "loadError": "Neizdevās ielādēt organizācijas",
+  "chrome": {
+    "label": "Meklēšana un kategorijas",
+    "home": "Dod ar prieku: uz karti",
+    "actions": "Pieteikties un iestatījumi"
+  },
+  "rail": {
+    "label": "Kartes rīki",
+    "list": "Organizācijas",
+    "leaderboard": "Lielākie atbalstītāji",
+    "news": "Jaunumi",
+    "about": "Par projektu",
+    "account": "Mans konts"
+  },
+  "news": {
+    "title": "Jaunumi",
+    "body": "Kad kādai iestādei kaut kas būs steidzami vajadzīgs, mēs jums uzrakstīsim. Atrakstīties var jebkurā brīdī."
+  }
 }

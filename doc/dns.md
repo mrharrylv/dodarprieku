@@ -46,7 +46,7 @@ the Keychain account is known to carry. The job that writes DNS runs in the
 the step's `env:` block must show `ZONE_USERNAME: ***`; a blank value means
 nothing was written at Zone.ee, whatever the tick says.
 
-### Dodar prieku: two hosts on one distribution
+### Dod ar prieku: two hosts on one distribution
 
 `dev.tfvars` lists the admin portal as an alias, so the one certificate covers
 both names and Terraform creates four records at Zone.ee in the same apply:

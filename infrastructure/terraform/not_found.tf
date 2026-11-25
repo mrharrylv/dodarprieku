@@ -77,7 +77,7 @@ resource "aws_cloudwatch_log_group" "not_found" {
 
 resource "aws_lambda_function" "not_found" {
   function_name = local.not_found_function_name
-  description   = "Dodar prieku website 404 page (${var.environment})"
+  description   = "Dod ar prieku website 404 page (${var.environment})"
   role          = aws_iam_role.not_found.arn
   handler       = "index.handler"
   runtime       = "nodejs22.x"

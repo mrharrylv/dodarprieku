@@ -6,27 +6,31 @@ import { ROUTES } from '@/config/site'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useLocale } from '@/hooks/useLocale'
 import { useSnapshot } from '@/hooks/useSnapshot'
-import { cn } from '@/lib/cn'
-import { localePath } from '@/lib/locale-path'
-import { filterCharities, findBySlug } from '@/lib/snapshot'
+import { filterCharities, findBySlug, type CharityFilter } from '@/lib/snapshot'
 import { Seo } from '@/components/seo/Seo'
-import { ButtonLink } from '@/components/ui/Button'
-import { Icon } from '@/components/ui/Icon'
-import { MapPanel, type PanelFilter } from '@/components/map/MapPanel'
+import { ApiErrorNotice } from '@/components/charity/ApiErrorNotice'
 import type { MapFocus } from '@/components/map/MapView'
+import { PANEL_SHEET_QUERY } from '@/components/map/map-config'
+import { MapActions } from '@/components/map/chrome/MapActions'
+import { MapPanels } from '@/components/map/chrome/MapPanels'
+import { MapRail } from '@/components/map/chrome/MapRail'
+import { MapTopBar } from '@/components/map/chrome/MapTopBar'
+import { useMapPanels } from '@/components/map/chrome/useMapPanels'
 import { FOCUS_PARAM } from '@/components/charity/focus-param'
 
 /** The map itself is its own chunk: nothing about it belongs in the first paint. */
 const MapView = lazy(() => import('@/components/map/MapView').then((m) => ({ default: m.MapView })))
 
+const NO_FILTER: CharityFilter = { query: '', category: null }
 
-const NO_FILTER: PanelFilter = { query: '', category: null }
+const isSheet = (): boolean => typeof window.matchMedia === 'function' && window.matchMedia(PANEL_SHEET_QUERY).matches
 
 /**
- * The home page: the charity map, full height under the header, with the
- * side panel (a bottom sheet on a phone).
+ * The home page: the charity map, full screen, with floating chrome over it.
+ * The top bar (brand, search, chips), the actions (register, theme), the rail
+ * on the left and the one panel it has open.
  *
- * The prerendered HTML is the panel's heading and intro over a soft map
+ * The prerendered HTML is that chrome, every panel closed, over a soft map
  * skeleton. The snapshot is fetched, and MapLibre loaded, only after
  * hydration; nothing here reads the window or storage on the first render.
  */
@@ -35,12 +39,13 @@ export const MapPage = () => {
   const { locale } = useLocale()
   const hydrated = useHydrated()
   const snapshot = useSnapshot()
+  const panels = useMapPanels()
   const [params] = useSearchParams()
-  const [filter, setFilter] = useState<PanelFilter>(NO_FILTER)
+  const [filter, setFilter] = useState<CharityFilter>(NO_FILTER)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [focus, setFocus] = useState<MapFocus | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
   const handledParam = useRef(false)
+  const mapArea = useRef<HTMLDivElement>(null)
 
   const charities = snapshot.status === 'ready' ? snapshot.snapshot.charities : []
   const visible = filterCharities(charities, filter)
@@ -48,8 +53,19 @@ export const MapPage = () => {
   const choose = (id: string) => {
     setSelectedId(id)
     setFocus((prev) => ({ id, nonce: (prev?.nonce ?? 0) + 1 }))
-    setSheetOpen(false)
+    if (isSheet()) panels.close({ restoreFocus: true })
   }
+
+  // A press anywhere on the map closes the open panel, the way a sheet over a map does.
+  // Focus goes back to the rail only when it was inside the panel, so it is never lost to <body>.
+  const { close, panelRef } = panels
+  useEffect(() => {
+    const area = mapArea.current
+    if (area === null) return undefined
+    const onPointer = () => close({ restoreFocus: panelRef.current?.contains(document.activeElement) === true })
+    area.addEventListener('pointerdown', onPointer)
+    return () => area.removeEventListener('pointerdown', onPointer)
+  }, [close, panelRef])
 
   // Open on the charity named in ?org= once, when the snapshot arrives.
   const focusSlug = params.get(FOCUS_PARAM) ?? undefined
@@ -67,40 +83,12 @@ export const MapPage = () => {
   return (
     <>
       <Seo title={t('meta.title')} description={t('meta.description')} path={ROUTES.home} locale={locale} />
-      <section
-        aria-labelledby="map-title"
-        className="relative flex h-[calc(100dvh-4rem)] min-h-[34rem] overflow-hidden bg-(--surface-sunken) sm:h-[calc(100dvh-5rem)]"
-      >
-        <aside
-          aria-label={t('panel.label')}
-          className={cn(
-            'absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-(--radius-2xl) bg-(--surface-raised) shadow-(--shadow-lifted)',
-            'transition-[max-height] duration-300 ease-(--ease-out-soft)',
-            sheetOpen ? 'max-h-[85%]' : 'max-h-[42%]',
-            'lg:static lg:z-auto lg:max-h-none lg:w-104 lg:shrink-0 lg:rounded-none lg:border-r lg:border-(--border-subtle) lg:shadow-none',
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => setSheetOpen((open) => !open)}
-            aria-expanded={sheetOpen}
-            className="flex min-h-11 w-full shrink-0 flex-col items-center justify-center gap-1 pt-2 text-(length:--text-xs) font-medium text-(--text-secondary) lg:hidden"
-          >
-            <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-(--border-strong)" />
-            {sheetOpen ? t('panel.collapse') : t('panel.expand')}
-          </button>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            <MapPanel
-              state={snapshot}
-              filter={filter}
-              onFilter={setFilter}
-              selectedId={selectedId}
-              onChoose={choose}
-              onRetry={snapshot.retry}
-            />
-          </div>
-        </aside>
-        <div className="relative min-w-0 flex-1">
+      <section aria-labelledby="map-title" className="relative h-full min-h-[32rem] overflow-hidden bg-(--surface-sunken)">
+        <h1 id="map-title" className="sr-only">
+          {t('title')}
+        </h1>
+        <p className="sr-only">{t('intro')}</p>
+        <div ref={mapArea} className="absolute inset-0">
           <MapSkeleton />
           {hydrated && (
             <Suspense fallback={null}>
@@ -109,13 +97,24 @@ export const MapPage = () => {
               </div>
             </Suspense>
           )}
-          <div className="absolute top-4 right-4 z-10 sm:hidden">
-            <ButtonLink to={localePath(ROUTES.register, locale)} size="sm" className="shadow-(--shadow-lifted)">
-              <Icon name="plus" />
-              {t('registerCta')}
-            </ButtonLink>
-          </div>
         </div>
+        <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} />
+        <MapActions />
+        <MapRail panels={panels} />
+        <MapPanels
+          panels={panels}
+          state={snapshot}
+          filter={filter}
+          onFilter={setFilter}
+          selectedId={selectedId}
+          onChoose={choose}
+          onRetry={snapshot.retry}
+        />
+        {snapshot.status === 'error' && panels.open === null && (
+          <div className="absolute inset-x-3 bottom-20 z-20 md:right-auto md:bottom-6 md:left-20 md:w-96">
+            <ApiErrorNotice error={snapshot.error} title={t('loadError')} onRetry={snapshot.retry} />
+          </div>
+        )}
       </section>
     </>
   )

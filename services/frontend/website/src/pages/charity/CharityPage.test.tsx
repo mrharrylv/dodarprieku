@@ -123,7 +123,7 @@ describe('CharityPage', () => {
     fireEvent.click(form.getByRole('button', { name: 'Apstiprināt' }))
     expect(form.getByText('Lai mēs varētu jums rakstīt, apstipriniet piekrišanu.')).toBeInTheDocument()
 
-    fireEvent.click(form.getByRole('checkbox', { name: /Piekrītu, ka Dodar prieku/ }))
+    fireEvent.click(form.getByRole('checkbox', { name: /Piekrītu, ka Dod ar prieku/ }))
     fireEvent.click(form.getByRole('button', { name: 'Apstiprināt' }))
 
     expect(await form.findByText('Paldies!')).toBeInTheDocument()

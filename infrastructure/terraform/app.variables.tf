@@ -1,5 +1,5 @@
 # =============================================================================
-# Dodar prieku: API, mail, analytics (api.tf, app_data.tf, csp.tf)
+# Dod ar prieku: API, mail, analytics (api.tf, app_data.tf, csp.tf)
 # =============================================================================
 
 variable "mail_from" {

@@ -1,28 +1,73 @@
 {
   "meta": {
     "title": "Par projektu",
-    "description": "Dodar prieku savieno cilvēkus, kuri vēlas palīdzēt, ar Latvijas iestādēm, kurām kaut kas ir vajadzīgs: no suņu barības līdz autiņbiksītēm."
+    "description": "Dod ar prieku savieno cilvēkus, kuri vēlas palīdzēt, ar Latvijas iestādēm, kurām kaut kas ir vajadzīgs: no suņu barības līdz autiņbiksītēm."
   },
-  "title": "Par projektu",
-  "lead": "Dodar prieku ir karte, kurā Latvijas patversmes, bērnu nami, pansionāti, slimnīcas un citas iestādes pašas norāda, kas tām šobrīd ir vajadzīgs.",
+  "eyebrow": "Par projektu",
+  "title": "Palīdzība, kas nonāk tieši tur, kur to gaida",
+  "lead": "Dod ar prieku ir karte, kurā Latvijas patversmes, bērnu nami, pansionāti, slimnīcas un citas iestādes pašas norāda, kas tām šobrīd ir vajadzīgs.",
+  "backToMap": "Atpakaļ uz karti",
   "how": {
-    "title": "Kā tas darbojas",
+    "title": "Kā palīdzēt",
+    "subtitle": "Trīs soļi, un jūsu dāvana ir ceļā.",
     "steps": {
-      "find": "Atrodiet kartē iestādi sev tuvumā vai to, kuras darbs jums ir tuvs.",
-      "choose": "Apskatiet, kas tai vajadzīgs, un atzīmējiet lietas, ko atnesīsiet. Iestāde un citi palīdzētāji redz, kas jau ir apsolīts.",
-      "deliver": "Nogādājiet ziedojumu tā, kā iestāde norādījusi: personīgi, pakomātā vai pa pastu."
+      "find": {
+        "title": "Atrodiet",
+        "body": "Atrodiet kartē iestādi sev tuvumā vai to, kuras darbs jums ir tuvs."
+      },
+      "choose": {
+        "title": "Atzīmējiet „Es ziedošu”",
+        "body": "Apskatiet, kas iestādei vajadzīgs, un atzīmējiet lietas, ko atnesīsiet. Iestāde un citi palīdzētāji redz, kas jau ir apsolīts, tāpēc nekas netiek nopirkts divreiz."
+      },
+      "deliver": {
+        "title": "Nogādājiet",
+        "body": "Nogādājiet ziedojumu tā, kā iestāde norādījusi: personīgi, pakomātā vai pa pastu."
+      }
     }
   },
-  "recipients": {
-    "title": "Iestādēm",
-    "body": "Reģistrācija ir bez maksas. Pēc pieteikuma mēs to pārskatām, un, kad tas ir apstiprināts, jūsu iestāde parādās kartē. Vajadzību sarakstu varat mainīt jebkurā brīdī savā kontā."
+  "institutions": {
+    "eyebrow": "Iestādēm",
+    "title": "Vai jūsu iestādei vajadzīga palīdzība?",
+    "body": "Patversmes, bērnu nami, pansionāti, slimnīcas un citas iestādes var pievienoties bez maksas. Jūs paši norādāt, kas vajadzīgs, un cilvēki to atnes.",
+    "steps": {
+      "register": {
+        "title": "Piesakieties",
+        "body": "Aizpildiet pieteikumu: iestādes dati, adrese un tas, kas jums šobrīd vajadzīgs."
+      },
+      "approve": {
+        "title": "Mēs pārbaudām",
+        "body": "Pārskatām pieteikumu un, kad viss ir kārtībā, to apstiprinām. Par to saņemsiet e-pastu."
+      },
+      "map": {
+        "title": "Parādāties kartē",
+        "body": "Jūsu iestāde ar vajadzību sarakstu kļūst redzama ikvienam, kurš atver karti."
+      },
+      "help": {
+        "title": "Saņemat palīdzību",
+        "body": "Cilvēki atzīmē, ko atnesīs, un savā kontā redzat, kas ir ceļā. Sarakstu varat mainīt jebkurā brīdī."
+      }
+    },
+    "account": "Jau reģistrēti? Ieejiet kontā"
   },
-  "money": {
-    "title": "Bez naudas",
-    "body": "Šeit netiek vākta nauda. Dodar prieku palīdz nogādāt lietas, kuras patiešām vajag, tieši tur, kur tās gaida."
+  "principles": {
+    "title": "Kā tas ir iekārtots",
+    "free": {
+      "title": "Bez naudas un bez maksas",
+      "body": "Šeit netiek vākta nauda: palīdzība nonāk kā lietas, kuras patiešām vajag. Reģistrācija un lietošana ir bez maksas gan iestādēm, gan palīdzētājiem."
+    },
+    "operator": {
+      "title": "Kas to uztur",
+      "body": "Projektu bez maksas izveidojis un uztur {{legalName}}. Jautājumi un ieteikumi: {{email}}."
+    }
   },
-  "operator": {
-    "title": "Kas to uztur",
-    "body": "Projektu bez maksas izveidojis un uztur {{legalName}}. Jautājumi un ieteikumi: {{email}}."
+  "projects": {
+    "title": "Citi HA Group projekti",
+    "subtitle": "Dod ar prieku ir viens no HA Group projektiem. Iepazīstieties arī ar pārējiem.",
+    "items": {
+      "unveil": "Iepazīšanās lietotne.",
+      "eventapp": "Pasākumi visā Latvijā.",
+      "balticgp": "Motosporta sacīkstes Baltijā.",
+      "hagroup": "Programmatūras izstrāde."
+    }
   }
 }

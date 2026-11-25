@@ -1,6 +1,6 @@
-# Dodar prieku
+# Dod ar prieku
 
-The website for **Dodar prieku**: a static React site, prerendered page by page at
+The website for **Dod ar prieku**: a static React site, prerendered page by page at
 build time, on S3 + CloudFront, deployed from GitHub Actions, with
 infrastructure in Terraform.
 

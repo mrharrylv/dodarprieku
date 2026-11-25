@@ -53,15 +53,15 @@ export const CharityList = ({
                 </span>
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-(--text-primary)">{organization.name}</span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-(length:--text-sm) text-(--text-secondary)">
+                <span className="line-clamp-2 font-medium leading-snug text-(--text-primary)">{organization.name}</span>
+                <span className="mt-1 flex items-center gap-1.5 text-(length:--text-sm) text-(--text-secondary)">
                   <CategoryBadge category={category} size="sm" className="h-5 w-5 text-(length:--text-xs)" />
-                  <span className="truncate">
+                  <span className="min-w-0 truncate">
                     {categoryById(category).label}, {address.city}
                   </span>
                 </span>
+                {urgent && <UrgentBadge label={t('list.urgent')} className="mt-1.5" />}
               </span>
-              {urgent && <UrgentBadge label={t('list.urgent')} />}
             </button>
           </li>
         )

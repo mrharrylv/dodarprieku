@@ -21,7 +21,7 @@
  * Removing a locale means deleting its folder under `i18n/locales/` too: the
  * parity test walks this list.
  *
- * Dodar prieku is Latvian only (doc/specs/dodarprieku.md), so there is one
+ * Dod ar prieku is Latvian only (doc/specs/dodarprieku.md), so there is one
  * entry: `isPrefixed()` is false and no URL carries a `/lv` segment.
  */
 export const LOCALES = [{ code: 'lv', label: 'Latviešu', short: 'LV', htmlLang: 'lv' }] as const
@@ -46,9 +46,9 @@ export const LOCALE_CODES: readonly LocaleCode[] = LOCALES.map((l) => l.code)
 
 export const SITE = {
   /** Brand name, as shown to visitors. */
-  name: 'Dodar prieku',
+  name: 'Dod ar prieku',
   /** Used where the brand needs qualifying, e.g. the <title> suffix. */
-  shortName: 'Dodar prieku',
+  shortName: 'Dod ar prieku',
   /** Domain without protocol, for display, not for linking. */
   domain: 'dodarprieku.hagroup.lv',
   /** Two-letter country of operation, for structured data. */

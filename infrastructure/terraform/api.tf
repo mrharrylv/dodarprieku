@@ -1,5 +1,5 @@
 # =============================================================================
-# Dodar prieku API: one Lambda behind an HTTP API, served at /api/* by the
+# Dod ar prieku API: one Lambda behind an HTTP API, served at /api/* by the
 # site's own distribution
 # =============================================================================
 # The code is services/api (esbuild bundle in services/api/dist). Terraform
@@ -177,7 +177,7 @@ resource "aws_cloudwatch_log_group" "api" {
 # -----------------------------------------------------------------------------
 resource "aws_lambda_function" "api" {
   function_name = local.api_function_name
-  description   = "Dodar prieku API (${var.environment})"
+  description   = "Dod ar prieku API (${var.environment})"
   role          = aws_iam_role.api.arn
   handler       = "index.handler"
   runtime       = "nodejs22.x"
@@ -219,7 +219,7 @@ resource "aws_lambda_function" "api" {
 resource "aws_apigatewayv2_api" "api" {
   name          = local.api_function_name
   protocol_type = "HTTP"
-  description   = "Dodar prieku API (${var.environment}), reached through CloudFront at /api/*"
+  description   = "Dod ar prieku API (${var.environment}), reached through CloudFront at /api/*"
 
   tags = local.tags
 }

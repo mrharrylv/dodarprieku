@@ -20,8 +20,8 @@ Work through this list before anyone outside the team sees the site.
 
 | Constant | Field | Ships as | Notes |
 | --- | --- | --- | --- |
-| `SITE` | `name` | `Dodar prieku` | Replaced by `bin/init-site.sh --brand`. Shown in the header, the footer, the `<title>` suffix, and the Organization structured data. |
-| | `shortName` | `Dodar prieku` | Used where the brand needs qualifying. |
+| `SITE` | `name` | `Dod ar prieku` | Replaced by `bin/init-site.sh --brand`. Shown in the header, the footer, the `<title>` suffix, and the Organization structured data. |
+| | `shortName` | `Dod ar prieku` | Used where the brand needs qualifying. |
 | | `domain` | `example.com` | Display only, shown in the footer's bottom bar. `bin/init-site.sh --domain` sets it. The canonical URL comes from `VITE_SITE_URL`, not from here. |
 | | `country` | `LV` | Two-letter code for the structured data's `addressCountry`. |
 | `CONTACT` | `email` | `hello@example.com` | Footer, contact page, company page, structured data, and the legal pages' "how to reach us". |

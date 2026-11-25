@@ -4,7 +4,7 @@ import { Shell } from './Shell'
 import { AboutPage } from './AboutPage'
 
 /**
- * Classic: the template's default, and Dodar prieku's look.
+ * Classic: the template's default, and Dod ar prieku's look.
  *
  * Sticky translucent header with the brand, the navigation and the register
  * button; card grids and alternating page and sunken bands on the About page.

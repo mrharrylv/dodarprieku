@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next'
 
 import { otherTheme, type ResolvedTheme } from '@/context/theme-context'
 import { useTheme } from '@/hooks/useTheme'
+import { cn } from '@/lib/cn'
 
 /**
  * Switches between the light and the dark theme. Two states only: there is
  * no "system" mode (Harry, 2026-11-06).
  */
-export const ThemeToggle = () => {
+export const ThemeToggle = ({ className }: { className?: string } = {}) => {
   const { t } = useTranslation('common')
   const { resolved, setPreference } = useTheme()
 
@@ -23,7 +24,11 @@ export const ThemeToggle = () => {
       // that is the state or the action.
       aria-label={t('theme.toggle', { mode: t(`theme.${next}`) })}
       title={t('theme.toggle', { mode: t(`theme.${next}`) })}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-(--radius-md) text-(--text-secondary) transition-colors hover:bg-(--surface-sunken) hover:text-(--text-primary)"
+      className={cn(
+        'inline-flex h-11 w-11 items-center justify-center text-(--text-secondary) transition-colors hover:text-(--text-primary)',
+        // A caller's className replaces the default shape rather than fighting it.
+        className ?? 'rounded-(--radius-md) hover:bg-(--surface-sunken)',
+      )}
     >
       <ThemeIcon theme={resolved} />
     </button>

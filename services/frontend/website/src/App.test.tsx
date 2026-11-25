@@ -32,7 +32,9 @@ describe('routing', () => {
   it('renders the map at the root', async () => {
     renderWithProviders(<App />, { route: ROUTES.home })
 
-    expect(await screen.findByRole('heading', { level: 1, name: lv.map.title })).toBeInTheDocument()
+    // The map page is a lazy chunk that now carries its floating chrome too;
+    // under coverage instrumentation it can take longer than the default second.
+    expect(await screen.findByRole('heading', { level: 1, name: lv.map.title }, { timeout: 5000 })).toBeInTheDocument()
   })
 
   it.each([
@@ -94,24 +96,43 @@ describe('page chrome', () => {
   })
 
   it('exposes the landmarks a screen reader navigates by', async () => {
-    renderWithProviders(<App />, { route: ROUTES.home })
+    renderWithProviders(<App />, { route: ROUTES.about })
 
     expect(await screen.findByRole('banner')).toBeInTheDocument()
     expect(screen.getByRole('main')).toBeInTheDocument()
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
-  it('offers the register button in the header', async () => {
+  it('shows the map full screen, with no header or footer, and its own register button', async () => {
     renderWithProviders(<App />, { route: ROUTES.home })
+
+    expect(await screen.findByRole('heading', { level: 1, name: lv.map.title })).toBeInTheDocument()
+    expect(screen.getByRole('main')).toBeInTheDocument()
+    expect(screen.queryByRole('banner')).toBeNull()
+    expect(screen.queryByRole('contentinfo')).toBeNull()
+    const register = screen.getAllByRole('link', { name: lv.common.cta.register })
+    expect(register.some((link) => link.getAttribute('href') === ROUTES.register)).toBe(true)
+  })
+
+  it.each([ROUTES.about, ROUTES.register, ROUTES.privacy, '/no-such-page'])('keeps the header and footer on %s', async (route) => {
+    renderWithProviders(<App />, { route })
+
+    // The registration wizard has a header of its own inside main, so at least one.
+    expect((await screen.findAllByRole('banner')).length).toBeGreaterThan(0)
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+  })
+
+  it('offers the register button in the header', async () => {
+    renderWithProviders(<App />, { route: ROUTES.about })
     const header = await screen.findByRole('banner')
 
     const register = within(header).getAllByRole('link', { name: lv.common.cta.register })
     expect(register.some((link) => link.getAttribute('href') === ROUTES.register)).toBe(true)
   })
 
-  it('links to no admin page anywhere', async () => {
-    const { container } = renderWithProviders(<App />, { route: ROUTES.home })
-    await screen.findByRole('banner')
+  it.each([ROUTES.home, ROUTES.about])('links to no admin page anywhere on %s', async (route) => {
+    const { container } = renderWithProviders(<App />, { route })
+    await screen.findByRole('heading', { level: 1 })
 
     const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '')
     expect(hrefs.filter((href) => /admin/i.test(href))).toEqual([])

@@ -10,6 +10,7 @@ import { PATHS } from '../paths'
 import {
   IconBuilding, IconDashboard, IconDiff, IconGift, IconInbox, IconList, IconLogout, IconMenu, IconMoon, IconSun, IconUsers,
 } from './Icon'
+import { BrandMark } from './BrandMark'
 import { Badge } from './ui'
 
 interface NavItem {
@@ -53,7 +54,10 @@ export const Layout = () => {
         {lv.app.skip}
       </a>
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-2 md:hidden">
-        <span className="font-[family-name:var(--font-display)] font-semibold">{lv.app.name}</span>
+        <span className="inline-flex items-center gap-2 font-[family-name:var(--font-display)] font-semibold">
+          <BrandMark className="size-7" />
+          {lv.app.name}
+        </span>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -69,9 +73,12 @@ export const Layout = () => {
         id="sanu-izvelne"
         className={`${open ? 'block' : 'hidden'} border-r border-[var(--border-subtle)] bg-[var(--surface-raised)] md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col`}
       >
-        <div className="hidden px-5 pb-2 pt-6 md:block">
-          <p className="font-[family-name:var(--font-display)] text-lg font-semibold">{lv.app.name}</p>
-          <p className="text-xs text-[var(--text-muted)]">{lv.app.area}</p>
+        <div className="hidden items-center gap-3 px-5 pb-2 pt-6 md:flex">
+          <BrandMark className="size-10" />
+          <div>
+            <p className="font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">{lv.app.name}</p>
+            <p className="text-xs text-[var(--text-muted)]">{lv.app.area}</p>
+          </div>
         </div>
         <nav aria-label={lv.app.menu} className="flex-1 space-y-1 p-3">
           {NAV.map((item) => {

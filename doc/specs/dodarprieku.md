@@ -1,4 +1,4 @@
-# Dodar prieku: product and system spec
+# Dod ar prieku: product and system spec
 
 Binding for every package in this repository. Types live in
 `services/shared/src/contracts.ts`, the category and needs catalog in
@@ -106,7 +106,7 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
    session.
 7. **Sponsor leaderboard**: companies on charities' sponsor walls, grouped by
    normalised name (case, quotes and "SIA"/"AS" ignored), ranked by how many
-   charities they sponsor. Shown in the map's side panel and on charity pages.
+   charities they sponsor. Shown in the map's leaderboard panel and on charity pages.
 8. **Admin**: dashboard counts; applications (pending); update requests;
    all charities with search and status filter; detail view with every field
    editable (admin edits publish immediately), approve, reject, suspend
@@ -174,13 +174,13 @@ are logged with a request id; responses never leak internals.
 
 | Path | Page |
 | --- | --- |
-| `/` | the map (full-height), side panel, "+ Kļūt par labdarības saņēmēju" button top right |
+| `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" and the theme switch top right, and a rail on the left that opens one floating panel at a time (organisations, top supporters, newsletter) and links to the project page and the account |
 | `/organizacija/:slug` | charity page (client-rendered from the snapshot; prerendered shell) |
 | `/registreties` | registration wizard |
 | `/konts` | charity dashboard (login form when logged out) |
 | `/konts/parole` | set password (from the email link) / reset |
 | `/konts/aizmirsu` | forgot password |
-| `/par-projektu` | about the project |
+| `/par-projektu` | about the project: how donors help, how institutions join, how it is run, HA Group's other projects |
 | `/legal/*` | privacy, cookies, terms, company (template) |
 
 The footer, on every page: HA Group's other products with small icons (Unveil

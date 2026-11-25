@@ -14,7 +14,19 @@ const initials = (name: string): string =>
     .toUpperCase()
 
 /** "Lielākie atbalstītāji": the companies on the most sponsor walls, top ten. */
-export const SponsorLeaderboard = ({ entries, headingLevel = 2 }: { entries: readonly SponsorLeaderboardEntry[]; headingLevel?: 2 | 3 }) => {
+/**
+ * `titled={false}` leaves the heading out, inside a panel whose own heading
+ * already says it.
+ */
+export const SponsorLeaderboard = ({
+  entries,
+  headingLevel = 2,
+  titled = true,
+}: {
+  entries: readonly SponsorLeaderboardEntry[]
+  headingLevel?: 2 | 3
+  titled?: boolean
+}) => {
   const { t } = useTranslation('map')
   const { t: tc } = useTranslation('common')
   const headingId = useId()
@@ -22,11 +34,13 @@ export const SponsorLeaderboard = ({ entries, headingLevel = 2 }: { entries: rea
   const Heading = headingLevel === 2 ? 'h2' : 'h3'
 
   return (
-    <section aria-labelledby={headingId} className="space-y-3">
+    <section aria-labelledby={titled ? headingId : undefined} className="space-y-3">
       <div>
-        <Heading id={headingId} className="text-(length:--text-lg) font-semibold text-(--text-primary)">
-          {t('leaderboard.title')}
-        </Heading>
+        {titled && (
+          <Heading id={headingId} className="text-(length:--text-lg) font-semibold text-(--text-primary)">
+            {t('leaderboard.title')}
+          </Heading>
+        )}
         <p className="text-(length:--text-sm) text-(--text-secondary)">{t('leaderboard.intro')}</p>
       </div>
       {top.length === 0 ? (

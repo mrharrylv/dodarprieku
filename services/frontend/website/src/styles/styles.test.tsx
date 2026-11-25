@@ -34,7 +34,11 @@ const styles: Array<[string, SiteStyle]> = Object.entries(modules)
 
 const AppFor = ({ style }: { style: SiteStyle }) => useRoutes(buildRoutes(style))
 
-const renderStyle = (style: SiteStyle, route: string = ROUTES.home) =>
+/**
+ * The shell is checked on the About page: the map, the home page, is full
+ * screen and has no header or footer (see the test that says so below).
+ */
+const renderStyle = (style: SiteStyle, route: string = localePath(ROUTES.about, 'lv')) =>
   renderWithProviders(<AppFor style={style} />, { route })
 
 const lv = (ns: string) => i18n.getFixedT('lv', ns)
@@ -66,6 +70,16 @@ describe.each(styles)('style "%s"', (id, style) => {
     expect(main).toHaveAttribute('id', MAIN_CONTENT_ID)
     // Focusable, so the skip link can actually move focus here.
     expect(main).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('renders the map full screen: main and the skip link, no header, no footer', async () => {
+    renderStyle(style, localePath(ROUTES.home, 'lv'))
+
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.getByRole('main')).toHaveAttribute('id', MAIN_CONTENT_ID)
+    expect(screen.getByRole('link', { name: lv('common')('a11y.skipToContent') })).toBeInTheDocument()
+    expect(screen.queryByRole('banner')).toBeNull()
+    expect(screen.queryByRole('contentinfo')).toBeNull()
   })
 
   it('puts the skip link first in the tab order', async () => {

@@ -1,5 +1,5 @@
 # =============================================================================
-# Dodar prieku: data, media and secrets
+# Dod ar prieku: data, media and secrets
 # =============================================================================
 # One DynamoDB table (doc/specs/dodarprieku.md, "Storage"), one private media
 # bucket behind the same distribution, and two SSM parameters the API reads at

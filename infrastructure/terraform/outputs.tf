@@ -123,7 +123,7 @@ output "zone_dns_managed" {
 }
 
 # =============================================================================
-# Dodar prieku API, data and media (api.tf, app_data.tf)
+# Dod ar prieku API, data and media (api.tf, app_data.tf)
 # =============================================================================
 # Read by the Build & Deploy workflow and `make admin-invite`; the names also
 # follow <prefix>-<project>-{api,data,media}, which is what they fall back to.

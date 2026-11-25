@@ -105,6 +105,8 @@ export interface SiteStyle {
 | `<DevelopedBy />` inside the footer | The developer credit, translated around the name. |
 | `<CopyrightYear />` for the footer's year, never `new Date()` | Every page is prerendered at build time. A year computed in render differs from the build's on the first January page load and fails hydration on every page, all year. |
 
+The map (`/`, the page `isFullScreenPage()` in `src/lib/full-screen.ts` names) is the one exception: it fills the viewport, so the shell renders the skip link, `<SiteChrome />` and `main` there and leaves the header and the footer out. The map carries its own floating brand, search, register button and theme switch, and the contract test checks that every other page keeps the banner and the footer.
+
 ### What the pages must do
 
 - Exactly **one `h1`** each. Two, or none, makes the document outline useless.

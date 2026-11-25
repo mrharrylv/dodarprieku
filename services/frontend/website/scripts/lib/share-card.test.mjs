@@ -33,7 +33,7 @@ beforeAll(async () => {
 
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
-const input = (heroFile) => ({ sharp, brand: 'Dodar prieku', headline: 'Consulting and support', heroFile, colours, logo, fonts })
+const input = (heroFile) => ({ sharp, brand: 'Dod ar prieku', headline: 'Consulting and support', heroFile, colours, logo, fonts })
 
 const pixel = async (png, x, y) => {
   const { data } = await sharp(png).extract({ left: x, top: y, width: 1, height: 1 }).raw().toBuffer({ resolveWithObject: true })

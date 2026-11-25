@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { llmsTxt, pageText, siteFacts } from './llms'
 
 const TEMPLATE = {
-  brand: 'Dodar prieku',
+  brand: 'Dod ar prieku',
   country: 'Latvia',
   languages: ['English', 'Latviešu', 'Русский'],
   legalName: 'SIA "Example"',
@@ -30,7 +30,7 @@ const REAL = {
 describe('siteFacts', () => {
   it('states only what is real: with the template values, the brand, the country and the languages', () => {
     expect(siteFacts(TEMPLATE)).toEqual([
-      'Dodar prieku operates in Latvia.',
+      'Dod ar prieku operates in Latvia.',
       'The site is published in English, Latviešu and Русский.',
     ])
   })

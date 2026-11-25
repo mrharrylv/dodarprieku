@@ -1,4 +1,4 @@
-# CLAUDE.md: Dodar prieku
+# CLAUDE.md: Dod ar prieku
 
 Instructions for AI sessions in this repository. Read this, then read
 [`doc/architecture.md`](doc/architecture.md) before touching anything under
@@ -6,7 +6,7 @@ Instructions for AI sessions in this repository. Read this, then read
 
 ## What this is
 
-The production website for **Dodar prieku**. A static React site on S3 + CloudFront,
+The production website for **Dod ar prieku**. A static React site on S3 + CloudFront,
 deployed by GitHub Actions, infrastructure in Terraform. Three languages, each
 on its own URL prefix. Every page is prerendered at build time into its own
 HTML file and hydrated in the browser: see "Prerendering and hydration" in

@@ -146,7 +146,7 @@ run shop "contact,consent"
 assert_status "$ST" 0 "setup.sh runs with contact and consent"
 check_project shop shop-eu
 
-# ── The app feature: Dodar prieku's API (api.tf, app_data.tf) ──────────────
+# ── The app feature: Dod ar prieku's API (api.tf, app_data.tf) ──────────────
 
 # The names Terraform gives the app's resources, read from the .tf files, so a
 # rename there fails here until setup.sh follows.

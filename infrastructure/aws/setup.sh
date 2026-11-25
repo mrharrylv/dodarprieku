@@ -14,7 +14,7 @@
 #   ./setup.sh
 #   FEATURES=contact ./setup.sh          # also grant Lambda + SES + logs
 #   FEATURES=contact,consent ./setup.sh  # ... and DynamoDB
-#   FEATURES=app ./setup.sh              # Dodar prieku's API: DynamoDB, Lambda,
+#   FEATURES=app ./setup.sh              # Dod ar prieku's API: DynamoDB, Lambda,
 #                                        # API Gateway, SSM, the media bucket
 #
 # Environment overrides:
@@ -502,7 +502,7 @@ EOF
     }"
   fi
 
-  # ── Optional: Dodar prieku's API (infrastructure/terraform/api.tf) ────────
+  # ── Optional: Dod ar prieku's API (infrastructure/terraform/api.tf) ────────
   # Each grant names the one resource Terraform creates, by the
   # <env>-<project>-<name> names api.tf and app_data.tf use. API Gateway IDs
   # are random, so those grants cannot name the API; a Deny keeps the role off

@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react'
+import { BrandMark } from '../components/BrandMark'
 import { lv } from '../i18n/lv'
 
 /** The centred card the login and set-password pages share. */
 export const AuthShell = ({ title, intro, children }: { readonly title: string; readonly intro: string; readonly children: ReactNode }) => (
   <main className="flex min-h-screen items-center justify-center px-4 py-10">
     <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-card)]">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-accent)]">
-        {lv.app.name} · {lv.app.area}
-      </p>
+      <div className="flex items-center gap-3">
+        <BrandMark className="size-10" />
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-accent)]">
+          {lv.app.name} · {lv.app.area}
+        </p>
+      </div>
       <h1 className="mt-2 text-[length:var(--text-2xl)]">{title}</h1>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">{intro}</p>
       <div className="mt-6">{children}</div>

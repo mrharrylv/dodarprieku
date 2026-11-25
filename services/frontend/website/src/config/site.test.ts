@@ -15,7 +15,7 @@ import { isPlaceholder } from '@/lib/placeholder'
 import { CATEGORIES } from '@shared/catalog'
 import { SNAPSHOT_PATH } from '@shared/contracts'
 
-describe('the Dodar prieku routes', () => {
+describe('the Dod ar prieku routes', () => {
   it('are the spec’s Latvian paths', () => {
     expect(ROUTES).toMatchObject({
       home: '/',

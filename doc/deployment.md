@@ -24,7 +24,7 @@ loudly at best and silently at worst, so the order matters.
 No AWS keys exist anywhere. Both workflows assume an IAM role through GitHub's
 OIDC provider, scoped to this project by name and by resource tag.
 
-Dodar prieku adds, in the same Terraform and the same distribution: the
+Dod ar prieku adds, in the same Terraform and the same distribution: the
 DynamoDB table `<env>-dodarprieku-data`, the media bucket
 `<env>-dodarprieku-media` (`/media/*` and `/data/*`), the API function
 `<env>-dodarprieku-api` behind an HTTP API (`/api/*`), two SSM parameters, and

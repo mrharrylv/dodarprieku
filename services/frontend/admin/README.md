@@ -1,4 +1,4 @@
-# Dodar prieku: admin portal
+# Dod ar prieku: admin portal
 
 The administrators' app for the charity map, served at
 `https://admin.dodarprieku.hagroup.lv`. A plain single-page app (no prerender,

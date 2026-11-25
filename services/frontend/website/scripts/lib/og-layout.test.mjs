@@ -20,7 +20,7 @@ const HEADLINES = {
   russian: 'Облачная инфраструктура, консультации по DevOps и поддержка для компаний по всей Латвии',
 }
 
-const BRANDS = ['Dodar prieku', 'HA Group', 'Rīgas Būvkonsultācijas', 'Облако']
+const BRANDS = ['Dod ar prieku', 'HA Group', 'Rīgas Būvkonsultācijas', 'Облако']
 
 /** Every box on the card, for the containment checks. */
 const boxesOf = (layout) => [layout.tile, layout.brand.box, ...layout.headline.lines.map((line) => line.box)]
@@ -83,20 +83,20 @@ describe('layoutShareCard with a stand-in measurer', () => {
   const metrics = { brand: { ascent: 1, descent: 0.26 }, headline: { ascent: 0.97, descent: 0.24 } }
 
   it.each(Object.entries(HEADLINES))('keeps the %s headline inside the central square', (_, headline) => {
-    const layout = layoutShareCard({ brand: 'Dodar prieku', headline, measure, metrics })
+    const layout = layoutShareCard({ brand: 'Dod ar prieku', headline, measure, metrics })
     expectInsideSafeSquare(layout)
     expectStackedWithoutOverlap(layout)
     expect(layout.headline.lines.length).toBeLessThanOrEqual(SPEC.headline.maxLines)
   })
 
   it('centres everything on the card', () => {
-    const layout = layoutShareCard({ brand: 'Dodar prieku', headline: HEADLINES.template, measure, metrics })
+    const layout = layoutShareCard({ brand: 'Dod ar prieku', headline: HEADLINES.template, measure, metrics })
     expect(layout.centreX).toBe(CARD.width / 2)
     expect(layout.tile.x + layout.tile.width / 2).toBe(CARD.width / 2)
   })
 
   it('draws a brand-only card when there is no headline', () => {
-    const layout = layoutShareCard({ brand: 'Dodar prieku', headline: '', measure, metrics })
+    const layout = layoutShareCard({ brand: 'Dod ar prieku', headline: '', measure, metrics })
     expect(layout.headline.lines).toEqual([])
     expectInsideSafeSquare(layout)
   })
@@ -110,17 +110,17 @@ describe('layoutShareCard with a stand-in measurer', () => {
   it('refuses copy that cannot fit, instead of clipping it', () => {
     expect(() => layoutShareCard({ brand: 'x'.repeat(40), headline: 'Hi', measure, metrics })).toThrow(/brand name/)
     expect(() =>
-      layoutShareCard({ brand: 'Dodar prieku', headline: 'word '.repeat(80), measure, metrics }),
+      layoutShareCard({ brand: 'Dod ar prieku', headline: 'word '.repeat(80), measure, metrics }),
     ).toThrow(/headline/)
     expect(() =>
-      layoutShareCard({ brand: 'Dodar prieku', headline: 'Unbreakablesupercalifragilisticexpialidocious', measure, metrics }),
+      layoutShareCard({ brand: 'Dod ar prieku', headline: 'Unbreakablesupercalifragilisticexpialidocious', measure, metrics }),
     ).toThrow(/headline/)
     expect(() => layoutShareCard({ brand: ' ', headline: 'Hi', measure, metrics })).toThrow(/brand name/)
   })
 
   it('refuses a stack taller than the square', () => {
     const tall = { brand: { ascent: 3, descent: 3 }, headline: metrics.headline }
-    expect(() => layoutShareCard({ brand: 'Dodar prieku', headline: HEADLINES.long, measure, metrics: tall })).toThrow(
+    expect(() => layoutShareCard({ brand: 'Dod ar prieku', headline: HEADLINES.long, measure, metrics: tall })).toThrow(
       /tall/,
     )
   })
@@ -167,20 +167,20 @@ describe('layoutPhotoCard', () => {
   const SHAPES = { wide: [3000, 1000], tall: [800, 2400], square: [1000, 1000], tiny: [120, 90] }
 
   it.each(Object.entries(SHAPES))('keeps a %s photo and the brand name inside the central square', (_, [width, height]) => {
-    const layout = layoutPhotoCard({ brand: 'Dodar prieku', photo: { width, height }, measure, metrics })
+    const layout = layoutPhotoCard({ brand: 'Dod ar prieku', photo: { width, height }, measure, metrics })
     const safe = safeSquare()
     expect(isInside(layout.photo.box, safe), JSON.stringify(layout.photo.box)).toBe(true)
     expect(isInside(layout.brand.box, safe), JSON.stringify(layout.brand.box)).toBe(true)
   })
 
   it.each(Object.entries(SHAPES))('contains a %s photo without distorting it', (_, [width, height]) => {
-    const { photo } = layoutPhotoCard({ brand: 'Dodar prieku', photo: { width, height }, measure, metrics })
+    const { photo } = layoutPhotoCard({ brand: 'Dod ar prieku', photo: { width, height }, measure, metrics })
     expect(photo.box.width / photo.box.height).toBeCloseTo(width / height, 6)
     expect(photo.box.x + photo.box.width / 2).toBeCloseTo(CARD.width / 2, 6)
   })
 
   it('puts the brand name beneath the photo, with a gap, and centres the stack in the square', () => {
-    const layout = layoutPhotoCard({ brand: 'Dodar prieku', photo: { width: 1000, height: 1000 }, measure, metrics })
+    const layout = layoutPhotoCard({ brand: 'Dod ar prieku', photo: { width: 1000, height: 1000 }, measure, metrics })
     expect(layout.brand.box.y).toBeGreaterThanOrEqual(layout.photo.box.y + layout.photo.box.height + SPEC.photo.gap - 1e-6)
     const top = layout.photo.box.y - layout.safe.y
     const bottom = layout.safe.y + layout.safe.height - (layout.brand.box.y + layout.brand.box.height)
@@ -188,7 +188,7 @@ describe('layoutPhotoCard', () => {
   })
 
   it('keeps the shadow on the card, so nothing is cut at the edge', () => {
-    const { photo } = layoutPhotoCard({ brand: 'Dodar prieku', photo: { width: 3000, height: 1000 }, measure, metrics })
+    const { photo } = layoutPhotoCard({ brand: 'Dod ar prieku', photo: { width: 3000, height: 1000 }, measure, metrics })
     expect(isInside(photo.shadowBox, { x: 0, y: 0, width: CARD.width, height: CARD.height })).toBe(true)
   })
 
@@ -200,6 +200,6 @@ describe('layoutPhotoCard', () => {
   })
 
   it('refuses a photo with no size', () => {
-    expect(() => layoutPhotoCard({ brand: 'Dodar prieku', photo: { width: 0, height: 10 }, measure, metrics })).toThrow(/photo/)
+    expect(() => layoutPhotoCard({ brand: 'Dod ar prieku', photo: { width: 0, height: 10 }, measure, metrics })).toThrow(/photo/)
   })
 })

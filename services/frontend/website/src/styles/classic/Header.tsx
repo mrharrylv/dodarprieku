@@ -47,7 +47,10 @@ export const Header = () => {
           <div className="flex items-center gap-2">
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
-            <RegisterButton className="hidden sm:inline-flex" />
+            {/* Wrapped: the button's own inline-flex would fight a `hidden` passed to it. */}
+            <span className="hidden sm:inline-flex">
+              <RegisterButton />
+            </span>
 
             <button
               ref={toggleRef}

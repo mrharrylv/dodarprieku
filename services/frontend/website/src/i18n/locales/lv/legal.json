@@ -2,7 +2,7 @@
   "privacy": {
     "meta": {
       "title": "Privātuma politika",
-      "description": "Kādus personas datus Dodar prieku vāc, kāpēc, kur tos glabā, cik ilgi un kādas ir jūsu tiesības."
+      "description": "Kādus personas datus Dod ar prieku vāc, kāpēc, kur tos glabā, cik ilgi un kādas ir jūsu tiesības."
     },
     "title": "Privātuma politika",
     "intro": "Šī politika skaidro, kādus personas datus {{legalName}} vāc vietnē {{domain}}, kāpēc un ko jūs varat ar tiem darīt. Tā ir sagatavota atbilstoši Vispārīgās datu aizsardzības regulas (VDAR) 13. un 14. pantam.",
@@ -83,7 +83,7 @@
   "cookies": {
     "meta": {
       "title": "Sīkdatņu politika",
-      "description": "Kuras sīkdatnes un kurus iestatījumus Dodar prieku saglabā jūsu ierīcē un kāpēc."
+      "description": "Kuras sīkdatnes un kurus iestatījumus Dod ar prieku saglabā jūsu ierīcē un kāpēc."
     },
     "title": "Sīkdatņu politika",
     "intro": "Vietne izmanto vienu nepieciešamo sīkdatni, un tikai tiem, kas ir pieteikušies. Jūsu pārlūkprogrammas lokālajā krātuvē tā saglabā dažus iestatījumus, kas šeit ir uzskaitīti pilnībā. Tie neatstāj jūsu ierīci.",
@@ -125,7 +125,7 @@
   "terms": {
     "meta": {
       "title": "Lietošanas noteikumi",
-      "description": "Noteikumi, ar kādiem tiek nodrošināta Dodar prieku karte."
+      "description": "Noteikumi, ar kādiem tiek nodrošināta Dod ar prieku karte."
     },
     "title": "Lietošanas noteikumi",
     "intro": "Šie noteikumi attiecas uz vietnes {{domain}} lietošanu un pakalpojumiem, ko ar tās starpniecību sniedz {{legalName}}. Lietojot vietni, jūs tiem piekrītat.",

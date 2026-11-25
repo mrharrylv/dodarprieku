@@ -25,12 +25,12 @@ export interface PageMeta {
 }
 
 /**
- * "About us" → "About us · Dodar prieku".
+ * "About us" → "About us · Dod ar prieku".
  *
- * The brand stands alone, rather than "Dodar prieku · Dodar prieku", when the title is
+ * The brand stands alone, rather than "Dod ar prieku · Dod ar prieku", when the title is
  * empty or is the brand. It also stands alone when the title is one of
  * `generic`: the words a navigation label uses for the home page. "Home ·
- * Dodar prieku" is what a search result shows as the site's headline, and it says
+ * Dod ar prieku" is what a search result shows as the site's headline, and it says
  * nothing about what the business does. The home page's `meta.title` is meant
  * to be a real phrase; this is the guard for when it is not.
  */

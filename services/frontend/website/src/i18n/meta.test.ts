@@ -6,7 +6,7 @@ import { buildTitle } from '@/lib/seo'
 
 /**
  * The home page's title is what a search result shows as the site's headline.
- * "Home · Dodar prieku" says nothing about what the business does, so the home
+ * "Home · Dod ar prieku" says nothing about what the business does, so the home
  * page's `meta.title` must be a real phrase, in every language, and never the
  * word the navigation uses for the home page.
  */
