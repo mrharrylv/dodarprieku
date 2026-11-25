@@ -67,7 +67,7 @@ export const loadConfig = (env: Env): AppConfig => {
   return config
 }
 
-/** "Dodar prieku <info@hagroup.lv>" -> "info@hagroup.lv". */
+/** "Dod ar prieku <info@hagroup.lv>" -> "info@hagroup.lv". */
 export const addressOf = (mailFrom: string): string => {
   const m = /<([^>]+)>/.exec(mailFrom)
   return (m?.[1] ?? mailFrom).trim()

@@ -32,7 +32,7 @@ export const testConfig = (overrides: Record<string, string> = {}) =>
     MEDIA_BUCKET: 'bucket',
     PUBLIC_ORIGIN,
     ADMIN_ORIGIN,
-    MAIL_FROM: 'Dodar prieku <info@hagroup.lv>',
+    MAIL_FROM: 'Dod ar prieku <info@hagroup.lv>',
     SESSION_SECRET_PARAM: '/dev/dodarprieku/session-secret',
     ADMIN_NOTIFY_EMAIL_PARAM: '/dev/dodarprieku/admin-notify-email',
     ENVIRONMENT: 'dev',

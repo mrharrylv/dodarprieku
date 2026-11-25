@@ -6,7 +6,7 @@ import { loadDetail, toSummary } from '../domain/views'
 import { requireSession } from '../http/auth'
 import { ok, type Handler } from '../http/context'
 import { validationError } from '../http/errors'
-import { adminCharity } from './admin-common'
+import { accountOf, adminCharity } from './admin-common'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
 const isStatus = (v: string): v is CharityStatus => (STATUSES as readonly string[]).includes(v)
@@ -19,7 +19,7 @@ export const listAdminCharities: Handler = async (ctx) => {
   const { repo } = ctx.deps
   const [charities, updateIds] = await Promise.all([repo.listCharities(status), repo.listUpdateIds()])
   const withUpdate = new Set(updateIds)
-  const accounts = await Promise.all(charities.map((c) => repo.getAccount(c.accountEmail)))
+  const accounts = await Promise.all(charities.map((c) => accountOf(ctx.deps, c)))
   return ok(charities.map((c, i) => toSummary(c, accounts[i], withUpdate.has(c.id))))
 }
 
@@ -54,7 +54,7 @@ export const deleteAdminCharity: Handler = async (ctx) => {
   const pending = await repo.getUpdate(c.id)
   await repo.deleteCharity(c.id)
   await repo.releaseSlug(c.slug)
-  const account = await repo.getAccount(c.accountEmail)
+  const account = await accountOf(ctx.deps, c)
   if (account && account.role === 'charity' && account.charityId === c.id) await repo.deleteAccount(account.email)
   ctx.log.info('charity deleted', { charityId: c.id })
   await removeMedia(ctx.deps, ctx.log, [c.profile, pending?.profile])

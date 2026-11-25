@@ -8,12 +8,24 @@ TF_DIR       := infrastructure/terraform
 PKG          := bash .github/scripts/package-checks.sh
 ENV          ?= dev
 PROJECT      := dodarprieku
+# `make run` loads the register charities (services/api/data/imported-charities.json); SEED_IMPORT=0 skips them.
+SEED_IMPORT  ?= 1
+IMPORT_FILE  := $(API_DIR)/data/imported-charities.json
+IMPORT_SOURCE := import:charity-map-2026-11-25
+
+# The API function for ENV: the Terraform output when the state is reachable
+# and is for ENV, else the naming convention <env>-dodarprieku-api.
+define api_function
+FN="$$(terraform -chdir=$(TF_DIR) output -raw api_function_name 2>/dev/null | grep -E '^[a-z0-9-]+$$' || true)"; \
+  case "$$FN" in $(ENV)-*) ;; *) FN="$(ENV)-$(PROJECT)-api" ;; esac
+endef
 
 # What `verify-styles` runs against each style, before building it.
 STYLE_TESTS  := src/App.test.tsx src/entry-server.test.tsx src/hydration.test.tsx
 
 .PHONY: install dev run build lint typecheck test coverage test-pipeline verify verify-styles \
         verify-shared verify-api verify-admin dev-api dev-admin admin-invite \
+        import-charities remove-imported \
         preview a11y sitemap images tf-fmt tf-validate clean help
 
 ## Show this help
@@ -39,9 +51,11 @@ install:
 dev:
 	cd $(FRONTEND_DIR) && npm run dev
 
+## The ~1000 imported register charities are included; SEED_IMPORT=0 leaves them out.
+##
 ## Everything locally with sample data: API (seeded, in memory), map on :5180, admin on :5181
 run:
-	@bash bin/run-local.sh
+	@SEED_IMPORT=$(SEED_IMPORT) bash bin/run-local.sh
 
 ## The API locally (services/api, its own dev server)
 dev-api:
@@ -63,10 +77,39 @@ admin-invite:
 	@test -n "$(EMAIL)" || { echo 'Usage: make admin-invite EMAIL=you@example.lv ENV=dev'; exit 1; }
 	@case "$(ENV)" in dev|prod) ;; *) echo "ENV must be dev or prod, not $(ENV)"; exit 1 ;; esac
 	@test -f $(API_DIR)/scripts/admin-invite.sh || { echo "$(API_DIR)/scripts/admin-invite.sh is missing: the API package provides it."; exit 1; }
-	@FN="$$(terraform -chdir=$(TF_DIR) output -raw api_function_name 2>/dev/null | grep -E '^[a-z0-9-]+$$' || true)"; \
-	  case "$$FN" in $(ENV)-*) ;; *) FN="$(ENV)-$(PROJECT)-api" ;; esac; \
+	@$(api_function); \
 	  echo "Inviting $(EMAIL) through $$FN"; \
 	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/admin-invite.sh "$$FN" "$(EMAIL)"
+
+# The import was asked for on dev. prod needs CONFIRM=1 by name: it publishes
+# about 1000 register records, e-mails and phone numbers included.
+import_env_guard = case "$(ENV)" in \
+	  dev) ;; \
+	  prod) [ "$(CONFIRM)" = 1 ] || { echo "ENV=prod writes to the production table and snapshot: add CONFIRM=1 if that is really meant"; exit 1; } ;; \
+	  *) echo "ENV must be dev (or prod with CONFIRM=1), not $(ENV)"; exit 1 ;; \
+	esac
+
+## Loads services/api/data/imported-charities.json into ENV's table as approved
+## charities (no accounts, no mail), then rebuilds the snapshot. Idempotent.
+## Needs AWS credentials. Regenerate the file first with
+## `cd services/api && npm run import:csv`.
+##
+## Import the register charities: make import-charities ENV=dev
+import-charities:
+	@$(import_env_guard)
+	@$(api_function); \
+	  echo "Importing $(IMPORT_FILE) through $$FN"; \
+	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/import-to-env.sh "$$FN" "$(IMPORT_FILE)"
+
+## Undoes import-charities: deletes only the charities of IMPORT_SOURCE, their
+## slugs and everything under them, then rebuilds the snapshot.
+##
+## Remove the imported charities: make remove-imported ENV=dev
+remove-imported:
+	@$(import_env_guard)
+	@$(api_function); \
+	  echo "Removing $(IMPORT_SOURCE) through $$FN"; \
+	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/remove-imported.sh "$$FN" "$(IMPORT_SOURCE)"
 
 ## Production build
 build:

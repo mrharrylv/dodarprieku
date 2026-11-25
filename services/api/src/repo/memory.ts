@@ -45,6 +45,9 @@ export const createMemoryRepository = (): MemoryRepository => {
     },
     listCharities: async (status) =>
       [...charities.values()].filter((c) => status === undefined || c.status === status).sort(byNewest).map(clone),
+    putCharities: async (list) => {
+      for (const c of list) charities.set(c.id, clone(c))
+    },
     deleteCharity: async (id) => {
       charities.delete(id)
       updates.delete(id)
@@ -66,7 +69,8 @@ export const createMemoryRepository = (): MemoryRepository => {
     },
 
     claimSlug: async (slug, charityId) => {
-      if (slugs.has(slug)) return false
+      const owner = slugs.get(slug)
+      if (owner !== undefined) return owner === charityId
       slugs.set(slug, charityId)
       return true
     },

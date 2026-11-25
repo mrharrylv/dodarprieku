@@ -58,7 +58,7 @@ describe('charities', () => {
     expect(input.UpdateExpression).not.toContain('views')
     expect(input.ExpressionAttributeValues?.[':gpk']).toBe('STATUS#approved')
     await repo.saveCharity({ ...charity, rejectReason: 'a', suspendReason: 'b' })
-    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).not.toContain('REMOVE')
+    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source$/)
   })
 
   it('lists by status index, all four statuses when unfiltered, paging', async () => {

@@ -3,19 +3,19 @@ import { publishSnapshot, removeMedia, sendMail } from '../domain/effects'
 import { loadDetail } from '../domain/views'
 import { linksOf } from '../deps'
 import { ok, type Handler } from '../http/context'
-import { conflict } from '../http/errors'
+import { conflict, validationError } from '../http/errors'
 import { applicationRejectedEmail, updateApprovedEmail, updateRejectedEmail } from '../mail/templates'
 import type { AccountRecord, CharityRecord } from '../repo/types'
-import { adminCharity, readReason, sendCharityInvite, withoutReasons } from './admin-common'
+import { accountOf, adminCharity, readReason, sendCharityInvite, withoutReasons } from './admin-common'
 
 export const approveCharity: Handler = async (ctx) => {
   const c = await adminCharity(ctx)
   if (c.status !== 'pending' && c.status !== 'rejected') throw conflict()
   const { repo } = ctx.deps
   const now = ctx.deps.now().toISOString()
-  const existing = await repo.getAccount(c.accountEmail)
+  const existing = await accountOf(ctx.deps, c)
   if (existing && (existing.role !== 'charity' || existing.charityId !== c.id)) throw conflict()
-  if (!existing) {
+  if (!existing && c.accountEmail !== '') {
     const account: AccountRecord = {
       email: c.accountEmail, role: 'charity', charityId: c.id, sessionVersion: 0, createdAt: now, updatedAt: now,
     }
@@ -84,6 +84,8 @@ export const restoreCharity: Handler = async (ctx) => {
 export const resendInvite: Handler = async (ctx) => {
   const c = await adminCharity(ctx)
   if (c.status !== 'approved' && c.status !== 'suspended') throw conflict()
+  // An imported charity has no account to invite: an admin must give it an email first.
+  if (c.accountEmail === '') throw validationError({ accountEmail: 'required' })
   const account = await ctx.deps.repo.getAccount(c.accountEmail)
   if (!account || account.charityId !== c.id) throw conflict()
   const mailSent = await sendCharityInvite(ctx.deps, ctx.log, c)

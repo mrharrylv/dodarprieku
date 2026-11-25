@@ -7,7 +7,7 @@ import { objectBody, param, type Ctx } from '../http/context'
 import { notFound, validationError } from '../http/errors'
 import type { Logger } from '../log'
 import { approvalEmail } from '../mail/templates'
-import type { CharityRecord } from '../repo/types'
+import type { AccountRecord, CharityRecord } from '../repo/types'
 import { createToken } from './auth'
 
 export const adminCharity = async (ctx: Ctx): Promise<CharityRecord> => {
@@ -16,6 +16,10 @@ export const adminCharity = async (ctx: Ctx): Promise<CharityRecord> => {
   if (!c) throw notFound()
   return c
 }
+
+/** The charity's account, unless it has none (an imported charity's accountEmail is ''). */
+export const accountOf = (deps: Deps, c: CharityRecord): Promise<AccountRecord | undefined> =>
+  c.accountEmail === '' ? Promise.resolve(undefined) : deps.repo.getAccount(c.accountEmail)
 
 /** The optional `reason` of a ReasonRequest, trimmed; undefined when empty. */
 export const readReason = (ctx: Ctx): string | undefined => {
@@ -35,6 +39,7 @@ export const withoutReasons = (c: CharityRecord, ...fields: readonly Reasons[]):
 
 /** A fresh 7-day set-password link to the charity's account email. */
 export const sendCharityInvite = async (deps: Deps, log: Logger, c: CharityRecord): Promise<boolean> => {
+  if (c.accountEmail === '') return false
   const token = await createToken(deps, c.accountEmail, 'set-password')
   return sendMail(deps, log, c.accountEmail, approvalEmail(linksOf(deps.config), c.profile.organization.name, token))
 }

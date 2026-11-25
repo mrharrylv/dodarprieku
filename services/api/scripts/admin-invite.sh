@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates (or re-invites) an admin of the Dodar prieku admin portal by invoking
+# Creates (or re-invites) an admin of the Dod ar prieku admin portal by invoking
 # the API Lambda directly. Only an IAM principal allowed lambda:InvokeFunction
 # on the function can do this; there is no HTTP route for it.
 #

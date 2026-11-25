@@ -11,7 +11,7 @@ const ENV = {
   MEDIA_BUCKET: 'b',
   PUBLIC_ORIGIN: 'https://dodarprieku.hagroup.lv',
   ADMIN_ORIGIN: 'https://admin.dodarprieku.hagroup.lv',
-  MAIL_FROM: 'Dodar prieku <info@hagroup.lv>',
+  MAIL_FROM: 'Dod ar prieku <info@hagroup.lv>',
   SESSION_SECRET_PARAM: '/dev/dodarprieku/session-secret',
   ADMIN_NOTIFY_EMAIL_PARAM: '',
   ENVIRONMENT: 'dev',
@@ -43,7 +43,7 @@ describe('config', () => {
   })
 
   it('extracts the reply address', () => {
-    expect(addressOf('Dodar prieku <info@hagroup.lv>')).toBe('info@hagroup.lv')
+    expect(addressOf('Dod ar prieku <info@hagroup.lv>')).toBe('info@hagroup.lv')
     expect(addressOf(' info@hagroup.lv ')).toBe('info@hagroup.lv')
   })
 

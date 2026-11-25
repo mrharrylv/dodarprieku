@@ -1,4 +1,4 @@
-# Dodar prieku API
+# Dod ar prieku API
 
 One Node 22 Lambda behind API Gateway (HTTP API, payload 2.0), reached through
 CloudFront at `/api/*`. The endpoints, item shapes and flows are in
@@ -44,7 +44,7 @@ changes the port.
 | `MEDIA_BUCKET` | media bucket: `media/uploads/...` and `data/charities.json` |
 | `PUBLIC_ORIGIN` | `https://dodarprieku.hagroup.lv` |
 | `ADMIN_ORIGIN` | `https://admin.dodarprieku.hagroup.lv` |
-| `MAIL_FROM` | `Dodar prieku <info@hagroup.lv>` |
+| `MAIL_FROM` | `Dod ar prieku <info@hagroup.lv>` |
 | `SESSION_SECRET_PARAM` | SSM SecureString name, at least 32 characters, read once per container |
 | `ADMIN_NOTIFY_EMAIL_PARAM` | SSM String name; empty variable, or a value of `none`, turns notifications off |
 | `ENVIRONMENT` | `dev`, `prod`; `local` only for the dev server |
@@ -81,3 +81,26 @@ scripts/admin-invite.sh <function-name> <email>   # {"task":"invite-admin","emai
 aws lambda invoke --function-name <fn> --cli-binary-format raw-in-base64-out \
   --payload '{"task":"rebuild-snapshot"}' /dev/stdout
 ```
+
+## Imported register charities
+
+`data/imported-charities.json` holds the charities of the public registers
+(LM Sociālo pakalpojumu sniedzēju reģistrs, Uzņēmumu reģistrs), one per line,
+as `{ id: "imp-<location_id>", slug, profile, source }`. They are shown as
+approved, with no needs, no photos and no account: `accountEmail` is `''`, so
+nothing is ever mailed to them (`sendMail` skips an empty recipient, and
+resend-invite answers `validation` / `accountEmail: required`). Their profiles
+pass `isImportedProfile` (`src/domain/imported.ts`), not `validateProfile`, so
+an admin edit needs the missing fields filled in first.
+
+```bash
+npm run import:csv                      # ../../charity-map-2026-11-25.csv -> data/imported-charities.json
+make run                                # loads them locally (SEED_IMPORT=0 make run leaves them out)
+make import-charities ENV=dev           # scripts/import-to-env.sh: 100 per call, then rebuild-snapshot
+make remove-imported ENV=dev            # scripts/remove-imported.sh: deletes only that source, then rebuilds
+```
+
+The tasks behind them: `{"task":"import-charities","items":[...]}` (at most
+200 items, idempotent, never overwrites a charity that was not imported, keeps
+an admin's suspension) and `{"task":"remove-imported","source":"import:...","limit":50}`
+(rebuilds the snapshot when none remain).

@@ -132,7 +132,7 @@ describe('reject, suspend, restore, resend', () => {
     expect(errorOf(await call(w.app, 'POST', '/admin/charities/c1/resend-invite', { cookie: admin })).status).toBe(409)
     await putAccount(w.deps, { email: 'owner@kepa.example.com', role: 'charity', charityId: 'c1' })
     expect(data(await call(w.app, 'POST', '/admin/charities/c1/resend-invite', { cookie: admin }))).toEqual({ mailSent: true })
-    expect(w.deps.mailer.sent().at(-1)?.subject).toBe('Jūsu organizācija ir apstiprināta Dodar prieku kartē')
+    expect(w.deps.mailer.sent().at(-1)?.subject).toBe('Jūsu organizācija ir apstiprināta Dod ar prieku kartē')
     await putCharity(w.deps, { id: 'c2', slug: 's2', status: 'pending' })
     expect(errorOf(await call(w.app, 'POST', '/admin/charities/c2/resend-invite', { cookie: admin })).status).toBe(409)
   })

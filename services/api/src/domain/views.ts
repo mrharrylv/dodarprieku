@@ -75,7 +75,10 @@ export const loadStats = async (repo: Repository, c: CharityRecord): Promise<Cha
 }
 
 export const loadDetail = async (repo: Repository, c: CharityRecord): Promise<AdminCharityDetail> => {
-  const [account, update] = await Promise.all([repo.getAccount(c.accountEmail), repo.getUpdate(c.id)])
+  const [account, update] = await Promise.all([
+    c.accountEmail === '' ? undefined : repo.getAccount(c.accountEmail),
+    repo.getUpdate(c.id),
+  ])
   return toDetail(c, account, update)
 }
 

@@ -24,7 +24,7 @@ export const createLocalDeps = (
     MEDIA_BUCKET: 'local',
     PUBLIC_ORIGIN: env.PUBLIC_ORIGIN ?? 'http://localhost:5173',
     ADMIN_ORIGIN: env.ADMIN_ORIGIN ?? 'http://localhost:5174',
-    MAIL_FROM: 'Dodar prieku <info@hagroup.lv>',
+    MAIL_FROM: 'Dod ar prieku <info@hagroup.lv>',
     SESSION_SECRET_PARAM: 'local',
     ADMIN_NOTIFY_EMAIL_PARAM: '',
     ENVIRONMENT: 'local',

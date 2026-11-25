@@ -30,17 +30,31 @@ export const queryAll = async (db: Db, input: Omit<QueryCommandInput, 'TableName
 const BATCH_SIZE = 25
 const MAX_ATTEMPTS = 5
 
-/** Deletes keys in batches of 25, retrying unprocessed ones. */
-export const batchDelete = async (db: Db, itemKeys: readonly { PK: string; SK: string }[]): Promise<void> => {
-  for (let i = 0; i < itemKeys.length; i += BATCH_SIZE) {
-    let requests = itemKeys.slice(i, i + BATCH_SIZE).map((Key) => ({ DeleteRequest: { Key } }))
+type WriteRequest = { DeleteRequest: { Key: Item } } | { PutRequest: { Item: Item } }
+
+const BACKOFF_MS = 50
+const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Writes in batches of 25, retrying unprocessed requests with a growing pause between attempts. */
+const batchWrite = async (db: Db, all: readonly WriteRequest[], what: string): Promise<void> => {
+  for (let i = 0; i < all.length; i += BATCH_SIZE) {
+    let requests = all.slice(i, i + BATCH_SIZE)
     for (let attempt = 0; requests.length > 0; attempt += 1) {
-      if (attempt >= MAX_ATTEMPTS) throw new Error('batch delete: unprocessed items remain')
-      const res = await db.client.send(new BatchWriteCommand({ RequestItems: { [db.table]: requests } }))
-      requests = (res.UnprocessedItems?.[db.table] ?? []) as typeof requests
+      if (attempt >= MAX_ATTEMPTS) throw new Error(`batch ${what}: unprocessed items remain`)
+      if (attempt > 0) await pause(BACKOFF_MS * 2 ** (attempt - 1))
+      const res = await db.client.send(new BatchWriteCommand({ RequestItems: { [db.table]: [...requests] } }))
+      requests = (res.UnprocessedItems?.[db.table] ?? []) as WriteRequest[]
     }
   }
 }
+
+/** Deletes keys in batches of 25, retrying unprocessed ones. */
+export const batchDelete = (db: Db, itemKeys: readonly { PK: string; SK: string }[]): Promise<void> =>
+  batchWrite(db, itemKeys.map((Key) => ({ DeleteRequest: { Key } })), 'delete')
+
+/** Puts whole items in batches of 25 (overwriting), retrying unprocessed ones. */
+export const batchPut = (db: Db, items: readonly Item[]): Promise<void> =>
+  batchWrite(db, items.map((Item) => ({ PutRequest: { Item } })), 'put')
 
 export const isConditionalFailure = (err: unknown): boolean =>
   err instanceof Error && err.name === 'ConditionalCheckFailedException'

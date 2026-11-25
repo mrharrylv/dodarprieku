@@ -14,6 +14,7 @@ import { parseCookies } from '../http/cookies'
 import { stripApiPrefix } from '../http/event'
 import type { ApiRequest } from '../http/types'
 import type { Email } from '../mail/types'
+import { loadImportedFile } from './imported-file'
 import { createLocalDeps } from './local'
 import { DEV_ADMIN_EMAIL, DEV_CHARITY_EMAIL, DEV_PASSWORD, seedDev } from './seed'
 
@@ -99,9 +100,12 @@ const server = createServer((req, res) => {
   })
 })
 
-await seedDev(deps)
+// SEED_IMPORT=1 (make run's default) adds the register charities of data/imported-charities.json.
+const imported = process.env.SEED_IMPORT === '1' ? loadImportedFile() : []
+await seedDev(deps, { imported })
 server.listen(PORT, () => {
-  out(`Dodar prieku API (local) on http://localhost:${PORT}`)
+  out(`Dod ar prieku API (local) on http://localhost:${PORT}`)
   out(`  admin:   ${DEV_ADMIN_EMAIL} / ${DEV_PASSWORD}`)
   out(`  charity: ${DEV_CHARITY_EMAIL} / ${DEV_PASSWORD}`)
+  out(`  imported register charities: ${imported.length}${imported.length === 0 ? ' (SEED_IMPORT=1 adds them)' : ''}`)
 })

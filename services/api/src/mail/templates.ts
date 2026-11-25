@@ -4,7 +4,7 @@
  */
 import { link, list, p, type Message } from './render'
 
-const SIGN_OFF = 'Ar cieņu,\nDodar prieku komanda'
+const SIGN_OFF = 'Ar cieņu,\nDod ar prieku komanda'
 
 export interface Links {
   readonly publicOrigin: string
@@ -25,10 +25,10 @@ export const charityPageUrl = (l: Links, slug: string): string => `${l.publicOri
 export const adminReviewUrl = (l: Links, id: string): string => `${l.adminOrigin}/pieteikumi/${q(id)}`
 
 export const approvalEmail = (l: Links, orgName: string, token: string): Message => ({
-  subject: 'Jūsu organizācija ir apstiprināta Dodar prieku kartē',
+  subject: 'Jūsu organizācija ir apstiprināta Dod ar prieku kartē',
   blocks: [
     p('Labdien!'),
-    p(`Paldies par pieteikumu. Organizācija “${orgName}” ir apstiprināta un tagad redzama Dodar prieku kartē.`),
+    p(`Paldies par pieteikumu. Organizācija “${orgName}” ir apstiprināta un tagad redzama Dod ar prieku kartē.`),
     p('Lai pieslēgtos savam kontam, lūdzu, izveidojiet paroli šajā saitē. Saite ir derīga 7 dienas.'),
     link(setPasswordUrl(l, token)),
     p('Kontā redzēsiet, cik cilvēku ir apskatījuši jūsu lapu un ko viņi apsolījuši atnest. Tur varēsiet arī atjaunot vajadzību sarakstu.'),
@@ -37,7 +37,7 @@ export const approvalEmail = (l: Links, orgName: string, token: string): Message
 })
 
 export const resetEmail = (url: string): Message => ({
-  subject: 'Paroles atjaunošana Dodar prieku kontā',
+  subject: 'Paroles atjaunošana Dod ar prieku kontā',
   blocks: [
     p('Labdien!'),
     p('Saņēmām pieprasījumu atjaunot jūsu konta paroli. Jaunu paroli varat izveidot šajā saitē. Saite ir derīga 1 stundu.'),
@@ -48,10 +48,10 @@ export const resetEmail = (url: string): Message => ({
 })
 
 export const adminInviteEmail = (l: Links, token: string): Message => ({
-  subject: 'Uzaicinājums uz Dodar prieku administrācijas portālu',
+  subject: 'Uzaicinājums uz Dod ar prieku administrācijas portālu',
   blocks: [
     p('Labdien!'),
-    p('Jums ir izveidots Dodar prieku administratora konts. Lūdzu, izveidojiet paroli šajā saitē. Saite ir derīga 7 dienas.'),
+    p('Jums ir izveidots Dod ar prieku administratora konts. Lūdzu, izveidojiet paroli šajā saitē. Saite ir derīga 7 dienas.'),
     link(adminSetPasswordUrl(l, token)),
     p(SIGN_OFF),
   ],
@@ -70,7 +70,7 @@ export const updateApprovedEmail = (l: Links, orgName: string, slug: string): Me
 const reasonBlocks = (reason: string | undefined) => (reason ? [p(`Iemesls: ${reason}`)] : [])
 
 export const applicationRejectedEmail = (l: Links, orgName: string, reason?: string): Message => ({
-  subject: 'Par jūsu pieteikumu Dodar prieku kartei',
+  subject: 'Par jūsu pieteikumu Dod ar prieku kartei',
   blocks: [
     p('Labdien!'),
     p(`Paldies par interesi. Diemžēl šoreiz nevaram apstiprināt organizācijas “${orgName}” pieteikumu.`),

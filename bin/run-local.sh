@@ -3,7 +3,10 @@
 # The whole site on this machine, with sample data: `make run`.
 #
 #   API      http://localhost:8787  in-memory, seeded with 6 charities on the map,
-#                                   2 pending applications, sponsors, and two logins
+#                                   2 pending applications, sponsors, and two logins,
+#                                   plus the ~1000 register charities of
+#                                   services/api/data/imported-charities.json
+#                                   (SEED_IMPORT=0 make run leaves them out)
 #   website  http://localhost:5180  the public map (proxies /api, /media, /data to the API)
 #   admin    http://localhost:5181  the admin portal
 #
@@ -22,6 +25,8 @@ for dir in services/api services/frontend/website services/frontend/admin; do
 done
 
 WEB_PORT="${WEB_PORT:-5180}"
+SEED_IMPORT="${SEED_IMPORT:-1}"
+case "$SEED_IMPORT" in 0|1) ;; *) echo "SEED_IMPORT must be 0 or 1, not $SEED_IMPORT" >&2; exit 1 ;; esac
 ADMIN_PORT="${ADMIN_PORT:-5181}"
 for port in 8787 "$WEB_PORT" "$ADMIN_PORT"; do
   if lsof -ti "tcp:$port" -sTCP:LISTEN >/dev/null 2>&1; then
@@ -45,13 +50,13 @@ stop() {
 }
 trap stop INT TERM EXIT
 
-(cd services/api && PUBLIC_ORIGIN="http://localhost:$WEB_PORT" ADMIN_ORIGIN="http://localhost:$ADMIN_PORT" npm run dev --silent 2>&1 | sed 's/^/[api]     /') & pids+=($!)
+(cd services/api && SEED_IMPORT="$SEED_IMPORT" PUBLIC_ORIGIN="http://localhost:$WEB_PORT" ADMIN_ORIGIN="http://localhost:$ADMIN_PORT" npm run dev --silent 2>&1 | sed 's/^/[api]     /') & pids+=($!)
 (cd services/frontend/website && npm run dev --silent -- --port "$WEB_PORT" --strictPort 2>&1 | sed 's/^/[website] /') & pids+=($!)
 (cd services/frontend/admin && npm run dev --silent -- --port "$ADMIN_PORT" --strictPort 2>&1 | sed 's/^/[admin]   /') & pids+=($!)
 
 cat <<MSG
 
-  Dodar prieku, local, with sample data
+  Dod ar prieku, local, with sample data
     map      http://localhost:$WEB_PORT
     admin    http://localhost:$ADMIN_PORT   admin@example.com / dev-password-123
     charity  http://localhost:$WEB_PORT/konts   charity@example.com / dev-password-123

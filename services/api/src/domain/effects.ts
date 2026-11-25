@@ -15,7 +15,12 @@ import { hashIp } from '../auth/tokens'
 import { checkRateLimit, type RateScope } from './ratelimit'
 import { buildSnapshot } from './snapshot'
 
+/** False without trying when there is no recipient: an imported charity has no account email. */
 export const sendMail = async (deps: Deps, log: Logger, to: string, message: Message): Promise<boolean> => {
+  if (to.trim() === '') {
+    log.info('mail skipped: no recipient', { subject: message.subject })
+    return false
+  }
   try {
     await deps.mailer.send(render(to, message))
     log.info('mail sent', { to: maskEmail(to), subject: message.subject })

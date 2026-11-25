@@ -68,11 +68,11 @@ beforeEach(() => ses.reset())
 describe('mailers', () => {
   it('sends through SES v2 from the configured address, text and HTML', async () => {
     ses.on(SendEmailCommand).resolves({ MessageId: 'm' })
-    await createSesMailer('Dodar prieku <info@hagroup.lv>', new SESv2Client({ region: 'eu-north-1' })).send({
+    await createSesMailer('Dod ar prieku <info@hagroup.lv>', new SESv2Client({ region: 'eu-north-1' })).send({
       to: 'a@b.lv', subject: 'S', text: 'T', html: '<p>H</p>',
     })
     expect(ses.commandCalls(SendEmailCommand)[0]!.args[0].input).toEqual({
-      FromEmailAddress: 'Dodar prieku <info@hagroup.lv>',
+      FromEmailAddress: 'Dod ar prieku <info@hagroup.lv>',
       Destination: { ToAddresses: ['a@b.lv'] },
       Content: {
         Simple: {

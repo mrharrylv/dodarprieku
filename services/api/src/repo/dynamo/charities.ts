@@ -1,16 +1,20 @@
 import { DeleteCommand, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import type { CharityStatus } from '../../../../shared/src/contracts'
 import type { CharityRecord, Repository, UpdateRecord } from '../types'
-import { batchDelete, isConditionalFailure, queryAll, type Db, type Item } from './client'
+import { batchDelete, batchPut, isConditionalFailure, queryAll, type Db, type Item } from './client'
 import { GSI1, charityPk, gsi, keys, stripKeys } from './keys'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
-const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt'] as const
+const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source'] as const
 
 const toCharity = (item: Item): CharityRecord => {
   const r = stripKeys(item)
   return { ...r, views: Number(r.views ?? 0), pledges: Number(r.pledges ?? 0) } as unknown as CharityRecord
 }
+
+const charityItem = (c: CharityRecord): Item => ({
+  ...keys.charity(c.id), GSI1PK: gsi.status(c.status), GSI1SK: c.createdAt, type: 'charity', ...c,
+})
 
 const byNewest = (a: CharityRecord, b: CharityRecord): number => b.createdAt.localeCompare(a.createdAt)
 
@@ -20,6 +24,7 @@ type CharityRepo = Pick<
   | 'getCharity'
   | 'saveCharity'
   | 'listCharities'
+  | 'putCharities'
   | 'deleteCharity'
   | 'incrementViews'
   | 'claimSlug'
@@ -65,7 +70,7 @@ export const charityRepo = (db: Db): CharityRepo => ({
     await db.client.send(
       new PutCommand({
         TableName: db.table,
-        Item: { ...keys.charity(c.id), GSI1PK: gsi.status(c.status), GSI1SK: c.createdAt, type: 'charity', ...c },
+        Item: charityItem(c),
         ConditionExpression: 'attribute_not_exists(PK)',
       }),
     )
@@ -101,6 +106,10 @@ export const charityRepo = (db: Db): CharityRepo => ({
       ),
     )
     return pages.flat().map(toCharity).sort(byNewest)
+  },
+
+  putCharities: async (list) => {
+    await batchPut(db, list.map(charityItem))
   },
 
   deleteCharity: async (id) => {
@@ -148,7 +157,8 @@ export const charityRepo = (db: Db): CharityRepo => ({
         new PutCommand({
           TableName: db.table,
           Item: { ...keys.slug(slug), type: 'slug', charityId },
-          ConditionExpression: 'attribute_not_exists(PK)',
+          ConditionExpression: 'attribute_not_exists(PK) OR charityId = :id',
+          ExpressionAttributeValues: { ':id': charityId },
         }),
       )
       return true

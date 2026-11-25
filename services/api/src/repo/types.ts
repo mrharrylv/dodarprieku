@@ -20,7 +20,10 @@ export interface CharityRecord {
   readonly slug: string
   /** The live profile, or the application while pending. */
   readonly profile: CharityProfile
+  /** '' for a charity imported from a register: it has no account and is never mailed. */
   readonly accountEmail: string
+  /** Set on imported charities only: 'import:<dataset>'. */
+  readonly source?: string
   readonly views: number
   readonly pledges: number
   readonly rejectReason?: string
@@ -70,12 +73,14 @@ export interface Repository {
   /** Rewrites everything but the view and pledge counters. */
   readonly saveCharity: (charity: CharityRecord) => Promise<void>
   readonly listCharities: (status?: CharityStatus) => Promise<readonly CharityRecord[]>
+  /** Writes each record whole (counters included), creating or overwriting: the import's batch path. */
+  readonly putCharities: (charities: readonly CharityRecord[]) => Promise<void>
   /** Removes the charity and every item under it (update, pledges, counts, links, list requests). */
   readonly deleteCharity: (id: string) => Promise<void>
   readonly incrementViews: (id: string) => Promise<void>
 
   // Slugs
-  /** True when the slug was free and is now this charity's. */
+  /** True when the slug was free and is now this charity's, or was this charity's already. */
   readonly claimSlug: (slug: string, charityId: string) => Promise<boolean>
   readonly releaseSlug: (slug: string) => Promise<void>
 
