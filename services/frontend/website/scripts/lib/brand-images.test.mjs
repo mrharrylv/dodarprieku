@@ -63,7 +63,7 @@ describe('svgDataUri', () => {
 
 describe('firstLetter', () => {
   it("is the brand name's first letter, capitalised, skipping anything that is not one", () => {
-    expect(firstLetter('Dodar prieku')).toBe('S')
+    expect(firstLetter('Dodar prieku')).toBe('D')
     expect(firstLetter('  brightwater')).toBe('B')
     expect(firstLetter('"Rīgas" Būve')).toBe('R')
     expect(firstLetter('Облако')).toBe('О')
