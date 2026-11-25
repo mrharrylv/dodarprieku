@@ -42,6 +42,9 @@ const RequireAdmin = () => {
 
 export const App = () => (
   <Routes>
+    {/* The app's own files live under /admin/, so /admin or /admin/ can be
+        typed or bookmarked; both mean the dashboard. */}
+    <Route path="/admin/*" element={<Navigate to="/" replace />} />
     <Route path={PATHS.login} element={<LoginPage />} />
     <Route path={PATHS.setPassword} element={<SetPasswordPage />} />
     <Route element={<RequireAdmin />}>

@@ -66,8 +66,9 @@ export const MapCanvas = ({
   useEffect(() => {
     let cancelled = false
     onState('loading')
-    Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')])
-      .then(([lib]) => {
+    import('@/lib/load-maplibre')
+      .then(({ loadMaplibre }) => loadMaplibre())
+      .then((lib) => {
         if (cancelled || !container.current) return
         libRef.current = lib
         const start = initial.current

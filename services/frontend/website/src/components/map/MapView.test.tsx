@@ -15,6 +15,7 @@ const fakeLibrary = () => {
     easeTo: vi.fn(),
     setData: vi.fn(),
     popups: [] as FakePopup[],
+    labels: null as Map<string, unknown> | null,
   }
 
   class FakeMap {
@@ -34,6 +35,19 @@ const fakeLibrary = () => {
     addControl() {}
     addSource() {}
     addLayer() {}
+    resize() {}
+    fitBounds() {}
+    labels = new Map<string, unknown>([['place', ['get', 'name:en']]])
+    getStyle() {
+      return { layers: [{ id: 'place', type: 'symbol' }, { id: 'water', type: 'fill' }, { id: 'icons', type: 'symbol' }] }
+    }
+    getLayoutProperty(id: string) {
+      return this.labels.get(id)
+    }
+    setLayoutProperty(id: string, _name: string, value: unknown) {
+      this.labels.set(id, value)
+      state.labels = this.labels
+    }
     isSourceLoaded() {
       return true
     }
@@ -142,6 +156,9 @@ describe('MapView', () => {
 
     state.features = [point('c-ulubele', 24.1, 56.95), { geometry: { type: 'Point', coordinates: [25, 57] }, properties: { cluster: true, cluster_id: 3, point_count: 4 } }]
     act(() => state.map?.fire('load'))
+    // Place names switch to Latvian where OpenStreetMap has one.
+    expect(state.labels?.get('place')).toEqual(['coalesce', ['get', 'name:lv'], ['get', 'name']])
+    expect(state.labels?.has('icons')).toBe(false)
     expect(screen.queryByText('Ielādē karti…')).not.toBeInTheDocument()
 
     const pin = await screen.findByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })

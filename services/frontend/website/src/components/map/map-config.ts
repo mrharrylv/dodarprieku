@@ -10,11 +10,11 @@ export const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
 /** Longitude, latitude: the middle of Latvia. */
 export const MAP_CENTER: readonly [number, number] = [24.6, 56.9]
 export const MAP_ZOOM = 6.6
-export const MAP_MIN_ZOOM = 5.5
+export const MAP_MIN_ZOOM = 4.5
 export const MAP_MAX_ZOOM = 18
 
-/** How far past Latvia's box the visitor may pan, in degrees. */
-const MARGIN = { lng: 1.2, lat: 0.6 } as const
+/** How far past Latvia's box the visitor may pan, in degrees. Generous: MapLibre zooms in until the view fits inside maxBounds, so a tight box stops a tall, narrow map from showing the whole country. */
+const MARGIN = { lng: 4, lat: 2.5 } as const
 
 /** South-west and north-east corners, longitude first, as MapLibre wants them. */
 export const MAP_BOUNDS: readonly [[number, number], [number, number]] = [

@@ -109,7 +109,7 @@ export const MapPage = () => {
               </div>
             </Suspense>
           )}
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-4 right-4 z-10 sm:hidden">
             <ButtonLink to={localePath(ROUTES.register, locale)} size="sm" className="shadow-(--shadow-lifted)">
               <Icon name="plus" />
               {t('registerCta')}

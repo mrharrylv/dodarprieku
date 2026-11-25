@@ -25,8 +25,8 @@ export const supportsWebGl = (): boolean => {
 export const MAPLIBRE_ENGINE: MapEngine = {
   supported: supportsWebGl,
   load: async () => {
-    const [lib] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')])
-    return lib
+    const { loadMaplibre } = await import('@/lib/load-maplibre')
+    return loadMaplibre()
   },
 }
 

@@ -17,9 +17,9 @@ export const MapPin = ({ location }: { readonly location: GeoPoint }) => {
   useEffect(() => {
     let disposed = false
     let cleanup: (() => void) | undefined
-    import('maplibre-gl')
-      .then(async (maplibre) => {
-        await import('maplibre-gl/dist/maplibre-gl.css')
+    import('../lib/load-maplibre')
+      .then(({ loadMaplibre }) => loadMaplibre())
+      .then((maplibre) => {
         if (disposed || !container.current) return
         const map = new maplibre.Map({
           container: container.current,

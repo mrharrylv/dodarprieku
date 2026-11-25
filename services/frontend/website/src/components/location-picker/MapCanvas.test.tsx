@@ -49,7 +49,7 @@ const fake = vi.hoisted(() => {
   return { state, Map, Marker, NavigationControl }
 })
 
-vi.mock('maplibre-gl', () => ({ Map: fake.Map, Marker: fake.Marker, NavigationControl: fake.NavigationControl }))
+vi.mock('maplibre-gl', () => ({ Map: fake.Map, Marker: fake.Marker, NavigationControl: fake.NavigationControl, setWorkerUrl: () => {} }))
 vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}))
 
 describe('MapCanvas', () => {

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { GeoJSONSource, Map as MlMap, Marker, Popup } from 'maplibre-gl'
 
-import type { PublicCharity } from '@shared/contracts'
+import { LATVIA_BOUNDS, type PublicCharity } from '@shared/contracts'
 import { toFeatureCollection } from '@/lib/snapshot'
 import { Spinner } from '@/components/ui/Spinner'
 import { MapPopupCard } from './MapPopupCard'
@@ -15,11 +15,9 @@ import {
   FOCUS_ZOOM,
   HIT_LAYER_ID,
   MAP_BOUNDS,
-  MAP_CENTER,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_STYLE_URL,
-  MAP_ZOOM,
   POPUP_OFFSET,
   SOURCE_ID,
 } from './map-config'
@@ -45,6 +43,26 @@ export interface MapFocus {
  * HTML markers rendered by React through portals, so each one is a real,
  * focusable button; the panel's list remains the main accessible path.
  */
+const LATVIA_BOX: [[number, number], [number, number]] = [
+  [LATVIA_BOUNDS.minLng, LATVIA_BOUNDS.minLat],
+  [LATVIA_BOUNDS.maxLng, LATVIA_BOUNDS.maxLat],
+]
+const FIT_PADDING = 24
+/** How far below the map's centre a selected pin settles, in pixels. */
+const POPUP_PAN_OFFSET_PX = 170
+
+/**
+ * OpenFreeMap's style labels places in English ("Latvia", "Lithuania"). Where
+ * OpenStreetMap has a Latvian name, show that instead, falling back to the
+ * local name.
+ */
+const applyLatvianLabels = (map: MlMap): void => {
+  for (const layer of map.getStyle().layers) {
+    if (layer.type !== 'symbol' || map.getLayoutProperty(layer.id, 'text-field') === undefined) continue
+    map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:lv'], ['get', 'name']])
+  }
+}
+
 export const MapView = ({
   charities,
   selectedId,
@@ -85,7 +103,7 @@ export const MapView = ({
     const sync = () => {
       const map = mapRef.current
       const lib = libRef.current
-      if (map === null || lib === null || !map.isSourceLoaded(SOURCE_ID)) return
+      if (map === null || lib === null || !map.getSource(SOURCE_ID) || !map.isSourceLoaded(SOURCE_ID)) return
       const items = pinItems(map.querySourceFeatures(SOURCE_ID) as unknown as SourceFeature[])
       const next = pinSignature(items)
       if (next === signature.current) return
@@ -126,8 +144,10 @@ export const MapView = ({
       const map = new lib.Map({
         container: container.current,
         style: MAP_STYLE_URL,
-        center: [MAP_CENTER[0], MAP_CENTER[1]],
-        zoom: MAP_ZOOM,
+        // Fit the whole country whatever the panel leaves of the screen; a
+        // fixed zoom showed only Riga on a narrow map.
+        bounds: LATVIA_BOX,
+        fitBoundsOptions: { padding: FIT_PADDING },
         minZoom: MAP_MIN_ZOOM,
         maxZoom: MAP_MAX_ZOOM,
         maxBounds: [MAP_BOUNDS[0], MAP_BOUNDS[1]],
@@ -138,6 +158,11 @@ export const MapView = ({
       mapRef.current = map
       map.addControl(new lib.NavigationControl({ showCompass: false }), 'bottom-right')
       map.on('load', () => {
+        // The panel settles its width after the map is created; fit again
+        // now that the container has its final size.
+        map.resize()
+        map.fitBounds(LATVIA_BOX, { padding: FIT_PADDING, animate: false })
+        applyLatvianLabels(map)
         map.addSource(SOURCE_ID, {
           type: 'geojson',
           data: dataRef.current,
@@ -191,6 +216,14 @@ export const MapView = ({
     const map = mapRef.current
     const lib = libRef.current
     if (phase !== 'ready' || map === null || lib === null || selected === undefined) return
+    // Bring the pin to the lower middle of the map, so the card (anchored
+    // automatically) opens above it with room to spare instead of running off
+    // the bottom edge.
+    map.easeTo({
+      center: [selected.profile.location.lng, selected.profile.location.lat],
+      offset: [0, POPUP_PAN_OFFSET_PX],
+      duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS / 2,
+    })
     const node = document.createElement('div')
     const popup: Popup = new lib.Popup({ closeButton: false, offset: POPUP_OFFSET, maxWidth: 'none', className: 'dp-popup', focusAfterOpen: false })
       .setLngLat([selected.profile.location.lng, selected.profile.location.lat])
@@ -227,7 +260,12 @@ export const MapView = ({
         if (event.key === 'Escape' && selectedId !== null) onSelect(null)
       }}
     >
-      <div ref={container} className="absolute inset-0" role="region" aria-label={t('map.label')} />
+      {/* MapLibre's stylesheet sets position: relative on its container, which
+          would override absolute positioning and collapse it to zero height,
+          so the container fills an absolutely positioned wrapper instead. */}
+      <div className="absolute inset-0">
+        <div ref={container} className="h-full w-full" role="region" aria-label={t('map.label')} />
+      </div>
       {phase === 'loading' && (
         <p className="absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-(--surface-raised) px-4 py-2 text-(length:--text-sm) text-(--text-secondary) shadow-(--shadow-card)">
           <Spinner />
