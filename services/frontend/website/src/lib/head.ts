@@ -8,7 +8,7 @@ import {
   truncateDescription,
   type PageMeta,
 } from '@/lib/seo'
-import { structuredDataFor, type ServiceSummary } from '@/lib/structured-data'
+import { structuredDataFor } from '@/lib/structured-data'
 
 /**
  * A page's whole `<head>`, as data.
@@ -48,8 +48,6 @@ export interface HeadStrings {
   readonly homeLabel: string
   /** The home page's meta description, the Organization's description. */
   readonly siteDescription: string
-  /** The services the page lists. Empty unless it is the services page. */
-  readonly services: readonly ServiceSummary[]
 }
 
 const meta = (attr: 'name' | 'property', key: string, content: string): HeadTag => ({
@@ -96,7 +94,6 @@ export const pageHead = (page: PageMeta, strings: HeadStrings): PageHead => {
     title: page.title,
     homeLabel: strings.homeLabel,
     siteDescription: strings.siteDescription,
-    services: strings.services,
     ...(page.noIndex !== undefined ? { noIndex: page.noIndex } : {}),
   }).map((data): HeadTag => ({ kind: 'json-ld', data }))
 

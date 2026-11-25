@@ -2,13 +2,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 
-import { NAMESPACES } from '@/i18n'
-import enCommon from '@/i18n/locales/en/common.json'
-import enHome from '@/i18n/locales/en/home.json'
-import enServices from '@/i18n/locales/en/services.json'
-import enAbout from '@/i18n/locales/en/about.json'
-import enContact from '@/i18n/locales/en/contact.json'
-import enLegal from '@/i18n/locales/en/legal.json'
+import { DEFAULT_LOCALE } from '@/config/site'
+import { NAMESPACES, resources } from '@/i18n'
 
 /**
  * The rules a style folder has to follow that a rendering test cannot see.
@@ -31,16 +26,9 @@ import enLegal from '@/i18n/locales/en/legal.json'
 
 const STYLES_DIR = join(__dirname)
 
-const LOCALE: Record<string, unknown> = {
-  common: enCommon,
-  home: enHome,
-  services: enServices,
-  about: enAbout,
-  contact: enContact,
-  legal: enLegal,
-}
+const LOCALE: Record<string, unknown> = resources[DEFAULT_LOCALE]
 
-/** Every `<namespace>:<dotted.key>` that actually exists in English. */
+/** Every `<namespace>:<dotted.key>` that actually exists in the default language. */
 const KNOWN_KEYS: ReadonlySet<string> = new Set(
   NAMESPACES.flatMap((ns) => {
     const walk = (value: unknown, path = ''): string[] => {
@@ -59,10 +47,7 @@ const COLOUR_TOKEN = /^(surface|border|text|fill|ring)-/
 const REQUIRED = [
   'style.ts',
   'Shell.tsx',
-  'HomePage.tsx',
-  'ServicesPage.tsx',
   'AboutPage.tsx',
-  'ContactPage.tsx',
   'tokens.css',
   'README.md',
 ] as const

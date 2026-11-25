@@ -1,11 +1,12 @@
 {
   "name": "Dodar prieku",
   "short_name": "Dodar prieku",
-  "description": "Replace this with one sentence describing what the business does.",
+  "description": "Latvijas labdarības karte: atrodiet patversmi, bērnu namu vai pansionātu sev tuvumā, apskatiet, kas tur vajadzīgs, un atzīmējiet, ko atnesīsiet.",
+  "lang": "lv",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#3c8ef1",
+  "background_color": "#fbfaf9",
+  "theme_color": "#e25c57",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

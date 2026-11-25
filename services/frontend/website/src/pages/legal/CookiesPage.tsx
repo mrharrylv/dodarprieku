@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
 
-import { hasAnalytics } from '@/config/env'
-import { MAP, ROUTES, STORAGE_KEYS } from '@/config/site'
+import { hasAnalytics, hasGoogleAnalytics } from '@/config/env'
+import { ROUTES, STORAGE_KEYS } from '@/config/site'
 import { useLocale } from '@/hooks/useLocale'
 import { LegalShell, LegalSection } from '@/components/legal/LegalShell'
 import { legalValues } from '@/components/legal/legal-values'
+import { ConsentSettingsButton } from '@/components/analytics/ConsentSettingsButton'
 
 /**
  * The table below must list EVERY key the site writes to local storage.
@@ -12,17 +13,14 @@ import { legalValues } from '@/components/legal/legal-values'
  * It is built from `STORAGE_KEYS` rather than typed out, so a new key cannot be
  * added to the code and forgotten here: the row appears automatically and the
  * missing translation is then obvious. Adding a key is still a legal-copy
- * change in all three languages, not just a line of TypeScript.
+ * change too, not just a line of TypeScript.
  */
 const ROWS = [
   { key: STORAGE_KEYS.theme, purpose: 'themePurpose', duration: 'untilCleared' },
   { key: STORAGE_KEYS.locale, purpose: 'localePurpose', duration: 'untilCleared' },
   { key: STORAGE_KEYS.consent, purpose: 'consentPurpose', duration: 'oneYear' },
-  {
-    key: STORAGE_KEYS.contactRateLimit,
-    purpose: 'rateLimitPurpose',
-    duration: 'tenMinutes',
-  },
+  { key: STORAGE_KEYS.viewedCharities, purpose: 'viewedPurpose', duration: 'untilTabClosed' },
+  { key: STORAGE_KEYS.registerDraft, purpose: 'registerDraftPurpose', duration: 'untilTabClosed' },
 ] as const
 
 export const CookiesPage = () => {
@@ -38,6 +36,10 @@ export const CookiesPage = () => {
       locale={locale}
     >
       <p>{t('cookies.intro')}</p>
+
+      <LegalSection title={t('cookies.session.title')}>
+        <p>{t('cookies.session.body')}</p>
+      </LegalSection>
 
       <LegalSection title={t('cookies.tableTitle')}>
         {/* Wide content scrolls inside its own container: the page body must
@@ -76,16 +78,15 @@ export const CookiesPage = () => {
         </LegalSection>
       )}
 
+      {hasGoogleAnalytics() && (
+        <LegalSection title={t('cookies.analytics.title')}>
+          <p>{t('cookies.analytics.body')}</p>
+          <ConsentSettingsButton className="mt-3" />
+        </LegalSection>
+      )}
+
       <LegalSection title={t('cookies.thirdParty.title')}>
-        {/* The map is a third-party request, and only while it is on. */}
-        {MAP === null ? (
-          <p>{t('cookies.thirdParty.body')}</p>
-        ) : (
-          <>
-            <p>{t('cookies.thirdParty.bodyWithMap')}</p>
-            <p>{t('cookies.thirdParty.map')}</p>
-          </>
-        )}
+        <p>{t('cookies.thirdParty.body')}</p>
       </LegalSection>
     </LegalShell>
   )

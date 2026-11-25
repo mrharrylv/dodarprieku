@@ -38,7 +38,7 @@ beforeEach(() => {
 
   // Tests assert against English copy. A test that changed the language would
   // otherwise leave it changed for whatever runs next.
-  if (i18n.resolvedLanguage !== 'en') void i18n.changeLanguage('en')
+  if (i18n.resolvedLanguage !== 'lv') void i18n.changeLanguage('lv')
 })
 
 afterEach(() => {

@@ -16,8 +16,8 @@ const VARIABLES = readFileSync(
   join(__dirname, '..', '..', '..', '..', '..', 'infrastructure', 'terraform', 'variables.tf'),
   'utf8',
 )
-const MAIN = readFileSync(
-  join(__dirname, '..', '..', '..', '..', '..', 'infrastructure', 'terraform', 'main.tf'),
+const CSP = readFileSync(
+  join(__dirname, '..', '..', '..', '..', '..', 'infrastructure', 'terraform', 'csp.tf'),
   'utf8',
 )
 
@@ -33,8 +33,9 @@ describe('analytics origin', () => {
     expect(terraformDefault()).toBe(expected)
   })
 
-  it('main.tf puts it in connect-src', () => {
-    expect(MAIN).toContain(`join(" ", compact(["connect-src 'self'", var.analytics_origin]))`)
+  it('csp.tf puts it in connect-src', () => {
+    const connect = /\["connect-src 'self'"[\s\S]*?\)\),/.exec(CSP)?.[0] ?? ''
+    expect(connect).toContain('compact([var.analytics_origin])')
   })
 })
 

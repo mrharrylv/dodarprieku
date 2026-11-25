@@ -12,8 +12,8 @@ import { buildTitle } from '@/lib/seo'
  */
 describe("the home page's meta title", () => {
   it.each(LOCALE_CODES)('is a real phrase in %s', (locale) => {
-    const title = resources[locale].home.meta.title.trim()
-    const navLabel = resources[locale].common.nav.home.trim()
+    const title = resources[locale].map.meta.title.trim()
+    const navLabel = resources[locale].common.nav.map.trim()
 
     expect(title.toLowerCase()).not.toBe(navLabel.toLowerCase())
     expect(title).not.toBe(SITE.name)
@@ -21,10 +21,10 @@ describe("the home page's meta title", () => {
   })
 
   it.each(LOCALE_CODES)('renders as "<phrase> · <brand>" in %s, never "Home · <brand>"', (locale) => {
-    const navLabel = resources[locale].common.nav.home
-    const rendered = buildTitle(resources[locale].home.meta.title, [navLabel])
+    const navLabel = resources[locale].common.nav.map
+    const rendered = buildTitle(resources[locale].map.meta.title, [navLabel])
 
-    expect(rendered).toBe(`${resources[locale].home.meta.title.trim()} · ${SITE.name}`)
+    expect(rendered).toBe(`${resources[locale].map.meta.title.trim()} · ${SITE.name}`)
     expect(rendered.startsWith(`${navLabel} ·`)).toBe(false)
   })
 })

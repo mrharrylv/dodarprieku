@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CONTACT } from '@/config/site'
 import { useVisitTracker } from '@/hooks/useVisitTracker'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { BackToTop } from './BackToTop'
 import { PageTransition } from './PageTransition'
 import { ScrollProgress } from './ScrollProgress'
@@ -37,6 +38,7 @@ export const SiteChrome = () => {
       <ScrollRestoration />
       <PageTransition />
       <ScrollProgress />
+      <GoogleAnalytics />
       <aside aria-label={t('a11y.quickActions')}>
         <BackToTop raised={whatsapp} />
         {whatsapp && <WhatsAppBubble />}

@@ -6,10 +6,10 @@ import { hydrateRoot, type Root } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest'
 
-import i18n from '@/i18n'
+import i18n, { resources } from '@/i18n'
 import { App } from '@/App'
 import { ThemeProvider } from '@/context/ThemeProvider'
-import { SITE, STORAGE_KEYS } from '@/config/site'
+import { ROUTES, SITE, STORAGE_KEYS } from '@/config/site'
 import { startupPlan, type RenderedPage } from '@/lib/prerender'
 import { prerenderInChild } from '@/test/prerender-in-child'
 
@@ -41,16 +41,19 @@ const clientTree = (
 )
 
 const SAMPLE = [
-  ['en:/', '/en'],
-  ['lv:/about', '/lv/about'],
-  ['ru:/services', '/ru/services/'],
-  ['lv:/contact', '/lv/contact'],
-  ['en:/legal/privacy', '/en/legal/privacy'],
-  ['ru:/legal/company', '/ru/legal/company'],
-  ['lv:404', '/lv/no-such-page'],
+  ['lv:/', '/'],
+  ['lv:/par-projektu', '/par-projektu'],
+  ['lv:/organizacija', '/organizacija'],
+  ['lv:/registreties', '/registreties/'],
+  ['lv:/konts', '/konts'],
+  ['lv:/konts/parole', '/konts/parole'],
+  ['lv:/konts/aizmirsu', '/konts/aizmirsu'],
+  ['lv:/legal/privacy', '/legal/privacy'],
+  ['lv:/legal/company', '/legal/company'],
+  ['lv:404', '/no-such-page'],
   // The edge answers these spellings with the page's own file.
   ['lv:/', '/index.html'],
-  ['lv:/about', '/lv/about/index.html'],
+  ['lv:/par-projektu', '/par-projektu/index.html'],
 ] as const
 
 /** The pre-paint script, run in the page's window before React starts. */
@@ -59,7 +62,7 @@ const THEME_INIT = readFileSync(join(__dirname, '..', 'public', 'theme-init.js')
 let markup: Readonly<Record<string, RenderedPage>> = {}
 
 beforeAll(() => {
-  markup = prerenderInChild([...new Set([...SAMPLE.map(([key]) => key), 'en:/about', 'en:/legal/cookies', 'en:/legal/terms'])])
+  markup = prerenderInChild([...new Set([...SAMPLE.map(([key]) => key), 'lv:/legal/cookies', 'lv:/legal/terms'])])
 }, 120_000)
 
 const settle = () => act(async () => new Promise((resolve) => setTimeout(resolve, 50)))
@@ -117,7 +120,7 @@ describe('hydrating the prerendered markup', () => {
     window.localStorage.setItem(STORAGE_KEYS.theme, 'dark')
     document.documentElement.setAttribute('data-theme', 'dark')
 
-    const { onRecoverableError, consoleError } = await hydrate('/en/about', 'en:/about')
+    const { onRecoverableError, consoleError } = await hydrate('/par-projektu', 'lv:/par-projektu')
 
     expect(onRecoverableError).not.toHaveBeenCalled()
     expect(consoleError).not.toHaveBeenCalled()
@@ -134,14 +137,14 @@ describe('hydrating the prerendered markup', () => {
   it.each([
     [
       'a stored theme this site never wrote',
-      '/en/legal/cookies',
+      '/legal/cookies',
       () => window.localStorage.setItem(STORAGE_KEYS.theme, 'blue'),
     ],
     [
       // Reads only: i18next writes the language on every change, and in a real
       // browser with storage blocked it has already stopped trying.
       'storage that throws when read',
-      '/en/legal/terms',
+      '/legal/terms',
       () =>
         vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
           throw new DOMException('The operation is insecure.', 'SecurityError')
@@ -157,7 +160,7 @@ describe('hydrating the prerendered markup', () => {
     arrange()
     new Function('window', THEME_INIT)(window)
 
-    const { heading, onRecoverableError, consoleError } = await hydrate(url, `en:${url.slice(3)}`)
+    const { heading, onRecoverableError, consoleError } = await hydrate(url, `lv:${url}`)
 
     expect(onRecoverableError).not.toHaveBeenCalled()
     expect(consoleError).not.toHaveBeenCalled()
@@ -166,17 +169,17 @@ describe('hydrating the prerendered markup', () => {
     document.documentElement.removeAttribute('data-theme')
   })
 
-  it('keeps working after hydration: the language switcher still navigates', async () => {
-    const { consoleError } = await hydrate('/en/about', 'en:/about')
+  it('keeps working after hydration: the navigation still navigates', async () => {
+    const { consoleError } = await hydrate('/legal/privacy', 'lv:/legal/privacy')
 
-    const latvian = container?.querySelector<HTMLButtonElement>('[role="radio"][lang="lv"]')
-    expect(latvian).toBeTruthy()
-    await act(async () => latvian?.click())
+    const about = container?.querySelector<HTMLAnchorElement>(`a[href="${ROUTES.about}"]`)
+    expect(about).toBeTruthy()
+    await act(async () => about?.click())
     await settle()
 
-    expect(window.location.pathname).toBe('/lv/about')
+    expect(window.location.pathname).toBe(ROUTES.about)
     expect(document.documentElement.lang).toBe('lv')
-    await vi.waitFor(() => expect(document.title).toBe(`Par mums · ${SITE.name}`))
+    await vi.waitFor(() => expect(document.title).toBe(`${resources.lv.about.meta.title} · ${SITE.name}`))
     expect(consoleError).not.toHaveBeenCalled()
   })
 })

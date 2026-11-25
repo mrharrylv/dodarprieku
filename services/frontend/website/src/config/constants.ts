@@ -7,49 +7,13 @@
  */
 
 /**
- * Field length limits, in characters.
- *
- * These MUST mirror whatever the backend enforces, exactly. A frontend that
- * allows 5000 characters into a field the Lambda truncates at 2000 loses the
- * end of the message silently; a frontend stricter than the backend just
- * annoys people. When one side changes, change both in the same commit.
- */
-export const FIELD_LIMITS = {
-  name: { min: 2, max: 100 },
-  email: { min: 5, max: 254 },
-  phone: { min: 6, max: 32 },
-  subject: { min: 2, max: 150 },
-  message: { min: 10, max: 2000 },
-} as const
-
-/**
- * Client-side submission throttle.
- *
- * This is a courtesy guard against a double-click and a casual script, nothing
- * more: it lives in local storage, so anyone who wants to bypass it can. The
- * real limit belongs at the endpoint. Do not treat this as a security control.
- */
-export const RATE_LIMIT = {
-  maxAttempts: 3,
-  windowMs: 10 * 60 * 1000, // 10 minutes
-} as const
-
-/**
  * How long a request may run before the UI gives up.
  *
  * `fetch` has no default timeout. Without this an unreachable backend leaves
- * the button on "Sending…" forever, showing neither a success nor an error,
- * the single worst outcome for someone trying to contact a business.
+ * a button on its pending state forever, showing neither a success nor an
+ * error. Every call to `/api` uses this.
  */
 export const REQUEST_TIMEOUT_MS = 15_000
-
-/**
- * How long the mocked contact form pretends to be sending.
- *
- * Only used in `mock` mode. Long enough that the pending state is visible,
- * short enough not to feel broken.
- */
-export const CONTACT_MOCK_LATENCY_MS = 700
 
 /**
  * The longest `public/theme-init.js` keeps a page hidden before its first

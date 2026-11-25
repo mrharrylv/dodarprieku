@@ -70,8 +70,8 @@
   root.setAttribute('data-theme', theme)
   root.style.colorScheme = theme
 
-  var LOCALES = ['lv', 'en', 'ru']
-  var HTML_LANGS = ['lv', 'en', 'ru']
+  var LOCALES = ['lv']
+  var HTML_LANGS = ['lv']
   var HIDDEN_MS = 3000
   var path = window.location.pathname
 

@@ -150,39 +150,6 @@ export const breadcrumbJsonLd = (
   })),
 })
 
-/** One service as the visitor reads it on the services page, already translated. */
-export interface ServiceSummary {
-  readonly name: string
-  readonly description: string
-  /** The anchor the services page gives it, from `data/services.ts`. */
-  readonly slug: string
-}
-
-/**
- * The services a page lists, each a Service provided by the organisation. A
- * service whose text is still the template's instruction is listed by name,
- * with no description.
- */
-export const serviceJsonLd = (
-  services: readonly ServiceSummary[],
-  locale: LocaleCode,
-): JsonLd => ({
-  '@context': CONTEXT,
-  '@type': 'ItemList',
-  itemListElement: services.map((service, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    item: withoutEmpty({
-      '@type': 'Service',
-      name: service.name,
-      description: publishableCopy(service.description),
-      url: `${canonicalUrl(ROUTES.services, locale)}#${service.slug}`,
-      provider: { '@id': organizationId() },
-      areaServed: areaServed(),
-    }),
-  })),
-})
-
 export interface StructuredDataInput {
   /** The path the page gives `Seo`, prefixed or not. */
   readonly path: string
@@ -194,15 +161,13 @@ export interface StructuredDataInput {
   readonly homeLabel: string
   /** The home page's meta description, in this language. */
   readonly siteDescription: string
-  /** The services the page lists. Empty unless it is the services page. */
-  readonly services: readonly ServiceSummary[]
 }
 
 /**
  * Which blocks a page carries.
  *
  * Every page: the Organization. The home page: the WebSite. Every other
- * indexable page: its breadcrumb, and on the services page, the services.
+ * indexable page: its breadcrumb.
  * A `noIndex` page gets nothing beyond the Organization; it is not meant to
  * be understood, only to exist.
  */
@@ -220,8 +185,5 @@ export const structuredDataFor = (input: StructuredDataInput): readonly JsonLd[]
     ],
     input.locale,
   )
-  const listsServices = route === ROUTES.services && input.services.length > 0
-  return listsServices
-    ? [organization, breadcrumb, serviceJsonLd(input.services, input.locale)]
-    : [organization, breadcrumb]
+  return [organization, breadcrumb]
 }

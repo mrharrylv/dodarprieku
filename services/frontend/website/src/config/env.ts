@@ -22,9 +22,8 @@ const isNonEmpty = (value: unknown): value is string =>
 /**
  * Accepts a value only if it is an absolute https:// URL.
  *
- * A misconfigured endpoint is worse than an absent one: an absent endpoint
- * shows the "call or email us instead" fallback, while a malformed one produces
- * a fetch that fails at submit time, after the visitor has typed everything.
+ * A misconfigured endpoint is worse than an absent one: a malformed one produces a
+ * request that fails at run time, long after the build said nothing.
  * Reject it here, at build time's first read, and treat it as off.
  */
 const parseEndpoint = (raw: unknown, name: string): OptionalEndpoint => {
@@ -47,17 +46,21 @@ const parseEndpoint = (raw: unknown, name: string): OptionalEndpoint => {
   }
 }
 
-/** How the contact form behaves. See `contactMode()` for the resolution. */
-export type ContactMode = 'mock' | 'live' | 'off'
+/** A GA4 measurement id: `G-` and upper-case letters or digits. */
+const GA_MEASUREMENT_ID = /^G-[A-Z0-9]{4,20}$/
 
-const parseContactMode = (raw: unknown): ContactMode => {
-  if (!isNonEmpty(raw)) return 'mock'
-  const value = raw.trim().toLowerCase()
-  if (value === 'mock' || value === 'live' || value === 'off') return value
-  console.error(
-    `[config] VITE_CONTACT_MODE must be "mock", "live" or "off", got "${raw}". Using "mock".`,
-  )
-  return 'mock'
+/**
+ * The Google Analytics measurement id, or `null`. Only the prod GitHub
+ * Environment sets `VITE_GA_MEASUREMENT_ID`; a malformed one is logged and
+ * means off. Even with an id, GA loads only in a production build and only
+ * after the visitor consents (`hasGoogleAnalytics()`, the consent banner).
+ */
+export const parseGaMeasurementId = (raw: unknown): string | null => {
+  if (!isNonEmpty(raw)) return null
+  const id = raw.trim()
+  if (GA_MEASUREMENT_ID.test(id)) return id
+  console.error(`[config] VITE_GA_MEASUREMENT_ID is not a GA4 id: "${raw}". Google Analytics is off.`)
+  return null
 }
 
 /**
@@ -92,20 +95,6 @@ export const ENV = {
    */
   siteUrl: parseSiteUrl(import.meta.env.VITE_SITE_URL),
 
-  /** Contact-form endpoint. `null` disables the form and shows the fallback. */
-  contactEndpoint: parseEndpoint(
-    import.meta.env.VITE_CONTACT_ENDPOINT,
-    'VITE_CONTACT_ENDPOINT',
-  ),
-
-  /**
-   * The requested contact-form mode. `mock` (the default) renders the real
-   * form and discards what it is given after a short pause, so a site can be
-   * shown and reviewed before any backend exists. See `contactMode()` for how
-   * this combines with the endpoint.
-   */
-  contactMode: parseContactMode(import.meta.env.VITE_CONTACT_MODE),
-
   /** Consent-record endpoint. `null` keeps consent local to the browser. */
   consentEndpoint: parseEndpoint(
     import.meta.env.VITE_CONSENT_ENDPOINT,
@@ -118,50 +107,27 @@ export const ENV = {
     ANALYTICS_ENDPOINT,
   ),
 
+  /** Google Analytics (GA4) id; set only on the prod environment. */
+  gaMeasurementId: parseGaMeasurementId(import.meta.env.VITE_GA_MEASUREMENT_ID),
+
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
 } as const
-
-/**
- * What the form actually does, resolved once.
- *
- * - `off` wins over everything: the operator turned it off.
- * - A valid endpoint means `live`, whatever the mode says. A form that could
- *   deliver and instead pretends would lose real enquiries.
- * - An endpoint that was PROVIDED but rejected (not https, malformed) means
- *   `off`, not `mock`: the operator meant live, and a demo form in its place
- *   would hide the misconfiguration behind a cheerful "Message sent".
- * - `live` with no endpoint at all is `off`, and says so once.
- * - Otherwise `mock`.
- */
-const resolveContactMode = (): ContactMode => {
-  if (ENV.contactMode === 'off') return 'off'
-  if (ENV.contactEndpoint !== null) return 'live'
-  if (isNonEmpty(import.meta.env.VITE_CONTACT_ENDPOINT)) return 'off'
-  if (ENV.contactMode === 'live') {
-    console.error(
-      '[config] VITE_CONTACT_MODE is "live" but VITE_CONTACT_ENDPOINT is not set. The form is off.',
-    )
-    return 'off'
-  }
-  return 'mock'
-}
-
-const RESOLVED_CONTACT_MODE: ContactMode = resolveContactMode()
-
-export const contactMode = (): ContactMode => RESOLVED_CONTACT_MODE
-
-/** True when the form should be rendered at all, mocked or real. */
-export const hasContactBackend = (): boolean => RESOLVED_CONTACT_MODE !== 'off'
-
-/** True when the form is rendered but goes nowhere, so the UI must say so. */
-export const isContactMocked = (): boolean => RESOLVED_CONTACT_MODE === 'mock'
 
 /** True when consent decisions are recorded server-side as well as locally. */
 export const hasConsentBackend = (): boolean => ENV.consentEndpoint !== null
 
 /** True when page views are reported to the CRM. The legal pages say so when it is. */
 export const hasAnalytics = (): boolean => ENV.analyticsEndpoint !== null
+
+/**
+ * True when this build may offer Google Analytics: a production build with a
+ * valid measurement id. It still loads only after consent. The privacy and
+ * cookie policies describe GA exactly when this is true.
+ */
+export const hasGoogleAnalytics = (
+  env: { readonly isProd: boolean; readonly gaMeasurementId: string | null } = ENV,
+): boolean => env.isProd && env.gaMeasurementId !== null
 
 /**
  * The canonical origin to build absolute URLs from.

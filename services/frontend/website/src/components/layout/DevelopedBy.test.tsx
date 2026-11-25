@@ -21,15 +21,13 @@ const withLanguage = async (code: string) => {
 
 afterEach(async () => {
   await act(async () => {
-    await i18n.changeLanguage('en')
+    await i18n.changeLanguage('lv')
   })
 })
 
 describe('DevelopedBy', () => {
   it.each([
-    ['en', /developed by/i],
     ['lv', /izstrāde/i],
-    ['ru', /разработка/i],
   ])('in %s says so in that language and links the developer', async (code, words) => {
     await withLanguage(code)
     renderWithProviders(<DevelopedBy />)

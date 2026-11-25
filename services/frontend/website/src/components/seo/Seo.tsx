@@ -1,13 +1,8 @@
 import { useContext, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ROUTES } from '@/config/site'
-import { SERVICES } from '@/data/services'
 import { HEAD_MARK, jsonLdText, pageHead, type HeadTag, type PageHead } from '@/lib/head'
-import { stripLocale } from '@/lib/locale-path'
-import { publishableCopy } from '@/lib/placeholder'
 import type { PageMeta } from '@/lib/seo'
-import type { ServiceSummary } from '@/lib/structured-data'
 import { HeadCollectorContext } from './head-collector'
 
 /**
@@ -68,25 +63,12 @@ const applyHead = (data: PageHead) => {
 
 export const Seo = ({ title, description, path, locale, image, noIndex }: PageMeta) => {
   const { t: tc } = useTranslation('common')
-  const { t: th } = useTranslation('home')
-  const { t: ts } = useTranslation('services')
+  const { t: tm } = useTranslation('map')
   const collect = useContext(HeadCollectorContext)
 
-  const homeLabel = tc('nav.home')
-  const siteDescription = th('meta.description')
-  // Marked up only where the page lists them, from the strings it shows,
-  // less any part that is still the template's instruction to write it.
-  const services = useMemo<readonly ServiceSummary[]>(
-    () =>
-      stripLocale(path) === ROUTES.services
-        ? SERVICES.map((service) => ({
-            name: ts(`items.${service.key}.title`),
-            description: publishableCopy(ts(`items.${service.key}.summary`), ts(`items.${service.key}.body`)) ?? '',
-            slug: service.slug,
-          }))
-        : [],
-    [path, ts],
-  )
+  const homeLabel = tc('nav.map')
+  // The map page's description is the site's own: the Organization's.
+  const siteDescription = tm('meta.description')
 
   const head = useMemo(
     () =>
@@ -99,9 +81,9 @@ export const Seo = ({ title, description, path, locale, image, noIndex }: PageMe
           ...(image !== undefined ? { image } : {}),
           ...(noIndex !== undefined ? { noIndex } : {}),
         },
-        { homeLabel, siteDescription, services },
+        { homeLabel, siteDescription },
       ),
-    [title, description, path, locale, image, noIndex, homeLabel, siteDescription, services],
+    [title, description, path, locale, image, noIndex, homeLabel, siteDescription],
   )
 
   // Only during the build's prerender, where effects never run.

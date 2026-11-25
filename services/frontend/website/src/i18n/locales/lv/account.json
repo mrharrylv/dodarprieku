@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "title": "Mans konts",
+    "description": "Organizācijas konts Dodar prieku kartē: apmeklējumi, solījumi un profila labošana."
+  },
+  "title": "Mans konts",
+  "loading": "Ielādē...",
+  "retry": "Mēģināt vēlreiz",
+  "signedInAs": "Pieteicies kā {{email}}",
+  "logout": "Iziet",
+  "loggingOut": "Iziet...",
+  "logoutFailed": "Neizdevās iziet no konta",
+  "failures": {
+    "rate_limited": "Pārāk daudz mēģinājumu īsā laikā. Lūdzu, pagaidiet un mēģiniet vēlreiz.",
+    "network": "Neizdevās sazināties ar serveri. Pārbaudiet interneta savienojumu.",
+    "timeout": "Serveris neatbildēja laikā. Lūdzu, mēģiniet vēlreiz.",
+    "server": "Serverī radās kļūda. Tā nav jūsu vaina, lūdzu, mēģiniet vēlreiz pēc brīža.",
+    "generic": "Kaut kas nogāja greizi. Lūdzu, mēģiniet vēlreiz."
+  },
+  "loadError": {
+    "title": "Kontu neizdevās ielādēt"
+  },
+  "notCharity": {
+    "title": "Šis nav organizācijas konts",
+    "body": "Jūs esat pieteicies kā {{email}}, bet šai adresei nav piesaistīta neviena organizācija. Izejiet un piesakieties ar organizācijas e-pastu."
+  },
+  "login": {
+    "title": "Pieteikties",
+    "intro": "Pieteikšanās organizācijām, kuru pieteikums ir apstiprināts.",
+    "email": "E-pasts",
+    "password": "Parole",
+    "submit": "Pieteikties",
+    "submitting": "Piesakās...",
+    "forgot": "Aizmirsāt paroli?",
+    "notRegistered": "Jūsu organizācija vēl nav kartē?",
+    "register": "Kļūt par saņēmēju",
+    "errors": {
+      "emailRequired": "Ierakstiet e-pastu.",
+      "emailInvalid": "Ievadiet derīgu e-pasta adresi.",
+      "passwordRequired": "Ierakstiet paroli."
+    },
+    "failures": {
+      "unauthorized": {
+        "title": "Nepareizs e-pasts vai parole",
+        "body": "Pārbaudiet abus laukus. Ja paroli neatceraties, varat iestatīt jaunu."
+      },
+      "rate_limited": {
+        "title": "Pārāk daudz mēģinājumu",
+        "body": "Drošības nolūkos pieteikšanās uz brīdi ir apturēta. Mēģiniet vēlreiz pēc 15 minūtēm."
+      },
+      "network": {
+        "title": "Nav savienojuma ar serveri",
+        "body": "Pārbaudiet interneta savienojumu un mēģiniet vēlreiz."
+      },
+      "timeout": {
+        "title": "Serveris neatbildēja laikā",
+        "body": "Lūdzu, pēc brīža mēģiniet vēlreiz."
+      },
+      "server": {
+        "title": "Serverī radās kļūda",
+        "body": "Tā nav jūsu vaina. Lūdzu, mēģiniet vēlreiz pēc dažām minūtēm."
+      },
+      "generic": {
+        "title": "Pieteikties neizdevās",
+        "body": "Lūdzu, mēģiniet vēlreiz."
+      }
+    }
+  },
+  "status": {
+    "pending": {
+      "title": "Pieteikums gaida apstiprinājumu",
+      "body": "Administrators pārbaudīs jūsu datus. Kamēr pieteikums nav apstiprināts, jūsu lapa kartē nav redzama."
+    },
+    "approved": {
+      "title": "Jūsu lapa ir publicēta",
+      "body": "Jūs esat redzami kartē, un ziedotāji var atzīmēt, ko atnesīs."
+    },
+    "rejected": {
+      "title": "Pieteikums nav apstiprināts",
+      "body": "Iemeslu nosūtījām jums e-pastā. Ja jums ir jautājumi, atbildiet uz šo vēstuli."
+    },
+    "suspended": {
+      "title": "Lapa ir paslēpta no kartes",
+      "body": "Administrators uz laiku paslēpa jūsu lapu. Iemeslu nosūtījām jums e-pastā."
+    },
+    "publicLink": "Skatīt publisko lapu",
+    "pendingUpdate": {
+      "title": "Izmaiņas gaida administratora apstiprinājumu",
+      "body": "Iesniegtas {{date}}. Līdz apstiprināšanai kartē redzama iepriekšējā versija. Zemāk redzat iesniegto versiju."
+    }
+  },
+  "stats": {
+    "title": "Skaitļi",
+    "views": "Skatījumi",
+    "pledges": "Ziedotāju atzīmes",
+    "subscribers": "Abonenti",
+    "byNeed": "Atzīmes pa vajadzībām",
+    "byNeedEmpty": "Vajadzību sarakstā vēl nekā nav.",
+    "pledgeCount_zero": "{{count}} atzīmju",
+    "pledgeCount_one": "{{count}} atzīme",
+    "pledgeCount_other": "{{count}} atzīmes"
+  },
+  "pledges": {
+    "title": "Ziedotāju atzīmes",
+    "loading": "Ielādē atzīmes...",
+    "empty": "Vēl neviens nav atzīmējis, ka atnesīs ko no jūsu saraksta.",
+    "anonymous": "Anonīms",
+    "needs": "Atnesīs"
+  },
+  "editor": {
+    "title": "Labot profilu",
+    "intro": "Izmaiņas stāsies spēkā pēc administratora apstiprinājuma. Līdz tam kartē redzama pašreizējā versija.",
+    "tabsLabel": "Profila sadaļas",
+    "tabs": {
+      "organization": "Organizācija",
+      "about": "Apraksts un foto",
+      "location": "Atrašanās vieta",
+      "needs": "Vajadzības",
+      "delivery": "Saņemšana",
+      "sponsors": "Atbalstītāji"
+    },
+    "tabHasErrors": ", jālabo",
+    "invalid": {
+      "title": "Daži lauki jāizlabo",
+      "body": "Sadaļas ar kļūdām ir atzīmētas ar sarkanu punktu."
+    },
+    "failures": {
+      "validation": {
+        "title": "Serveris nepieņēma dažus laukus",
+        "body": "Izlabojiet atzīmētos laukus un iesniedziet vēlreiz."
+      },
+      "unauthorized": {
+        "title": "Sesija ir beigusies",
+        "body": "Pārlādējiet lapu un piesakieties vēlreiz. Neiesniegtās izmaiņas tad pazudīs, tāpēc vispirms tās pierakstiet."
+      },
+      "rate_limited": {
+        "title": "Pārāk daudz iesniegumu",
+        "body": "Lūdzu, pagaidiet brīdi un mēģiniet vēlreiz."
+      },
+      "network": {
+        "title": "Nav savienojuma ar serveri",
+        "body": "Izmaiņas nav nosūtītas. Pārbaudiet savienojumu un mēģiniet vēlreiz."
+      },
+      "timeout": {
+        "title": "Serveris neatbildēja laikā",
+        "body": "Izmaiņas, iespējams, nav nosūtītas. Mēģiniet vēlreiz."
+      },
+      "server": {
+        "title": "Serverī radās kļūda",
+        "body": "Izmaiņas nav saglabātas. Lūdzu, mēģiniet vēlreiz pēc brīža."
+      },
+      "generic": {
+        "title": "Izmaiņas neizdevās iesniegt",
+        "body": "Lūdzu, mēģiniet vēlreiz."
+      }
+    },
+    "saved": {
+      "title": "Izmaiņas iesniegtas",
+      "body": "Izmaiņas gaida administratora apstiprinājumu. Kad tās apstiprinās, saņemsiet e-pastu."
+    },
+    "submit": "Iesniegt izmaiņas",
+    "submitting": "Iesniedz..."
+  },
+  "listRequest": {
+    "title": "Abonentu saraksts",
+    "body_zero": "Abonenti ir cilvēki, kas piekrita saņemt ziņas par jūsu vajadzībām. Pašlaik viņu ir {{count}}. Pieprasiet sarakstu, un administrators to jums nosūtīs.",
+    "body_one": "Abonenti ir cilvēki, kas piekrita saņemt ziņas par jūsu vajadzībām. Pašlaik ir {{count}} abonents. Pieprasiet sarakstu, un administrators to jums nosūtīs.",
+    "body_other": "Abonenti ir cilvēki, kas piekrita saņemt ziņas par jūsu vajadzībām. Pašlaik viņu ir {{count}}. Pieprasiet sarakstu, un administrators to jums nosūtīs.",
+    "never": "Sarakstu vēl neesat pieprasījuši.",
+    "last": "Pēdējais pieprasījums: {{date}}",
+    "message": "Ziņa administratoram",
+    "optional": "nav obligāta",
+    "sent": {
+      "title": "Pieprasījums nosūtīts",
+      "body": "Administrators sarakstu nosūtīs uz jūsu konta e-pastu."
+    },
+    "failedBody": "Pieprasījums nav nosūtīts.",
+    "submit": "Pieprasīt abonentu sarakstu",
+    "sending": "Sūta..."
+  },
+  "setPassword": {
+    "meta": {
+      "title": "Paroles iestatīšana",
+      "description": "Iestatiet sava Dodar prieku konta paroli, lai pieteiktos un pārvaldītu savas iestādes lapu."
+    },
+    "title": "Paroles iestatīšana",
+    "intro": "Izvēlieties paroli ar vismaz {{min}} zīmēm. Pēc tam uzreiz nonāksiet savā kontā.",
+    "password": "Jaunā parole",
+    "repeat": "Atkārtojiet paroli",
+    "hint": "Vismaz {{min}} zīmes. Garāka frāze ir drošāka par sarežģītu vārdu.",
+    "submit": "Saglabāt paroli",
+    "submitting": "Saglabā...",
+    "tryAgain": "Parole nav saglabāta. Mēģiniet vēlreiz.",
+    "errors": {
+      "required": "Ierakstiet paroli.",
+      "too_short": "Parolei jābūt vismaz {{min}} zīmes garai.",
+      "too_long": "Parole ir par garu: ne vairāk kā {{max}} zīmes.",
+      "mismatch": "Paroles nesakrīt."
+    },
+    "strength": {
+      "too_short": "Vēl par īsu: vajag vismaz {{min}} zīmes.",
+      "weak": "Vāja parole",
+      "fair": "Pieņemama parole",
+      "good": "Laba parole",
+      "strong": "Ļoti laba parole"
+    },
+    "tokenInvalid": {
+      "title": "Saite vairs nav derīga",
+      "body": "Saite ir jau izmantota vai tās derīguma termiņš beidzies. Pieprasiet jaunu saiti, un mēs to nosūtīsim e-pastā.",
+      "link": "Pieprasīt jaunu saiti"
+    }
+  },
+  "forgotPassword": {
+    "meta": {
+      "title": "Aizmirsta parole",
+      "description": "Saņemiet e-pastā saiti, lai iestatītu jaunu Dodar prieku konta paroli."
+    },
+    "title": "Aizmirsta parole",
+    "intro": "Ierakstiet sava konta e-pastu, un mēs nosūtīsim saiti jaunas paroles iestatīšanai.",
+    "email": "E-pasts",
+    "submit": "Nosūtīt saiti",
+    "submitting": "Sūta...",
+    "tryAgain": "Saite nav nosūtīta. Mēģiniet vēlreiz.",
+    "errors": {
+      "required": "Ierakstiet e-pastu.",
+      "invalid": "Ievadiet derīgu e-pasta adresi."
+    },
+    "done": {
+      "title": "Pārbaudiet e-pastu",
+      "body": "Ja šai adresei ir konts, pēc dažām minūtēm saņemsiet vēstuli ar saiti. Saite derīga vienu stundu."
+    },
+    "back": "Atpakaļ uz pieteikšanos"
+  }
+}

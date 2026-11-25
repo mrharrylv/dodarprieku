@@ -39,17 +39,17 @@ describe('prerendering every page', () => {
     },
   )
 
-  it('renders the language of the URL, not the last one used', async () => {
-    const lv = await renderPage(page('lv:/about'))
-    const ru = await renderPage(page('ru:/about'))
-    expect(lv.head?.lang).toBe('lv')
-    expect(ru.head?.lang).toBe('ru')
-    expect(ru.body).toMatch(/[а-яё]/i)
+  it('renders in Latvian, the one language', async () => {
+    const about = await renderPage(page('lv:/par-projektu'))
+    expect(about.head?.lang).toBe('lv')
+    expect(about.body).toMatch(/[āčēģīķļņšūž]/i)
   })
 
-  it('waits for the lazy legal pages instead of shipping their blank fallback', async () => {
-    const { body } = await renderPage(page('en:/legal/privacy'))
-    expect(body).toMatch(/<h1[^>]*>Privacy policy<\/h1>/i)
+  it('waits for the lazy pages instead of shipping their blank fallback', async () => {
+    const privacy = await renderPage(page('lv:/legal/privacy'))
+    expect(privacy.body).toMatch(/<h1[^>]*>Privātuma politika<\/h1>/)
+    const map = await renderPage(page('lv:/'))
+    expect(map.body).toMatch(/<h1[^>]*>Labdarības karte<\/h1>/)
   })
 
   it('renders the not-found page for the 404 file', async () => {

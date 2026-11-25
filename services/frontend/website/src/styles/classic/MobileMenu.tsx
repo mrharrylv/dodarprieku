@@ -2,12 +2,12 @@ import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
 
-import { NAV_LINKS, ROUTES } from '@/config/site'
+import { NAV_LINKS } from '@/config/site'
 import { cn } from '@/lib/cn'
 import { localePath } from '@/lib/locale-path'
-import { ButtonLink } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
+import { RegisterButton } from '@/components/layout/RegisterButton'
 
 /** Milliseconds between one link's entrance and the next. */
 const STAGGER_MS = 40
@@ -89,9 +89,7 @@ export const MobileMenu = ({
                 )}
               >
                 <LanguageSwitcher />
-                <ButtonLink to={localePath(ROUTES.contact, locale)} size="sm">
-                  {t('cta.contactUs')}
-                </ButtonLink>
+                <RegisterButton />
               </div>
             </nav>
           </Container>

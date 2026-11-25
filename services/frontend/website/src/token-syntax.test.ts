@@ -72,6 +72,8 @@ describe('design token syntax', () => {
         0,
       )
 
-    expect(count).toBeGreaterThan(500)
+    // 207 when the nine unused styles were removed (one style is left), so
+    // the floor is what one style and the shared components use.
+    expect(count).toBeGreaterThan(150)
   })
 })

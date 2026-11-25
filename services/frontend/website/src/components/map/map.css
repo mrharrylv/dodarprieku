@@ -1,0 +1,58 @@
+/* MapLibre's popup, restyled onto the site's surfaces (both themes). */
+.dp-popup .maplibregl-popup-content {
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lifted);
+}
+
+.dp-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.dp-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.dp-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--surface-raised);
+}
+
+.dp-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.dp-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.dp-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--surface-raised);
+}
+
+.dp-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--surface-raised);
+}
+
+.dp-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--surface-raised);
+}
+
+.dp-marker {
+  /* The marker's own box is the button's; no stray hit area around it. */
+  line-height: 0;
+}
+
+.dp-pin {
+  transition:
+    transform 180ms var(--ease-out-soft),
+    box-shadow 180ms var(--ease-out-soft);
+}
+
+.dp-pin:hover,
+.dp-pin:focus-visible,
+.dp-pin[aria-pressed='true'] {
+  transform: translateY(-2px) scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dp-pin {
+    transition: none;
+  }
+
+  .dp-pin:hover,
+  .dp-pin:focus-visible,
+  .dp-pin[aria-pressed='true'] {
+    transform: none;
+  }
+}

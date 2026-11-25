@@ -1,0 +1,58 @@
+/*
+ * Category colours: one per `Category.tone` in services/shared/src/catalog.ts.
+ *
+ *   --cat-<tone>   the badge fill in the current theme, behind --cat-on
+ *   --pin-<tone>   the map pin fill; the map is always light, so this never
+ *                  changes with the theme
+ *
+ * Light fills sit at L 0.50 so a white icon clears 4.5:1; dark fills at
+ * L 0.78 behind an ink-950 icon. Never a hex in a component: they read these.
+ */
+:root {
+  --cat-on: #fff;
+  --pin-on: #fff;
+  --pin-amber: oklch(0.52 0.13 65);
+  --pin-sky: oklch(0.5 0.13 240);
+  --pin-violet: oklch(0.5 0.16 300);
+  --pin-rose: oklch(0.52 0.18 10);
+  --pin-slate: oklch(0.48 0.04 255);
+  --pin-emerald: oklch(0.5 0.12 160);
+  --pin-orange: oklch(0.54 0.16 45);
+  --pin-teal: oklch(0.5 0.1 190);
+  --pin-indigo: oklch(0.48 0.16 275);
+  --pin-lime: oklch(0.5 0.13 130);
+  --pin-cyan: oklch(0.5 0.1 215);
+  --pin-yellow: oklch(0.52 0.11 90);
+  --pin-stone: oklch(0.48 0.03 60);
+
+  --cat-amber: var(--pin-amber);
+  --cat-sky: var(--pin-sky);
+  --cat-violet: var(--pin-violet);
+  --cat-rose: var(--pin-rose);
+  --cat-slate: var(--pin-slate);
+  --cat-emerald: var(--pin-emerald);
+  --cat-orange: var(--pin-orange);
+  --cat-teal: var(--pin-teal);
+  --cat-indigo: var(--pin-indigo);
+  --cat-lime: var(--pin-lime);
+  --cat-cyan: var(--pin-cyan);
+  --cat-yellow: var(--pin-yellow);
+  --cat-stone: var(--pin-stone);
+}
+
+[data-theme='dark'] {
+  --cat-on: var(--color-ink-950);
+  --cat-amber: oklch(0.8 0.12 70);
+  --cat-sky: oklch(0.78 0.11 240);
+  --cat-violet: oklch(0.78 0.12 300);
+  --cat-rose: oklch(0.78 0.12 10);
+  --cat-slate: oklch(0.78 0.04 255);
+  --cat-emerald: oklch(0.78 0.12 160);
+  --cat-orange: oklch(0.79 0.13 50);
+  --cat-teal: oklch(0.78 0.1 190);
+  --cat-indigo: oklch(0.76 0.12 275);
+  --cat-lime: oklch(0.8 0.14 130);
+  --cat-cyan: oklch(0.79 0.1 215);
+  --cat-yellow: oklch(0.83 0.13 95);
+  --cat-stone: oklch(0.78 0.03 60);
+}

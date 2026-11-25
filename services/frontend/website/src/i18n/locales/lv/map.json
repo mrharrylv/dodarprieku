@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "title": "Labdarības karte",
+    "description": "Latvijas labdarības karte: atrodiet patversmi, bērnu namu vai pansionātu sev tuvumā, apskatiet, kas tur vajadzīgs, un atzīmējiet, ko atnesīsiet."
+  },
+  "share": {
+    "headline": "Redziet, kas vajadzīgs, un atnesiet prieku"
+  },
+  "title": "Labdarības karte",
+  "intro": "Atrodiet iestādi sev tuvumā, apskatiet, kas tai vajadzīgs, un atnesiet to.",
+  "registerCta": "Kļūt par saņēmēju",
+  "panel": {
+    "label": "Organizāciju saraksts un meklēšana",
+    "expand": "Rādīt sarakstu",
+    "collapse": "Paslēpt sarakstu"
+  },
+  "search": {
+    "label": "Meklēt pēc nosaukuma vai pilsētas",
+    "placeholder": "Piemēram, Ulubele vai Cēsis",
+    "clear": "Notīrīt meklēšanu"
+  },
+  "filters": {
+    "label": "Kategorijas",
+    "all": "Visas"
+  },
+  "list": {
+    "heading": "Organizācijas",
+    "count_zero": "{{count}} organizāciju",
+    "count_one": "{{count}} organizācija",
+    "count_other": "{{count}} organizācijas",
+    "noMatch": "Neviena organizācija neatbilst meklējumam.",
+    "reset": "Rādīt visas",
+    "show": "Rādīt kartē: {{name}}",
+    "urgent": "Steidzami"
+  },
+  "empty": {
+    "title": "Kartē vēl nav nevienas organizācijas",
+    "body": "Pirmās iestādes parādīsies, tiklīdz būsim pārbaudījuši to pieteikumus. Vai palīdzība vajadzīga jūsu iestādei?",
+    "cta": "Pieteikt savu iestādi"
+  },
+  "loading": "Ielādē organizācijas…",
+  "leaderboard": {
+    "title": "Lielākie atbalstītāji",
+    "intro": "Uzņēmumi, kas atbalsta visvairāk kartē redzamo organizāciju.",
+    "charities_zero": "Atbalsta {{count}} organizāciju",
+    "charities_one": "Atbalsta {{count}} organizāciju",
+    "charities_other": "Atbalsta {{count}} organizācijas",
+    "rank": "{{rank}}. vieta",
+    "logoAlt": "{{name}} logotips",
+    "empty": "Atbalstītāji parādīsies šeit, kad organizācijas tos pievienos savās lapās."
+  },
+  "map": {
+    "label": "Labdarības organizāciju karte",
+    "loading": "Ielādē karti…",
+    "unavailableTitle": "Karti nevar parādīt",
+    "unavailableBody": "Šī pārlūkprogramma nevar attēlot karti. Visas organizācijas atradīsiet sarakstā.",
+    "cluster_zero": "{{count}} organizāciju šajā apgabalā. Pietuvināt",
+    "cluster_one": "{{count}} organizācija šajā apgabalā. Pietuvināt",
+    "cluster_other": "{{count}} organizācijas šajā apgabalā. Pietuvināt",
+    "pin": "{{name}}, {{category}}"
+  },
+  "popup": {
+    "close": "Aizvērt",
+    "view": "Skatīt vajadzības",
+    "photoAlt": "{{name}}: attēls",
+    "urgent": "Steidzami",
+    "noNeeds": "Vajadzības vēl nav norādītas."
+  },
+  "loadError": "Neizdevās ielādēt organizācijas"
+}

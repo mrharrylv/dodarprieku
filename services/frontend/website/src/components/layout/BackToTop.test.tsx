@@ -32,7 +32,7 @@ describe('BackToTop', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
 
     scrollTo(801)
-    expect(screen.getByRole('button', { name: /back to top/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /lapas augšā/i })).toBeInTheDocument()
 
     scrollTo(10)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
@@ -48,7 +48,7 @@ describe('BackToTop', () => {
     renderWithProviders(<BackToTop />)
     scrollTo(2000)
 
-    await user.click(screen.getByRole('button', { name: /back to top/i }))
+    await user.click(screen.getByRole('button', { name: /lapas augšā/i }))
 
     expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }))
     // The next Tab must start at the top, not from a button that just left
@@ -71,7 +71,7 @@ describe('BackToTop', () => {
 
     renderWithProviders(<BackToTop />)
     scrollTo(2000)
-    await user.click(screen.getByRole('button', { name: /back to top/i }))
+    await user.click(screen.getByRole('button', { name: /lapas augšā/i }))
 
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' })
     matchMedia.mockRestore()

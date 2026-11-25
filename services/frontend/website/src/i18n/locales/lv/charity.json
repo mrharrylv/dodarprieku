@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "title": "Organizācija",
+    "description": "Organizācijas lapa Dodar prieku kartē: ko tai vajag, kā to nogādāt un kas jau apsolījis palīdzēt.",
+    "charityDescription": "{{name}}, {{city}}: apskatiet, kas šai organizācijai vajadzīgs, kā to nogādāt, un atzīmējiet, ko atnesīsiet."
+  },
+  "title": "Organizācija",
+  "loading": "Ielādē organizācijas lapu…",
+  "back": "Visas organizācijas",
+  "showOnMap": "Rādīt kartē",
+  "notFound": {
+    "title": "Šāda organizācija nav atrasta",
+    "body": "Iespējams, saite ir novecojusi vai organizācija vairs nav redzama kartē.",
+    "action": "Atpakaļ uz karti"
+  },
+  "loadError": {
+    "title": "Neizdevās ielādēt organizācijas lapu"
+  },
+  "gallery": {
+    "title": "{{name}}: attēli",
+    "alt": "{{name}}: attēls {{current}}",
+    "open": "Atvērt attēlu {{current}} no {{total}}",
+    "logoAlt": "{{name}} logotips"
+  },
+  "about": {
+    "title": "Par organizāciju"
+  },
+  "contacts": {
+    "title": "Kontakti",
+    "address": "Adrese",
+    "email": "E-pasts",
+    "phone": "Tālrunis",
+    "website": "Mājaslapa",
+    "facebook": "Facebook",
+    "instagram": "Instagram"
+  },
+  "needs": {
+    "title": "Kas vajadzīgs",
+    "intro": "Atzīmējiet, ko atnesīsiet, un spiediet „Es ziedošu”.",
+    "other": "Citas vajadzības",
+    "urgent": "Steidzami",
+    "pledged": "Apsolīts: {{count}}",
+    "empty": "Organizācija vēl nav norādījusi, kas tai vajadzīgs.",
+    "selected": "Atzīmēts: {{count}}",
+    "cta": "Es ziedošu",
+    "selectFirst": "Vispirms atzīmējiet vismaz vienu lietu sarakstā."
+  },
+  "stats": {
+    "loading": "Ielādē apsolījumu skaitu…",
+    "error": "Neizdevās ielādēt apsolījumu skaitu.",
+    "retry": "Mēģināt vēlreiz"
+  },
+  "delivery": {
+    "title": "Kā nogādāt",
+    "inPerson": "Atnest uz iestādi",
+    "dropOff": "Nodošanas punkts",
+    "lockers": "Pakomāti",
+    "post": "Pa pastu",
+    "hours": "Darba laiks: {{hours}}",
+    "copy": "Kopēt adresi",
+    "copyLabel": "Kopēt adresi: {{address}}",
+    "copied": "Nokopēts",
+    "copyFailed": "Neizdevās nokopēt. Atlasiet adresi un nokopējiet to manuāli.",
+    "none": "Organizācija vēl nav norādījusi, kā ziedojumus nogādāt. Lūdzu, sazinieties ar to."
+  },
+  "sponsors": {
+    "title": "Atbalstītāji",
+    "logoAlt": "{{name}} logotips"
+  },
+  "supporters": {
+    "title": "Jau apsolījuši palīdzēt",
+    "empty": "Vēl neviens nav apsolījis palīdzību publiski. Varat būt pirmie."
+  },
+  "pledge": {
+    "title": "Es ziedošu",
+    "intro": "Jūs atnesīsiet:",
+    "close": "Aizvērt",
+    "identity": "Kā jūs parādīt atbalstītāju sarakstā?",
+    "anonymous": "Anonīmi",
+    "public": "Ar vārdu",
+    "name": "Vārds vai uzņēmuma nosaukums",
+    "nameHint": "Šis vārds būs redzams organizācijas lapā.",
+    "email": "E-pasts",
+    "emailHint": "Uz to nosūtīsim pateicību. Organizācija jūsu e-pastu neredz.",
+    "message": "Ziņa organizācijai",
+    "messageHint": "Piemēram, kad plānojat atnest.",
+    "optional": "nav obligāts",
+    "subscribe": "Pierakstīties jaunumiem",
+    "subscribeHint": "Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
+    "consent": "Piekrītu, ka Dodar prieku izmanto manu e-pasta adresi, lai nosūtītu pateicību un, ja to izvēlējos, jaunumus.",
+    "privacy": "Privātuma politika",
+    "honeypot": "Neaizpildiet šo lauku",
+    "submit": "Apstiprināt",
+    "submitting": "Sūta…",
+    "fieldErrors": {
+      "needs": {
+        "required": "Atzīmējiet vismaz vienu lietu.",
+        "invalid": "Kāda no atzīmētajām lietām vairs nav sarakstā. Pārlādējiet lapu."
+      },
+      "name": {
+        "required": "Ierakstiet vārdu vai izvēlieties „Anonīmi”.",
+        "too_long": "Vārds ir par garu."
+      },
+      "email": {
+        "required": "Lai pierakstītos jaunumiem, ierakstiet e-pasta adresi.",
+        "invalid": "Pārbaudiet e-pasta adresi.",
+        "too_long": "E-pasta adrese ir par garu."
+      },
+      "message": {
+        "too_long": "Ziņa ir par garu."
+      },
+      "consent": {
+        "required": "Lai mēs varētu jums rakstīt, apstipriniet piekrišanu."
+      },
+      "generic": "Pārbaudiet šo lauku."
+    },
+    "thanks": {
+      "title": "Paldies!",
+      "body": "Jūsu apsolījums ir saņemts. Organizācija redzēs, ka palīdzība ir ceļā.",
+      "email": "Pateicību nosūtīsim uz {{email}}.",
+      "subscribed": "Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
+      "offer": "Vai vēlaties uzzināt, kad kaut kas būs ļoti vajadzīgs?",
+      "done": "Atpakaļ uz organizācijas lapu"
+    }
+  },
+  "subscribe": {
+    "title": "Jaunumi un steidzamas vajadzības",
+    "body": "Kad kādai iestādei kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim. Atrakstīties var jebkurā brīdī.",
+    "email": "E-pasts",
+    "name": "Vārds",
+    "consent": "Piekrītu saņemt Dodar prieku e-pastus par steidzamām vajadzībām.",
+    "submit": "Pierakstīties",
+    "submitting": "Pieraksta…",
+    "success": "Paldies! Jūsu pieraksts ir saņemts.",
+    "fieldErrors": {
+      "email": {
+        "required": "Ierakstiet e-pasta adresi.",
+        "invalid": "Pārbaudiet e-pasta adresi.",
+        "too_long": "E-pasta adrese ir par garu."
+      },
+      "name": {
+        "too_long": "Vārds ir par garu."
+      },
+      "consent": {
+        "required": "Lai mēs varētu jums rakstīt, apstipriniet piekrišanu."
+      },
+      "generic": "Pārbaudiet šo lauku."
+    }
+  },
+  "errors": {
+    "retry": "Mēģināt vēlreiz",
+    "network": {
+      "title": "Nav savienojuma",
+      "body": "Pārbaudiet interneta savienojumu un mēģiniet vēlreiz."
+    },
+    "timeout": {
+      "title": "Serveris neatbild",
+      "body": "Pieprasījums ilga pārāk ilgi. Pagaidiet mirkli un mēģiniet vēlreiz."
+    },
+    "rate_limited": {
+      "title": "Pārāk daudz mēģinājumu",
+      "body": "No šī tīkla nesen sūtīts daudz pieprasījumu. Pagaidiet dažas minūtes un mēģiniet vēlreiz."
+    },
+    "validation": {
+      "title": "Pārbaudiet laukus",
+      "body": "Dažos laukos ir kļūdas. Tās ir norādītas pie attiecīgajiem laukiem."
+    },
+    "not_found": {
+      "title": "Nav atrasts",
+      "body": "Šī organizācija vairs nav pieejama. Pārlādējiet lapu."
+    },
+    "server": {
+      "title": "Kaut kas nogāja greizi",
+      "body": "Mūsu pusē radās kļūda. Mēģiniet vēlreiz pēc brīža vai rakstiet uz {{email}}."
+    }
+  }
+}

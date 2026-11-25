@@ -6,7 +6,7 @@ import { useRoutes } from 'react-router-dom'
 import i18n from '@/i18n'
 import { renderWithProviders } from '@/test/render'
 import { buildRoutes } from '@/routes'
-import { DEVELOPER, NAV_LINKS, ROUTES, SITE } from '@/config/site'
+import { DEVELOPER, NAV_LINKS, REGISTER_CTA, ROUTES, SITE } from '@/config/site'
 import { MAIN_CONTENT_ID } from '@/config/dom'
 import { localePath } from '@/lib/locale-path'
 import type { SiteStyle } from './contract'
@@ -16,8 +16,8 @@ import type { SiteStyle } from './contract'
  *
  * A style is free in how it looks and constrained in what it must provide:
  * the landmarks a screen reader navigates by, the skip link, the navigation,
- * the theme and language controls, the footer credit, one `h1` per page, and
- * the contact form. A style that drops any of these fails here, with its name
+ * the register button, the theme control, the footer credit and the other
+ * HA Group projects, and one `h1` per page. A style that drops any of these fails here, with its name
  * in the message, rather than shipping.
  *
  * Eager, so every style is loaded at collection time and `describe.each` has
@@ -34,16 +34,15 @@ const styles: Array<[string, SiteStyle]> = Object.entries(modules)
 
 const AppFor = ({ style }: { style: SiteStyle }) => useRoutes(buildRoutes(style))
 
-const renderStyle = (style: SiteStyle, route = '/en') =>
+const renderStyle = (style: SiteStyle, route: string = ROUTES.home) =>
   renderWithProviders(<AppFor style={style} />, { route })
 
-const en = (ns: string) => i18n.getFixedT('en', ns)
+const lv = (ns: string) => i18n.getFixedT('lv', ns)
 
 const PAGES: ReadonlyArray<[string, string]> = [
-  ['home', localePath(ROUTES.home, 'en')],
-  ['services', localePath(ROUTES.services, 'en')],
-  ['about', localePath(ROUTES.about, 'en')],
-  ['contact', localePath(ROUTES.contact, 'en')],
+  ['map', localePath(ROUTES.home, 'lv')],
+  ['about', localePath(ROUTES.about, 'lv')],
+  ['register', localePath(ROUTES.register, 'lv')],
 ]
 
 describe('the style folders', () => {
@@ -76,33 +75,49 @@ describe.each(styles)('style "%s"', (id, style) => {
 
     await user.tab()
 
-    expect(screen.getByRole('link', { name: en('common')('a11y.skipToContent') })).toHaveFocus()
+    expect(screen.getByRole('link', { name: lv('common')('a11y.skipToContent') })).toHaveFocus()
   })
 
   it('has a main navigation with every NAV_LINKS entry, localised', async () => {
     renderStyle(style)
     await screen.findByRole('banner')
 
-    const navs = screen.getAllByRole('navigation', { name: en('common')('a11y.mainNavigation') })
+    const navs = screen.getAllByRole('navigation', { name: lv('common')('a11y.mainNavigation') })
     expect(navs.length).toBeGreaterThan(0)
 
     // A nav may be duplicated (desktop and mobile). One of them must carry
     // every link with the right href.
     const complete = navs.some((nav) =>
       NAV_LINKS.every((link) => {
-        const anchors = within(nav).queryAllByRole('link', { name: en('common')(link.labelKey) })
-        return anchors.some((a) => a.getAttribute('href') === localePath(link.to, 'en'))
+        const anchors = within(nav).queryAllByRole('link', { name: lv('common')(link.labelKey) })
+        return anchors.some((a) => a.getAttribute('href') === localePath(link.to, 'lv'))
       }),
     )
     expect(complete, 'no navigation landmark contains every NAV_LINKS entry').toBe(true)
   })
 
-  it('offers the theme toggle and the language switcher', async () => {
+  it('offers the theme toggle, and no language switcher for one language', async () => {
     renderStyle(style)
     await screen.findByRole('banner')
 
-    expect(screen.getAllByRole('radiogroup', { name: en('common')('language.label') }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('button', { name: /theme/i }).length).toBeGreaterThan(0)
+    expect(screen.queryAllByRole('radiogroup', { name: lv('common')('language.label') })).toHaveLength(0)
+    expect(screen.getAllByRole('button', { name: /tēm/i }).length).toBeGreaterThan(0)
+  })
+
+  it('puts the register button in the header', async () => {
+    renderStyle(style)
+    const header = await screen.findByRole('banner')
+
+    const links = within(header).getAllByRole('link', { name: lv('common')(REGISTER_CTA.labelKey) })
+    expect(links.some((link) => link.getAttribute('href') === localePath(REGISTER_CTA.to, 'lv'))).toBe(true)
+  })
+
+  it("lists HA Group's other projects in the footer", async () => {
+    renderStyle(style)
+    await screen.findByRole('banner')
+
+    const footer = screen.getByRole('contentinfo')
+    expect(within(footer).getByRole('navigation', { name: lv('common')('a11y.projectsNavigation') })).toBeInTheDocument()
   })
 
   it('credits the developer in the footer', async () => {
@@ -130,19 +145,12 @@ describe.each(styles)('style "%s"', (id, style) => {
     }
   })
 
-  it('mounts the shared contact form on the contact page', async () => {
-    renderStyle(style, localePath(ROUTES.contact, 'en'))
-    await screen.findByRole('heading', { level: 1 })
-
-    expect(screen.getByRole('button', { name: en('contact')('form.submit') })).toBeInTheDocument()
-  })
-
   it('if it has a menu toggle, the menu opens, closes on Escape, and returns focus', async () => {
     const user = userEvent.setup()
     renderStyle(style)
     await screen.findByRole('banner')
 
-    const openLabel = en('common')('nav.openMenu')
+    const openLabel = lv('common')('nav.openMenu')
     const toggle = screen.queryByRole('button', { name: openLabel })
 
     // Two styles have no toggle at all: their navigation fits at every width.
@@ -151,7 +159,7 @@ describe.each(styles)('style "%s"', (id, style) => {
     // and that a style does not ship half of one.
     if (toggle === null) {
       expect(
-        screen.queryByRole('button', { name: en('common')('nav.closeMenu') }),
+        screen.queryByRole('button', { name: lv('common')('nav.closeMenu') }),
         `${id} has a close-menu button but no open-menu button`,
       ).toBeNull()
       return
@@ -160,7 +168,7 @@ describe.each(styles)('style "%s"', (id, style) => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
     await user.click(toggle)
-    expect(screen.getByRole('button', { name: en('common')('nav.closeMenu') })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: lv('common')('nav.closeMenu') })).toHaveAttribute(
       'aria-expanded',
       'true',
     )
@@ -173,8 +181,8 @@ describe.each(styles)('style "%s"', (id, style) => {
   })
 
   it('renders the shared legal pages and the 404 inside its shell', async () => {
-    renderStyle(style, `${localePath(ROUTES.privacy, 'en')}`)
-    expect(await screen.findByRole('heading', { level: 1, name: en('legal')('privacy.title') })).toBeInTheDocument()
+    renderStyle(style, localePath(ROUTES.privacy, 'lv'))
+    expect(await screen.findByRole('heading', { level: 1, name: lv('legal')('privacy.title') })).toBeInTheDocument()
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 })

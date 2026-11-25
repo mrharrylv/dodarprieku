@@ -6,9 +6,10 @@ import { useLocale } from '@/hooks/useLocale'
 import { useMobileMenu } from '@/hooks/useMobileMenu'
 import { cn } from '@/lib/cn'
 import { localePath } from '@/lib/locale-path'
-import { ButtonLink } from '@/components/ui/Button'
 import { Container } from '@/components/ui/Container'
+import { BrandMark } from '@/components/layout/BrandMark'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
+import { RegisterButton } from '@/components/layout/RegisterButton'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { MobileMenu } from './MobileMenu'
 
@@ -26,9 +27,10 @@ export const Header = () => {
         <div className="flex h-16 items-center justify-between gap-4 sm:h-20">
           <Link
             to={home}
-            className="font-(family-name:--font-display) text-(length:--text-xl) font-semibold tracking-tight text-(--text-primary)"
+            className="inline-flex min-h-11 items-center gap-2 font-(family-name:--font-display) text-(length:--text-xl) font-semibold tracking-tight text-(--text-primary)"
           >
-            {SITE.name}
+            <BrandMark />
+            <span>{SITE.name}</span>
           </Link>
 
           <nav
@@ -45,13 +47,7 @@ export const Header = () => {
           <div className="flex items-center gap-2">
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
-            <ButtonLink
-              to={localePath(ROUTES.contact, locale)}
-              size="sm"
-              className="hidden lg:inline-flex"
-            >
-              {t('cta.contactUs')}
-            </ButtonLink>
+            <RegisterButton className="hidden sm:inline-flex" />
 
             <button
               ref={toggleRef}

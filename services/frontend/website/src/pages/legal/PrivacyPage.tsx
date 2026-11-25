@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
-import { hasAnalytics } from '@/config/env'
-import { MAP, ROUTES } from '@/config/site'
+import { hasAnalytics, hasGoogleAnalytics } from '@/config/env'
+import { ROUTES } from '@/config/site'
 import { useLocale } from '@/hooks/useLocale'
 import { LegalShell, LegalSection } from '@/components/legal/LegalShell'
 import { legalValues } from '@/components/legal/legal-values'
@@ -14,6 +14,9 @@ export const PrivacyPage = () => {
   // (ENV.analyticsEndpoint), so the policy cannot claim "no analytics" on a
   // site that reports to the CRM, nor describe statistics a site turned off.
   const stats = hasAnalytics()
+  // Google Analytics is described only on a build that may load it (prod,
+  // with a measurement id), and even there it waits for consent.
+  const ga = hasGoogleAnalytics()
 
   return (
     <LegalShell
@@ -29,13 +32,23 @@ export const PrivacyPage = () => {
       </LegalSection>
 
       <LegalSection title={t('privacy.collected.title')}>
-        <p>{t(stats ? 'privacy.collected.bodyWithStats' : 'privacy.collected.body')}</p>
+        <p>{t('privacy.collected.lead')}</p>
+        <ul>
+          <li>{t('privacy.collected.registration')}</li>
+          <li>{t('privacy.collected.account')}</li>
+          <li>{t('privacy.collected.pledge')}</li>
+          <li>{t('privacy.collected.newsletter')}</li>
+        </ul>
         <p>{t('privacy.collected.serverLead')}</p>
         <ul>
           <li>{t('privacy.collected.server.ip')}</li>
           <li>{t('privacy.collected.server.agent')}</li>
           <li>{t('privacy.collected.server.time')}</li>
         </ul>
+      </LegalSection>
+
+      <LegalSection title={t('privacy.public.title')}>
+        <p>{t('privacy.public.body')}</p>
       </LegalSection>
 
       <LegalSection title={t('privacy.purpose.title')}>
@@ -48,12 +61,20 @@ export const PrivacyPage = () => {
         </LegalSection>
       )}
 
+      {ga && (
+        <LegalSection title={t('privacy.analytics.title')}>
+          <p>{t('privacy.analytics.body')}</p>
+        </LegalSection>
+      )}
+
       <LegalSection title={t('privacy.sharing.title')}>
         <p>{t('privacy.sharing.lead')}</p>
         <ul>
           <li>{t('privacy.sharing.hosting')}</li>
-          <li>{t('privacy.sharing.email')}</li>
-          {MAP !== null && <li>{t('privacy.sharing.map')}</li>}
+          <li>{t('privacy.sharing.email', v)}</li>
+          <li>{t('privacy.sharing.map')}</li>
+          <li>{t('privacy.sharing.search')}</li>
+          {ga && <li>{t('privacy.sharing.analytics')}</li>}
           {stats && <li>{t('privacy.sharing.statistics', v)}</li>}
         </ul>
         <p>{t('privacy.sharing.note')}</p>

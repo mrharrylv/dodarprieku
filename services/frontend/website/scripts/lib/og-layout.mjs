@@ -109,7 +109,7 @@ const fitHeadline = (headline, width, measure, spec) => {
   }
   throw new Error(
     `The headline "${headline}" does not fit ${spec.headline.maxLines} lines of ${width}px ` +
-      `even at ${spec.headline.minSize}px. Shorten hero.title in the default locale's home.json.`,
+      `even at ${spec.headline.minSize}px. Shorten share.headline in the default locale's map.json.`,
   )
 }
 

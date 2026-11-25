@@ -8,7 +8,6 @@ import {
   breadcrumbJsonLd,
   organizationId,
   organizationJsonLd,
-  serviceJsonLd,
   structuredDataFor,
   websiteId,
   websiteJsonLd,
@@ -30,17 +29,11 @@ const strings = (value: unknown): string[] => {
   return []
 }
 
-const SERVICES = [
-  { name: 'Consulting', description: 'Working out what to build.', slug: 'consulting' },
-  { name: 'Support', description: 'Keeping it working.', slug: 'support' },
-]
-
 const input = {
-  locale: 'en' as const,
-  title: 'Services',
-  homeLabel: 'Home',
-  siteDescription: 'We build websites for small businesses in Rīga.',
-  services: SERVICES,
+  locale: 'lv' as const,
+  title: 'Par projektu',
+  homeLabel: 'Karte',
+  siteDescription: 'Latvijas labdarības karte.',
 }
 
 describe('organizationJsonLd', () => {
@@ -81,7 +74,9 @@ describe('organizationJsonLd', () => {
   })
 
   it('never publishes the IBAN', () => {
-    expect(JSON.stringify(data)).not.toContain(COMPANY.iban)
+    // Empty when it is not published at all, and "" is in every string.
+    expect(JSON.stringify(data).toLowerCase()).not.toContain('iban')
+    if (COMPANY.iban !== '') expect(JSON.stringify(data)).not.toContain(COMPANY.iban)
   })
 
   it('keeps only the country when the street is a placeholder', () => {
@@ -154,7 +149,7 @@ describe('breadcrumbJsonLd', () => {
         { name: 'Home', path: '/' },
         { name: 'Services', path: '/services' },
       ],
-      'en',
+      'lv',
     )
 
     const items = data.itemListElement as Array<Record<string, unknown>>
@@ -164,39 +159,10 @@ describe('breadcrumbJsonLd', () => {
     expect(items[1]?.name).toBe('Services')
   })
 
-  it('produces locale-correct URLs', () => {
-    const data = breadcrumbJsonLd([{ name: 'About', path: '/about' }], 'lv')
+  it('produces unprefixed URLs on a one-language site', () => {
+    const data = breadcrumbJsonLd([{ name: 'About', path: '/par-projektu' }], 'lv')
     const items = data.itemListElement as Array<Record<string, unknown>>
-    expect(String(items[0]?.item)).toMatch(/\/lv\/about$/)
-  })
-})
-
-describe('serviceJsonLd', () => {
-  const data = serviceJsonLd(SERVICES, 'lv')
-  const items = data.itemListElement as Array<{ position: number; item: Record<string, unknown> }>
-
-  it('lists each service in order, provided by the organisation', () => {
-    expect(data['@type']).toBe('ItemList')
-    expect(items.map((entry) => entry.position)).toEqual([1, 2])
-    expect(items.map((entry) => entry.item.name)).toEqual(['Consulting', 'Support'])
-    expect(items[0]?.item['@type']).toBe('Service')
-    expect(items[0]?.item.provider).toEqual({ '@id': organizationId() })
-  })
-
-  it("links each service to its anchor on the page, in the page's language", () => {
-    expect(String(items[0]?.item.url)).toMatch(/\/lv\/services#consulting$/)
-  })
-
-  it('describes a service only with real copy', () => {
-    const drafted = serviceJsonLd(
-      [
-        { name: 'Consulting', description: 'Describe the service in three or four sentences.', slug: 'consulting' },
-        { name: 'Support', description: 'Keeping it working.', slug: 'support' },
-      ],
-      'en',
-    ).itemListElement as Array<{ item: Record<string, unknown> }>
-    expect(drafted[0]?.item).not.toHaveProperty('description')
-    expect(drafted[1]?.item.description).toBe('Keeping it working.')
+    expect(String(items[0]?.item)).toMatch(/[^/]\/par-projektu$/)
   })
 })
 
@@ -205,32 +171,18 @@ describe('structuredDataFor', () => {
 
   it('gives the home page the Organization and the WebSite', () => {
     expect(typesOf(structuredDataFor({ ...input, path: ROUTES.home }))).toEqual(['Organization', 'WebSite'])
-    expect(typesOf(structuredDataFor({ ...input, path: '/lv' }))).toEqual(['Organization', 'WebSite'])
-  })
-
-  it('gives the services page its breadcrumb and the services it lists', () => {
-    expect(typesOf(structuredDataFor({ ...input, path: ROUTES.services }))).toEqual([
-      'Organization',
-      'BreadcrumbList',
-      'ItemList',
-    ])
   })
 
   it('gives any other page a Home > Page breadcrumb', () => {
-    const blocks = structuredDataFor({ ...input, path: '/ru/legal/privacy', locale: 'ru', title: 'Privacy' })
+    const blocks = structuredDataFor({ ...input, path: '/legal/privacy', title: 'Privacy' })
     expect(typesOf(blocks)).toEqual(['Organization', 'BreadcrumbList'])
     const crumbs = (blocks[1]?.itemListElement ?? []) as Array<Record<string, unknown>>
-    expect(crumbs.map((crumb) => crumb.name)).toEqual(['Home', 'Privacy'])
-    expect(String(crumbs[1]?.item)).toMatch(/\/ru\/legal\/privacy$/)
-  })
-
-  it('marks up no services on a page that does not list them', () => {
-    expect(typesOf(structuredDataFor({ ...input, path: ROUTES.about }))).not.toContain('ItemList')
-    expect(typesOf(structuredDataFor({ ...input, path: ROUTES.services, services: [] }))).not.toContain('ItemList')
+    expect(crumbs.map((crumb) => crumb.name)).toEqual(['Karte', 'Privacy'])
+    expect(String(crumbs[1]?.item)).toMatch(/[^/]\/legal\/privacy$/)
   })
 
   it('gives a noIndex page the Organization only', () => {
-    expect(typesOf(structuredDataFor({ ...input, path: '/en/nope', noIndex: true }))).toEqual(['Organization'])
+    expect(typesOf(structuredDataFor({ ...input, path: '/nope', noIndex: true }))).toEqual(['Organization'])
   })
 
   it("describes the organisation with the site's own sentence", () => {

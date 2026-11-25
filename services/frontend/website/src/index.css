@@ -47,8 +47,11 @@
      Brand ramp: the one thing a new site changes.
      Swap the hue (0–360) and the whole site re-themes coherently.
        210 blue · 265 violet · 150 green · 25 orange · 350 rose
+     Dodar prieku: 25, a warm coral. It reads as a heart and a gift, warms
+     the neutrals a little, and stays clear of the map's own blues and
+     greens, so pins and buttons never blend into water or parks.
      --------------------------------------------------------------------- */
-  --brand-hue: 255;
+  --brand-hue: 25;
 
   --color-brand-50: oklch(0.971 0.014 var(--brand-hue));
   --color-brand-100: oklch(0.943 0.029 var(--brand-hue));

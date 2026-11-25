@@ -17,8 +17,8 @@ import { staticDocument } from '@/test/static-head'
 const head = staticDocument().head
 const content = (selector: string) => head.querySelector(selector)?.getAttribute('content') ?? null
 
-const home = resources[DEFAULT_LOCALE].home.meta
-const homeTitle = buildTitle(home.title, [resources[DEFAULT_LOCALE].common.nav.home])
+const home = resources[DEFAULT_LOCALE].map.meta
+const homeTitle = buildTitle(home.title, [resources[DEFAULT_LOCALE].common.nav.map])
 
 describe('the static head', () => {
   it("carries the home page's title and description in the default language", () => {
@@ -59,7 +59,7 @@ describe('the static head', () => {
     const fromHtml = [...head.querySelectorAll('meta[data-seo]')].map(keyOf).sort()
     const fromCode = pageHead(
       { title: home.title, description: home.description, path: '/', locale: DEFAULT_LOCALE },
-      { homeLabel: resources[DEFAULT_LOCALE].common.nav.home, siteDescription: home.description, services: [] },
+      { homeLabel: resources[DEFAULT_LOCALE].common.nav.map, siteDescription: home.description },
     )
       .tags.flatMap((tag) => (tag.kind === 'meta' ? [tag.key] : []))
       .sort()

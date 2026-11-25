@@ -1,9 +1,8 @@
 {
   "nav": {
-    "home": "Sākums",
-    "services": "Pakalpojumi",
-    "about": "Par mums",
-    "contact": "Kontakti",
+    "map": "Karte",
+    "about": "Par projektu",
+    "account": "Mans konts",
     "openMenu": "Atvērt izvēlni",
     "closeMenu": "Aizvērt izvēlni",
     "scrollToTop": "Atgriezties lapas augšā"
@@ -12,22 +11,22 @@
     "privacy": "Privātuma politika",
     "cookies": "Sīkdatņu politika",
     "terms": "Lietošanas noteikumi",
-    "company": "Uzņēmuma rekvizīti",
+    "company": "Rekvizīti",
     "updated": "Atjaunināts"
   },
   "cta": {
-    "contactUs": "Sazinieties ar mums",
-    "learnMore": "Uzzināt vairāk",
-    "seeServices": "Skatiet, ko mēs darām",
-    "backHome": "Atpakaļ uz sākumu"
+    "register": "Kļūt par saņēmēju",
+    "backHome": "Atpakaļ uz karti"
   },
   "footer": {
-    "tagline": "Skaidrs darbs, paveikts tad, kad solījām.",
+    "tagline": "Karte, kurā redzams, kas tieši vajadzīgs Latvijas patversmēm, bērnu namiem, pansionātiem un citām iestādēm.",
     "navHeading": "Vietne",
     "legalHeading": "Juridiskā informācija",
-    "contactHeading": "Kontakti",
+    "companyHeading": "Uzturētājs",
+    "projectsHeading": "Citi HA Group projekti",
+    "registrationNumber": "Reģ. Nr. {{value}}",
+    "vatNumber": "PVN {{value}}",
     "rights": "Visas tiesības aizsargātas.",
-    "followUs": "Sekojiet mums",
     "developedBy": "Mājaslapas izstrāde: <1>{{developer}}</1>"
   },
   "theme": {
@@ -44,23 +43,15 @@
     "skipToContent": "Pāriet uz galveno saturu",
     "mainNavigation": "Galvenā navigācija",
     "footerNavigation": "Kājenes navigācija",
+    "projectsNavigation": "Citi HA Group projekti",
     "breadcrumb": "Navigācijas ceļš",
-    "quickActions": "Ātrās darbības"
+    "quickActions": "Ātrās darbības",
+    "opensInNewTab": "(atveras jaunā cilnē)"
   },
   "notFound": {
     "title": "Lapa nav atrasta",
     "description": "Meklētā lapa ir pārvietota vai nekad nav pastāvējusi.",
-    "action": "Atpakaļ uz sākumu"
-  },
-  "contactDetails": {
-    "email": "E-pasts",
-    "phone": "Tālrunis",
-    "address": "Adrese",
-    "hours": "Darba laiks",
-    "weekdays": "No pirmdienas līdz piektdienai",
-    "saturday": "Sestdiena",
-    "sunday": "Svētdiena",
-    "closed": "Slēgts"
+    "action": "Atpakaļ uz karti"
   },
   "whatsapp": {
     "ariaLabel": "Atvērt WhatsApp sarunu ar {{brand}}",
@@ -73,7 +64,12 @@
     "counter": "Attēls {{current}} no {{total}}",
     "show": "Rādīt attēlu {{current}} no {{total}}"
   },
-  "map": {
-    "showOnMap": "Skatīt kartē"
+  "consent": {
+    "title": "Vai drīkstam skaitīt apmeklējumus ar Google Analytics?",
+    "body": "Ja piekrītat, vietne ielādēs Google Analytics, lai mēs redzētu, kā karte tiek lietota. Bez jūsu piekrišanas tas netiek ielādēts.",
+    "learnMore": "Sīkdatņu politika",
+    "accept": "Piekrītu",
+    "reject": "Nepiekrītu",
+    "change": "Mainīt piekrišanas izvēli"
   }
 }

@@ -77,14 +77,9 @@ describe('absoluteUrl and canonicalUrl', () => {
     expect(absoluteUrl('about')).toMatch(/\/about$/)
   })
 
-  it('puts the locale in the canonical URL', () => {
-    expect(canonicalUrl('/about', 'lv')).toMatch(/\/lv\/about$/)
-  })
-
-  it('does not double up an already-prefixed path', () => {
-    // Passing /lv/about must not produce /lv/lv/about.
-    expect(canonicalUrl('/lv/about', 'lv')).toMatch(/\/lv\/about$/)
-    expect(canonicalUrl('/lv/about', 'lv')).not.toMatch(/\/lv\/lv\//)
+  it('puts no locale in the canonical URL of a one-language site', () => {
+    expect(canonicalUrl('/par-projektu', 'lv')).toMatch(/[^/]\/par-projektu$/)
+    expect(canonicalUrl('/par-projektu', 'lv')).not.toMatch(/\/lv\//)
   })
 })
 
@@ -127,7 +122,7 @@ describe('socialTags', () => {
     title: 'About us',
     description: 'What we do and who we are.',
     path: '/about',
-    locale: 'en' as const,
+    locale: 'lv' as const,
   }
 
   it('includes the tags a share card needs', () => {

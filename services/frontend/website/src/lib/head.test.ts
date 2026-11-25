@@ -15,7 +15,7 @@ import {
 } from './head'
 import { absoluteUrl, canonicalUrl, shareImagePath } from './seo'
 
-const strings = { homeLabel: 'Home', siteDescription: 'We build things.', services: [] }
+const strings = { homeLabel: 'Home', siteDescription: 'We build things.' }
 
 const links = (head: PageHead, rel: string) =>
   head.tags.filter((tag) => tag.kind === 'link' && tag.rel === rel)
@@ -32,7 +32,7 @@ describe('pageHead', () => {
   })
 
   it('titles a page called by the home label with the brand alone', () => {
-    const home = pageHead({ title: 'Home', description: 'd', path: '/', locale: 'en' }, strings)
+    const home = pageHead({ title: 'Home', description: 'd', path: '/', locale: 'lv' }, strings)
     expect(home.title).toBe(SITE.name)
   })
 
@@ -59,7 +59,7 @@ describe('pageHead', () => {
   })
 
   it('names the app for the home screen and the install prompt, on every page', () => {
-    const notFound = pageHead({ title: 'Not found', description: 'd', path: '/404', locale: 'en', noIndex: true }, strings)
+    const notFound = pageHead({ title: 'Not found', description: 'd', path: '/404', locale: 'lv', noIndex: true }, strings)
     for (const head of [about, notFound]) {
       expect(metaContent(head, 'application-name')).toBe(SITE.shortName)
       expect(metaContent(head, 'apple-mobile-web-app-title')).toBe(SITE.shortName)
@@ -70,17 +70,9 @@ describe('pageHead', () => {
     expect(blocks(about).map((block) => block['@type'])).toEqual(['Organization', 'BreadcrumbList'])
   })
 
-  it('marks up the services the services page lists', () => {
-    const services = pageHead(
-      { title: 'Services', description: 'd', path: '/services', locale: 'en' },
-      { ...strings, services: [{ name: 'Audit', description: 'We look.', slug: 'audit' }] },
-    )
-    expect(blocks(services).map((block) => block['@type'])).toEqual(['Organization', 'BreadcrumbList', 'ItemList'])
-  })
-
   describe('on a noIndex page', () => {
     const missing = pageHead(
-      { title: 'Not found', description: 'Gone.', path: '/404', locale: 'en', noIndex: true },
+      { title: 'Not found', description: 'Gone.', path: '/404', locale: 'lv', noIndex: true },
       strings,
     )
 
@@ -100,7 +92,7 @@ describe('pageHead', () => {
   })
 
   it('falls back to the default language for an unknown locale', () => {
-    const odd = pageHead({ title: 't', description: 'd', path: '/', locale: 'xx' as 'en' }, strings)
+    const odd = pageHead({ title: 't', description: 'd', path: '/', locale: 'xx' as 'lv' }, strings)
     expect(odd.lang).toBe(SITE.defaultLang)
   })
 })
@@ -121,14 +113,14 @@ describe('canonicalOf', () => {
 
 describe('alternatesOf', () => {
   it('reads the hreflang alternates a head declares, x-default last, and nothing else', () => {
-    const about = pageHead({ title: 'About', description: 'd', path: '/about', locale: 'ru' }, strings)
+    const about = pageHead({ title: 'About', description: 'd', path: '/about', locale: 'lv' }, strings)
     const declared = alternatesOf(about)
     expect(declared.map((alternate) => alternate.hrefLang)).toEqual([...LOCALES.map((locale) => locale.htmlLang), 'x-default'])
     expect(declared.every((alternate) => alternate.href.endsWith('/about'))).toBe(true)
   })
 
   it('finds none on a page that declares none', () => {
-    expect(alternatesOf(pageHead({ title: 'x', description: 'd', path: '/nope', locale: 'en', noIndex: true }, strings))).toEqual([])
+    expect(alternatesOf(pageHead({ title: 'x', description: 'd', path: '/nope', locale: 'lv', noIndex: true }, strings))).toEqual([])
   })
 })
 

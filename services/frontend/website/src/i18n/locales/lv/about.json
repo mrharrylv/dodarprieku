@@ -1,36 +1,28 @@
 {
   "meta": {
-    "title": "Par mums",
-    "description": "Aizstājiet ar teikumu par to, kas vada uzņēmumu un kādas vērtības tas pārstāv."
+    "title": "Par projektu",
+    "description": "Dodar prieku savieno cilvēkus, kuri vēlas palīdzēt, ar Latvijas iestādēm, kurām kaut kas ir vajadzīgs: no suņu barības līdz autiņbiksītēm."
   },
-  "hero": {
-    "title": "Par mums",
-    "subtitle": "Viena rindkopa. Kas jūs esat, cik ilgi ar to nodarbojaties un kur atrodaties."
-  },
-  "story": {
-    "title": "Kā mēs nonācām šeit",
-    "body": "Divas vai trīs rindkopas patiesas vēstures. Kad uzņēmums tika dibināts, ar ko tas sāka, kas mainījās. Konkrētība ir vērtīgāka par iespaidīgumu: dibināšanas gads un pirmais klients ir vairāk vērts nekā lappuse ar misijas formulējumu."
-  },
-  "values": {
-    "title": "Kā mēs strādājam",
-    "items": {
-      "honest": {
-        "title": "Mēs protam atteikt",
-        "body": "Ja darbs mums neder, mēs to pasakām, nevis uzņemamies to un paveicam slikti."
-      },
-      "direct": {
-        "title": "Mēs atbildam",
-        "body": "Uz ziņām atbildam tajā pašā darba dienā, arī uz neērtajām."
-      },
-      "finish": {
-        "title": "Mēs pabeidzam",
-        "body": "Darbs ir padarīts tad, kad tas strādā jūsu rokās, nevis tad, kad mums beigušās apmaksātās stundas."
-      }
+  "title": "Par projektu",
+  "lead": "Dodar prieku ir karte, kurā Latvijas patversmes, bērnu nami, pansionāti, slimnīcas un citas iestādes pašas norāda, kas tām šobrīd ir vajadzīgs.",
+  "how": {
+    "title": "Kā tas darbojas",
+    "steps": {
+      "find": "Atrodiet kartē iestādi sev tuvumā vai to, kuras darbs jums ir tuvs.",
+      "choose": "Apskatiet, kas tai vajadzīgs, un atzīmējiet lietas, ko atnesīsiet. Iestāde un citi palīdzētāji redz, kas jau ir apsolīts.",
+      "deliver": "Nogādājiet ziedojumu tā, kā iestāde norādījusi: personīgi, pakomātā vai pa pastu."
     }
   },
-  "cta": {
-    "title": "Vēlaties parunāt?",
-    "body": "Pirmā saruna neko nemaksā un parasti izšķir, vai ir vērts sarunāt otro.",
-    "button": "Sazinieties ar mums"
+  "recipients": {
+    "title": "Iestādēm",
+    "body": "Reģistrācija ir bez maksas. Pēc pieteikuma mēs to pārskatām, un, kad tas ir apstiprināts, jūsu iestāde parādās kartē. Vajadzību sarakstu varat mainīt jebkurā brīdī savā kontā."
+  },
+  "money": {
+    "title": "Bez naudas",
+    "body": "Šeit netiek vākta nauda. Dodar prieku palīdz nogādāt lietas, kuras patiešām vajag, tieši tur, kur tās gaida."
+  },
+  "operator": {
+    "title": "Kas to uztur",
+    "body": "Projektu bez maksas izveidojis un uztur {{legalName}}. Jautājumi un ieteikumi: {{email}}."
   }
 }

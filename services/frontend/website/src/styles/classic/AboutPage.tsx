@@ -1,68 +1,58 @@
 import { useTranslation } from 'react-i18next'
 
 import { ROUTES } from '@/config/site'
-import { VALUES } from '@/data/services'
 import { useLocale } from '@/hooks/useLocale'
-import { localePath } from '@/lib/locale-path'
 import { Seo } from '@/components/seo/Seo'
-import { ButtonLink } from '@/components/ui/Button'
+import { legalValues } from '@/components/legal/legal-values'
+import { RegisterButton } from '@/components/layout/RegisterButton'
 import { Card } from '@/components/ui/Card'
 import { Container } from '@/components/ui/Container'
 import { Section } from '@/components/ui/Section'
 
+/** The three steps a visitor takes, in order: `how.steps.<key>` in `about.json`. */
+const STEPS = ['find', 'choose', 'deliver'] as const
+
+/** "Par projektu": what Dodar prieku is, for visitors and for institutions. */
 export const AboutPage = () => {
   const { t } = useTranslation('about')
   const { locale } = useLocale()
+  const v = legalValues()
 
   return (
     <>
-      <Seo
-        title={t('meta.title')}
-        description={t('meta.description')}
-        path={ROUTES.about}
-        locale={locale}
-      />
+      <Seo title={t('meta.title')} description={t('meta.description')} path={ROUTES.about} locale={locale} />
 
       <Container className="py-16 sm:py-24">
-        <h1 className="max-w-3xl text-(length:--text-4xl) text-(--text-primary)">
-          {t('hero.title')}
-        </h1>
-        <p className="mt-5 max-w-2xl text-(length:--text-lg) text-(--text-secondary)">
-          {t('hero.subtitle')}
-        </p>
+        <h1 className="max-w-3xl text-(length:--text-4xl) text-(--text-primary)">{t('title')}</h1>
+        <p className="mt-5 max-w-2xl text-(length:--text-lg) text-(--text-secondary)">{t('lead')}</p>
       </Container>
 
-      <Section tone="sunken">
-        <div className="prose-page">
-          <h2 className="text-(length:--text-2xl) text-(--text-primary)">
-            {t('story.title')}
-          </h2>
-          <p>{t('story.body')}</p>
-        </div>
-      </Section>
-
-      <Section title={t('values.title')}>
-        <ul className="grid gap-5 sm:grid-cols-3">
-          {VALUES.map((key) => (
+      <Section tone="sunken" title={t('how.title')}>
+        <ol className="grid gap-5 sm:grid-cols-3">
+          {STEPS.map((key, index) => (
             <li key={key}>
               <Card className="h-full">
-                <h3 className="text-(length:--text-lg) text-(--text-primary)">
-                  {t(`values.items.${key}.title`)}
-                </h3>
-                <p className="mt-3 text-(--text-secondary)">
-                  {t(`values.items.${key}.body`)}
+                <p aria-hidden="true" className="text-(length:--text-2xl) font-semibold text-(--text-accent)">
+                  {index + 1}
                 </p>
+                <p className="mt-3 text-(--text-secondary)">{t(`how.steps.${key}`)}</p>
               </Card>
             </li>
           ))}
-        </ul>
+        </ol>
       </Section>
 
-      <Section tone="sunken" align="center" title={t('cta.title')} subtitle={t('cta.body')}>
-        <div className="flex justify-center">
-          <ButtonLink to={localePath(ROUTES.contact, locale)} size="lg">
-            {t('cta.button')}
-          </ButtonLink>
+      <Section>
+        <div className="prose-page">
+          <h2>{t('recipients.title')}</h2>
+          <p>{t('recipients.body')}</p>
+          <h2>{t('money.title')}</h2>
+          <p>{t('money.body')}</p>
+          <h2>{t('operator.title')}</h2>
+          <p>{t('operator.body', v)}</p>
+        </div>
+        <div className="mt-8">
+          <RegisterButton size="lg" />
         </div>
       </Section>
     </>

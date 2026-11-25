@@ -14,6 +14,15 @@ const here = (path: string): string => fileURLToPath(new URL(path, import.meta.u
 
 const STYLES_DIR = here('./src/styles')
 
+/**
+ * The contracts, catalog and validators shared with the API and the admin
+ * app (doc/specs/dodarprieku.md), imported as `@shared/<module>`.
+ */
+const SHARED_DIR = here('../../shared/src')
+
+/** The API's local dev server, which `npm run dev` proxies /api, /media and /data to. */
+const API_DEV_ORIGIN = 'http://localhost:8787'
+
 /** Every folder under src/styles/ that has a style.ts. Sorted for stable messages. */
 const availableStyles = (): readonly string[] =>
   readdirSync(STYLES_DIR, { withFileTypes: true })
@@ -196,8 +205,18 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     resolve: {
       alias: {
         '@active-style': join(STYLES_DIR, style),
+        '@shared': SHARED_DIR,
         '@': here('./src'),
       },
+    },
+
+    server: {
+      // The shared package sits outside this app's root; Vite serves only
+      // what is allowed.
+      fs: { allow: [here('.'), SHARED_DIR] },
+      // In production CloudFront routes these to the API and the media
+      // bucket; in development the API's local server answers all three.
+      proxy: Object.fromEntries(['/api', '/media', '/data'].map((path) => [path, { target: API_DEV_ORIGIN, changeOrigin: true }])),
     },
 
     build: {

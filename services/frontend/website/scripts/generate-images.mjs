@@ -30,7 +30,7 @@
  * background colours, and index.html's two theme-color metas.
  *
  * Re-run it after replacing favicon.svg with the real logo, changing the brand
- * name, the brand hue, or the home page's hero.title. It fails, rather than
+ * name, the brand hue, or map.json's share.headline. It fails, rather than
  * writing a clipped card, when the brand name or headline cannot fit.
  *
  * Needs `sharp`, `fontkit` and `wawoff2` (devDependencies). None of them ships
@@ -85,8 +85,8 @@ const DARK = hex('color-ink-950')
 const site = read('src/config/site.ts')
 const brandName = site.match(/export const SITE = \{[\s\S]*?name:\s*'([^']+)'/)?.[1] ?? 'Site'
 const defaultLocale = site.match(/export const DEFAULT_LOCALE[^=]*=\s*'([^']+)'/)?.[1] ?? 'en'
-const home = JSON.parse(read(`src/i18n/locales/${defaultLocale}/home.json`))
-const headline = home?.hero?.title ?? ''
+const map = JSON.parse(read(`src/i18n/locales/${defaultLocale}/map.json`))
+const headline = map?.share?.headline ?? ''
 
 // --- keep the literal hexes honest -------------------------------------------
 

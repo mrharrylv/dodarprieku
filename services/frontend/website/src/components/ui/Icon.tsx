@@ -19,31 +19,41 @@ import { cn } from '@/lib/cn'
 export type IconName =
   | 'arrowRight'
   | 'arrowUp'
+  | 'building'
   | 'check'
   | 'chevronDown'
   | 'close'
+  | 'flag'
+  | 'heart'
   | 'mail'
   | 'menu'
   | 'moon'
   | 'phone'
   | 'pin'
+  | 'plus'
   | 'sparkle'
   | 'sun'
+  | 'ticket'
   | 'whatsapp'
 
 const STROKES: Record<Exclude<IconName, 'whatsapp'>, string> = {
   arrowRight: 'M5 12h13M12 6l6 6-6 6',
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
+  building: 'M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 10h3a1 1 0 0 1 1 1v10M3 21h18M9 8h2M9 12h2M9 16h2',
   check: 'M5 12.5l4.5 4.5L19 7',
   chevronDown: 'M6 9l6 6 6-6',
   close: 'M6 6l12 12M18 6L6 18',
+  flag: 'M5 21V4m0 0h11l-2 4 2 4H5',
+  heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z',
   mail: 'M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm-.6.4 8.6 6.4 8.6-6.4',
   menu: 'M4 7h16M4 12h16M4 17h16',
   moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z',
   phone:
     'M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L14 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z',
   pin: 'M12 21s6-5.5 6-11a6 6 0 1 0-12 0c0 5.5 6 11 6 11Zm0-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+  plus: 'M12 5v14M5 12h14',
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z',
+  ticket: 'M4 7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3a2 2 0 0 0 0 4v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a2 2 0 0 0 0-4V7Zm10-1v12',
   sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-15v2m0 16v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M2 12h2m16 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
 }
 

@@ -95,20 +95,3 @@ describe('locale parity', () => {
     })
   })
 })
-
-describe('consent copy', () => {
-  /**
-   * The privacy-policy link inside the consent checkbox is marked with <1>…</1>
-   * and rendered by a <Trans> component. react-i18next indexes those children
-   * from 0, so the tag number and the component array must agree: get it wrong
-   * and the link renders as plain text in that language only, which is how a
-   * consent checkbox quietly stops linking to the policy it references.
-   */
-  it.each(LOCALE_CODES)('"%s" keeps the privacy link tag in the consent string', (locale) => {
-    const contact = resources[locale].contact as { form: { consent: string } }
-    const consent = contact.form.consent
-
-    expect(consent, `${locale} consent string lost its <1> tag`).toContain('<1>')
-    expect(consent, `${locale} consent string lost its </1> tag`).toContain('</1>')
-  })
-})

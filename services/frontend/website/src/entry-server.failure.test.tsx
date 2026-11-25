@@ -23,8 +23,8 @@ vi.mock('@/App', () => ({
 describe('renderPage', () => {
   it('throws, naming the page, when anything in the tree threw', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const page = { key: 'en:/about', url: '/en/about', locale: 'en', route: '/about', files: [] } as const
+    const page = { key: 'lv:/par-projektu', url: '/par-projektu', locale: 'lv', route: '/par-projektu', files: [] } as const
 
-    await expect(renderPage(page)).rejects.toThrow(/\/en\/about threw while rendering:[\s\S]*the page broke/)
+    await expect(renderPage(page)).rejects.toThrow(/\/par-projektu threw while rendering:[\s\S]*the page broke/)
   })
 })

@@ -27,4 +27,4 @@ export const legalValues = () => ({
  * deploy and tell the reader that the policy was revised when it was not.
  * Change it in the same commit as any change to the legal copy.
  */
-export const LEGAL_LAST_UPDATED = '2026-11-06'
+export const LEGAL_LAST_UPDATED = '2026-11-25'

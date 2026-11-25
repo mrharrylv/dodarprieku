@@ -1,6 +1,6 @@
 import { beforeAll, describe, it, expect } from 'vitest'
 
-import { DEFAULT_LOCALE, LOCALES, LOCALE_CODES, ROUTES, type LocaleCode } from '@/config/site'
+import { DEFAULT_LOCALE, LOCALES, ROUTES, type LocaleCode } from '@/config/site'
 import { pageHead, type PageHead } from './head'
 import {
   NOT_FOUND_FILE,
@@ -21,8 +21,7 @@ const pages = prerenderPages()
 const byKey = (key: string) => pages.find((page) => page.key === key) as PrerenderPage
 /** The one 404 page, in whichever language is the default. */
 const NOT_FOUND_KEY = pageKey(DEFAULT_LOCALE, null)
-const OTHER_LOCALE = LOCALE_CODES.find((code) => code !== DEFAULT_LOCALE) ?? DEFAULT_LOCALE
-const strings = { homeLabel: 'Home', siteDescription: 'We build things.', services: [] }
+const strings = { homeLabel: 'Home', siteDescription: 'We build things.' }
 
 /** The origin `absoluteUrl` uses in this environment: jsdom's. */
 const ORIGIN = absoluteUrl('/').replace(/\/$/, '')
@@ -41,22 +40,27 @@ describe('prerenderPages', () => {
     }
   })
 
-  it('writes each page to <url>/index.html', () => {
-    expect(byKey('lv:/about').files).toEqual(['lv/about/index.html'])
-    expect(byKey('ru:/legal/privacy').files).toEqual(['ru/legal/privacy/index.html'])
-    expect(byKey(`${OTHER_LOCALE}:/`).files).toEqual([`${OTHER_LOCALE}/index.html`])
+  it('writes each page to <url>/index.html, with no language prefix', () => {
+    expect(byKey('lv:/par-projektu').files).toEqual(['par-projektu/index.html'])
+    expect(byKey('lv:/legal/privacy').files).toEqual(['legal/privacy/index.html'])
+    expect(byKey('lv:/konts/parole').files).toEqual(['konts/parole/index.html'])
   })
 
-  it('writes the default language home page to the bare root as well', () => {
-    expect(byKey(`${DEFAULT_LOCALE}:/`).files).toEqual([`${DEFAULT_LOCALE}/index.html`, 'index.html'])
+  it('writes the home page to the bare root, once', () => {
+    expect(byKey(`${DEFAULT_LOCALE}:/`).files).toEqual(['index.html'])
     expect(pages.flatMap((page) => page.files).filter((file) => file === 'index.html')).toHaveLength(1)
+  })
+
+  // The edge serves this one file for every /organizacija/<slug>.
+  it('writes one charity shell, at /organizacija', () => {
+    expect(byKey(`lv:${ROUTES.charity}`).files).toEqual(['organizacija/index.html'])
   })
 
   it('renders the 404 page at a URL no route matches, in the default language', () => {
     const notFound = byKey(NOT_FOUND_KEY)
     expect(notFound.route).toBeNull()
     expect(notFound.files).toEqual([NOT_FOUND_FILE])
-    expect(notFound.url).toBe(`/${DEFAULT_LOCALE}/404`)
+    expect(notFound.url).toBe('/404')
   })
 
   it('never writes two pages to one file', () => {
@@ -69,31 +73,30 @@ describe('fileForUrl', () => {
   it('maps a URL to the object key CloudFront rewrites it to', () => {
     expect(fileForUrl('/')).toBe('index.html')
     expect(fileForUrl('/en')).toBe('en/index.html')
-    expect(fileForUrl('/en/about/')).toBe('en/about/index.html')
+    expect(fileForUrl('/par-projektu/')).toBe('par-projektu/index.html')
   })
 })
 
 describe('keyForPathname', () => {
   it('names the page a URL renders', () => {
-    expect(keyForPathname('/en')).toBe('en:/')
-    expect(keyForPathname('/lv/about')).toBe('lv:/about')
-    expect(keyForPathname('/ru/legal/terms')).toBe('ru:/legal/terms')
+    expect(keyForPathname('/')).toBe('lv:/')
+    expect(keyForPathname('/par-projektu')).toBe('lv:/par-projektu')
+    expect(keyForPathname('/legal/terms')).toBe('lv:/legal/terms')
   })
 
   it('ignores a trailing slash, as the router and the edge do', () => {
-    expect(keyForPathname('/en/')).toBe('en:/')
-    expect(keyForPathname('/lv/about/')).toBe('lv:/about')
+    expect(keyForPathname('/par-projektu/')).toBe('lv:/par-projektu')
   })
 
-  it('names the 404 page of the URL language for a path no route matches', () => {
-    expect(keyForPathname('/en/no-such-page')).toBe('en:404')
-    expect(keyForPathname('/lv/no-such-page')).toBe('lv:404')
+  it('names the 404 page for a path no route matches', () => {
+    expect(keyForPathname('/no-such-page')).toBe('lv:404')
+    expect(keyForPathname('/en/par-projektu')).toBe('lv:404')
   })
 
-  it('is null for a URL that redirects rather than renders', () => {
-    expect(keyForPathname('/')).toBeNull()
-    expect(keyForPathname('/services')).toBeNull()
-    expect(keyForPathname('/de/about')).toBeNull()
+  // The shell is written once; a charity's own address renders the page
+  // afresh in the browser rather than hydrating the shell's markup.
+  it('names no prerendered page for a charity address', () => {
+    expect(keyForPathname('/organizacija/patversme')).toBe('lv:404')
   })
 
   it('agrees with prerenderPages for every page it writes', () => {
@@ -102,48 +105,35 @@ describe('keyForPathname', () => {
 })
 
 describe('startupPlan', () => {
-  const plan = (pathname: string, prerendered: string | null, redirecting = false, resolvedLanguage = 'en') =>
+  const plan = (pathname: string, prerendered: string | null, redirecting = false, resolvedLanguage = 'lv') =>
     startupPlan({ pathname, resolvedLanguage, prerendered, redirecting })
 
   it('hydrates the page the address renders', () => {
-    expect(plan('/lv/about', 'lv:/about')).toEqual({ mount: true, address: null, hydrate: true })
+    expect(plan('/par-projektu', 'lv:/par-projektu')).toEqual({ mount: true, address: null, hydrate: true })
+    expect(plan('/', 'lv:/', false, 'en')).toEqual({ mount: true, address: null, hydrate: true })
   })
 
   it('moves the address first, then hydrates the page it now names', () => {
-    expect(plan('/lv/about/', 'lv:/about')).toEqual({ mount: true, address: '/lv/about', hydrate: true })
-    expect(plan('/lv/about/index.html', 'lv:/about')).toEqual({ mount: true, address: '/lv/about', hydrate: true })
-    expect(plan('/', 'en:/')).toEqual({ mount: true, address: '/en', hydrate: true })
-    expect(plan('/index.html', 'en:/')).toEqual({ mount: true, address: '/en', hydrate: true })
+    expect(plan('/par-projektu/', 'lv:/par-projektu')).toEqual({ mount: true, address: '/par-projektu', hydrate: true })
+    expect(plan('/par-projektu/index.html', 'lv:/par-projektu')).toEqual({ mount: true, address: '/par-projektu', hydrate: true })
+    expect(plan('/index.html', 'lv:/')).toEqual({ mount: true, address: '/', hydrate: true })
   })
 
   it('renders from scratch when the markup is another page, or there is none', () => {
-    expect(plan('/', 'en:/', false, 'lv')).toEqual({ mount: true, address: '/lv', hydrate: false })
-    expect(plan('/lv/nope', 'en:404')).toEqual({ mount: true, address: null, hydrate: false })
-    expect(plan('/en/about', null)).toEqual({ mount: true, address: null, hydrate: false })
+    expect(plan('/organizacija/patversme', `lv:${ROUTES.charity}`)).toEqual({ mount: true, address: null, hydrate: false })
+    expect(plan('/par-projektu', null)).toEqual({ mount: true, address: null, hydrate: false })
   })
 
-  // The edge answers /lv/nope with the one 404.html, which is in the default
-  // language. theme-init.js keeps it hidden, and main.tsx shows it only after
-  // rendering the not-found page afresh, in the address's language.
-  it.each(LOCALE_CODES.filter((code) => code !== DEFAULT_LOCALE))(
-    'renders /%s/nope from scratch over the default-language 404 page',
-    (code) => {
-      expect(plan(`/${code}/nope`, NOT_FOUND_KEY, false, code)).toEqual({ mount: true, address: null, hydrate: false })
-    },
-  )
-
-  it('hydrates the 404 page at an address in the default language', () => {
-    expect(plan(`/${DEFAULT_LOCALE}/nope`, NOT_FOUND_KEY)).toEqual({ mount: true, address: null, hydrate: true })
+  it('hydrates the 404 page', () => {
+    expect(plan('/nope', NOT_FOUND_KEY)).toEqual({ mount: true, address: null, hydrate: true })
   })
 
   it('mounts on a scheme-relative path too, at an address on this origin', () => {
-    expect(plan('//evil.com/', 'en:404')).toEqual({ mount: true, address: '/evil.com', hydrate: false })
+    expect(plan('//evil.com/', 'lv:404')).toEqual({ mount: true, address: '/evil.com', hydrate: true })
   })
 
-  // theme-init.js has already called location.replace: the page is on its way
-  // out, and touching history or rendering it is wasted work at best.
   it('does not start at all while theme-init.js is sending the page elsewhere', () => {
-    expect(plan('/', 'en:/', true, 'lv')).toEqual({ mount: false })
+    expect(plan('/', 'lv:/', true)).toEqual({ mount: false })
   })
 })
 
@@ -168,8 +158,8 @@ describe('pageDocument', () => {
     '</html>',
   ].join('\n')
 
-  const page = byKey('lv:/about')
-  const head = headFor('/about', 'lv')
+  const page = byKey('lv:/par-projektu')
+  const head = headFor('/par-projektu', 'lv')
   const html = pageDocument(template, page, { body: BODY, head })
   const parsed = new DOMParser().parseFromString(html, 'text/html')
 
@@ -208,7 +198,7 @@ describe('pageDocument', () => {
 
   it('puts the body in #root and marks which page it is', () => {
     const root = parsed.getElementById('root')
-    expect(root?.getAttribute(PRERENDER_ATTR)).toBe('lv:/about')
+    expect(root?.getAttribute(PRERENDER_ATTR)).toBe('lv:/par-projektu')
     expect(root?.querySelector('h1')?.textContent).toBe('About')
   })
 
@@ -241,10 +231,10 @@ describe('pageDocument', () => {
 })
 
 describe('validatePage', () => {
-  const about = byKey('lv:/about')
+  const about = byKey('lv:/par-projektu')
 
   it('passes a complete page', () => {
-    expect(validatePage(about, { body: BODY, head: headFor('/about', 'lv') }, ORIGIN)).toEqual([])
+    expect(validatePage(about, { body: BODY, head: headFor('/par-projektu', 'lv') }, ORIGIN)).toEqual([])
   })
 
   it('accepts the language home as canonical, as a one-document style declares', () => {
@@ -252,17 +242,17 @@ describe('validatePage', () => {
   })
 
   it('rejects an empty root and a missing or doubled h1', () => {
-    expect(validatePage(about, { body: '', head: headFor('/about', 'lv') }, ORIGIN)).toEqual([
+    expect(validatePage(about, { body: '', head: headFor('/par-projektu', 'lv') }, ORIGIN)).toEqual([
       'rendered an empty #root',
       'has 0 <h1> elements, not exactly one',
     ])
-    expect(validatePage(about, { body: '<h1>a</h1><h1 class="x">b</h1>', head: headFor('/about', 'lv') }, ORIGIN)).toEqual([
+    expect(validatePage(about, { body: '<h1>a</h1><h1 class="x">b</h1>', head: headFor('/par-projektu', 'lv') }, ORIGIN)).toEqual([
       'has 2 <h1> elements, not exactly one',
     ])
   })
 
   it('rejects an inline script, which production would block', () => {
-    const problems = validatePage(about, { body: `${BODY}<script>x()</script>`, head: headFor('/about', 'lv') }, ORIGIN)
+    const problems = validatePage(about, { body: `${BODY}<script>x()</script>`, head: headFor('/par-projektu', 'lv') }, ORIGIN)
     expect(problems.join()).toMatch(/<script>/)
   })
 
@@ -272,29 +262,26 @@ describe('validatePage', () => {
     ])
   })
 
-  it('rejects a canonical in another language, or on another page', () => {
-    expect(validatePage(about, { body: BODY, head: headFor('/about', 'en') }, ORIGIN).join()).toContain(
-      `declares canonical ${canonicalUrl('/about', 'en')}`,
-    )
-    expect(validatePage(about, { body: BODY, head: headFor('/contact', 'lv') }, ORIGIN).join()).toContain(
-      'declares canonical',
+  it('rejects a canonical on another page', () => {
+    expect(validatePage(about, { body: BODY, head: headFor('/konts', 'lv') }, ORIGIN).join()).toContain(
+      `declares canonical ${canonicalUrl('/konts', 'lv')}`,
     )
   })
 
   it('rejects a relative canonical when the build has an origin', () => {
-    const problems = validatePage(about, { body: BODY, head: headFor('/about', 'lv') }, 'https://www.example.lv')
-    expect(problems.join()).toMatch(/declares canonical .* expected https:\/\/www\.example\.lv\/lv\/about/)
+    const problems = validatePage(about, { body: BODY, head: headFor('/par-projektu', 'lv') }, 'https://www.example.lv')
+    expect(problems.join()).toMatch(/declares canonical .* expected https:\/\/www\.example\.lv\/par-projektu/)
     expect(problems.join()).toMatch(/og:image/)
   })
 
   it('rejects a head whose og:url, robots, lang, title or description are wrong', () => {
-    const good = headFor('/about', 'lv')
+    const good = headFor('/par-projektu', 'lv')
     const broken: PageHead = {
       title: ' ',
       lang: 'en',
       tags: good.tags
         .filter((tag) => !(tag.kind === 'meta' && ['og:url', 'description'].includes(tag.key)))
-        .filter((tag) => !(tag.kind === 'link' && tag.hrefLang === 'ru'))
+        .filter((tag) => !(tag.kind === 'link' && tag.hrefLang === 'x-default'))
         .map((tag) => (tag.kind === 'meta' && tag.key === 'robots' ? { ...tag, content: 'noindex' } : tag)),
     }
     expect(validatePage(about, { body: BODY, head: broken }, ORIGIN)).toEqual([
@@ -303,7 +290,7 @@ describe('validatePage', () => {
       'declares lang "en", expected "lv"',
       'is noindex',
       'has an og:url that is not its canonical',
-      'has no hreflang alternate for ru',
+      'has no hreflang alternate for x-default',
     ])
   })
 
@@ -331,11 +318,11 @@ describe('declaredPages', () => {
   beforeAll(() => {
     declared = declaredPages(
       [
-        { page: byKey('lv:/about'), head: headFor('/about', 'lv') },
-        // A route that shares the home page's document, as long-scroll's do.
-        { page: byKey('ru:/services'), head: headFor('/', 'ru') },
+        { page: byKey('lv:/par-projektu'), head: headFor('/par-projektu', 'lv') },
+        // A route whose page names the home page as canonical.
+        { page: byKey('lv:/konts'), head: headFor('/', 'lv') },
         { page: byKey(NOT_FOUND_KEY), head: headFor('/nope', DEFAULT_LOCALE, true) },
-        { page: byKey('en:/contact'), head: null },
+        { page: byKey('lv:/registreties'), head: null },
       ],
       ORIGIN,
     )
@@ -343,21 +330,21 @@ describe('declaredPages', () => {
 
   it('reads each page with a route: its own URL, the canonical its head names, and its alternates', () => {
     expect(declared[0]).toEqual({
-      route: '/about',
+      route: '/par-projektu',
       locale: 'lv',
-      url: `${ORIGIN}/lv/about`,
-      canonical: canonicalUrl('/about', 'lv'),
-      alternates: headFor('/about', 'lv').tags.flatMap((tag) =>
+      url: `${ORIGIN}/par-projektu`,
+      canonical: canonicalUrl('/par-projektu', 'lv'),
+      alternates: headFor('/par-projektu', 'lv').tags.flatMap((tag) =>
         tag.kind === 'link' && tag.rel === 'alternate' ? [{ hrefLang: tag.hrefLang, href: tag.href }] : [],
       ),
     })
   })
 
   it('keeps what a page declares, even when it names another URL as canonical', () => {
-    expect(declared[1]).toMatchObject({ url: `${ORIGIN}/ru/services`, canonical: canonicalUrl('/', 'ru') })
+    expect(declared[1]).toMatchObject({ url: `${ORIGIN}/konts`, canonical: canonicalUrl('/', 'lv') })
   })
 
   it('leaves out the 404 page and a page with no head', () => {
-    expect(declared.map((entry) => entry.url)).toEqual([`${ORIGIN}/lv/about`, `${ORIGIN}/ru/services`])
+    expect(declared.map((entry) => entry.url)).toEqual([`${ORIGIN}/par-projektu`, `${ORIGIN}/konts`])
   })
 })

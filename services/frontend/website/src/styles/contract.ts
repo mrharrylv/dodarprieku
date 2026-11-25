@@ -4,18 +4,20 @@ import type { ComponentType } from 'react'
  * What a style is.
  *
  * A style owns everything a visitor SEES that is not content: the shell
- * (header, navigation, footer), the four marketing pages, its token overrides
- * in `tokens.css`, and its motion. It owns nothing a visitor READS: every
+ * (header, navigation, footer), the About page (`/par-projektu`), its token
+ * overrides in `tokens.css`, and its motion. It owns nothing a visitor READS: every
  * string comes from the locale files, every list from `src/data/`, every value
  * from `src/config/`. That split is what lets a style be deleted with
  * `rm -rf src/styles/<id>` and nothing else change.
  *
- * The legal pages, the 404 and the contact form are shared and render inside
- * whichever shell is active. A style's contact page must mount `ContactForm`.
+ * Dodar prieku is an application, not a marketing site: the map (the home
+ * page), the charity page, registration and the account pages are shared
+ * pages under `src/pages/`, and like the legal pages and the 404 they render
+ * inside whichever shell is active.
  *
  * `src/styles/styles.test.tsx` renders every folder on disk against this
- * contract, so a style that forgets the skip link or the footer credit fails
- * the build rather than shipping.
+ * contract, so a style that forgets the skip link, the footer credit or the
+ * register button fails the build rather than shipping.
  */
 export interface SiteStyle {
   /** Must equal the folder name under `src/styles/`. */
@@ -26,9 +28,6 @@ export interface SiteStyle {
    */
   readonly Shell: ComponentType
   readonly pages: {
-    readonly Home: ComponentType
-    readonly Services: ComponentType
     readonly About: ComponentType
-    readonly Contact: ComponentType
   }
 }

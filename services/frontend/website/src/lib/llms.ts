@@ -22,10 +22,13 @@ import { isPlaceholder, publishableCopy } from './placeholder'
  * check in `crawler-files.ts`.
  */
 export const PAGE_META = {
-  home: { ns: 'home', key: 'meta' },
-  services: { ns: 'services', key: 'meta' },
+  home: { ns: 'map', key: 'meta' },
+  charity: { ns: 'charity', key: 'meta' },
+  register: { ns: 'register', key: 'meta' },
+  account: { ns: 'account', key: 'meta' },
+  setPassword: { ns: 'account', key: 'setPassword.meta' },
+  forgotPassword: { ns: 'account', key: 'forgotPassword.meta' },
   about: { ns: 'about', key: 'meta' },
-  contact: { ns: 'contact', key: 'meta' },
   privacy: { ns: 'legal', key: 'privacy.meta' },
   cookies: { ns: 'legal', key: 'cookies.meta' },
   terms: { ns: 'legal', key: 'terms.meta' },

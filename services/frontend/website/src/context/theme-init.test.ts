@@ -89,6 +89,9 @@ const visit = ({
 
 const root = document.documentElement
 
+/** The language rules below only exist on a site with more than one language. */
+const multilingual = LOCALES.length > 1
+
 /** A published language that is not the default. */
 const OTHER = LOCALE_CODES.find((code) => code !== DEFAULT_LOCALE) ?? DEFAULT_LOCALE
 
@@ -204,7 +207,7 @@ describe('theme-init.js and ThemeProvider, hydrating', () => {
   })
 })
 
-describe('theme-init.js: the bare root', () => {
+describe.skipIf(!multilingual)('theme-init.js: the bare root', () => {
   const locale = (code: string) => ({ [STORAGE_KEYS.locale]: code })
   const others = LOCALE_CODES.filter((code) => code !== DEFAULT_LOCALE)
 
@@ -303,7 +306,7 @@ describe('theme-init.js: the bare root', () => {
   })
 })
 
-describe('theme-init.js: a page served in another language than its address', () => {
+describe.skipIf(!multilingual)('theme-init.js: a page served in another language than its address', () => {
   const defaultLang = LOCALES.find((locale) => locale.code === DEFAULT_LOCALE)?.htmlLang ?? DEFAULT_LOCALE
   const others = LOCALE_CODES.filter((code) => code !== DEFAULT_LOCALE)
 
@@ -411,7 +414,7 @@ describe('theme-init.js: a page served in another language than its address', ()
   })
 })
 
-describe('theme-init.js: a hidden page is never left hidden', () => {
+describe.skipIf(!multilingual)('theme-init.js: a hidden page is never left hidden', () => {
   const defaultLang = LOCALES.find((locale) => locale.code === DEFAULT_LOCALE)?.htmlLang ?? DEFAULT_LOCALE
   const [other = DEFAULT_LOCALE] = LOCALE_CODES.filter((code) => code !== DEFAULT_LOCALE)
 
@@ -447,6 +450,38 @@ describe('theme-init.js: a hidden page is never left hidden', () => {
 
   it.each([`/${DEFAULT_LOCALE}/about`, `/${other}/about`, '/'])('sets no timer on a page it does not hide: %s', (pathname) => {
     expect(visit(pathname === '/' ? { pathname, lang: defaultLang, languages: [DEFAULT_LOCALE] } : { pathname }).timers).toEqual([])
+  })
+})
+
+describe.skipIf(multilingual)('theme-init.js: a single-language site', () => {
+  const list = (name: string) =>
+    (new RegExp(`var ${name} = \\[([^\\]]*)\\]`).exec(SOURCE)?.[1] ?? '').split(',').map((code) => code.trim().replace(/'/g, ''))
+
+  it('publishes exactly the language site.ts does, with its htmlLang', () => {
+    expect(list('LOCALES')).toEqual([...LOCALE_CODES])
+    expect(list('HTML_LANGS')).toEqual(LOCALES.map((locale) => locale.htmlLang))
+  })
+
+  it.each([
+    [{}, ['en-US', 'en']],
+    [{ [STORAGE_KEYS.locale]: 'ru' }, ['ru-RU']],
+    ['blocked' as const, ['de']],
+  ] as const)('never sends the bare root anywhere (storage %j, languages %j)', (storage, languages) => {
+    const { replace, timers } = visit({ pathname: '/', storage, languages, lang: DEFAULT_LOCALE })
+    expect(replace).not.toHaveBeenCalled()
+    expect(timers).toEqual([])
+    expect(root.style.visibility).toBe('')
+    expect(root.hasAttribute(REDIRECTING_ATTR)).toBe(false)
+  })
+
+  it.each(['/par-projektu', '/organizacija/x', `/${DEFAULT_LOCALE}/nope`, '/en/nope'])('never hides %s', (pathname) => {
+    const { timers } = visit({ pathname, lang: DEFAULT_LOCALE })
+    expect(timers).toEqual([])
+    expect(root.style.visibility).toBe('')
+  })
+
+  it('agrees with startupRedirect, which leaves the bare root where it is', () => {
+    expect(startupRedirect('/', 'en')).toBeNull()
   })
 })
 

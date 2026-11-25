@@ -65,7 +65,7 @@ describe('crawlerFiles', () => {
 
   it("heads llms.txt with the brand, and the home page's description once it is real copy", () => {
     const [h1, , summary] = llms.split('\n')
-    const description = resources[DEFAULT_LOCALE].home.meta.description
+    const description = resources[DEFAULT_LOCALE].map.meta.description
     expect(h1).toBe(`# ${site.SITE.name}`)
     if (isPlaceholderCopy(description)) expect(llms).not.toMatch(/^> /m)
     else expect(summary).toBe(`> ${description}`)
@@ -77,19 +77,19 @@ describe('crawlerFiles', () => {
 
   it('puts the legal pages under Optional, after the pages people look for', () => {
     const [pages = '', optional = ''] = llms.split('## Optional')
-    for (const route of legalRoutes) expect(optional).toContain(`${localePath(route, 'en')})`)
+    for (const route of legalRoutes) expect(optional).toContain(`${localePath(route, 'lv')})`)
     for (const route of routes.filter((entry) => !legalRoutes.includes(entry))) {
-      expect(pages).toContain(`(${at(route, 'en')})`)
+      expect(pages).toContain(`(${at(route, 'lv')})`)
     }
   })
 
-  it("titles each link from the locale's meta, names its language, and notes it only with real copy", () => {
-    const lvServices = links.find((link) => link.url === `${SITE_URL}/lv/services`)
-    const { title, description } = resources.lv.services.meta
-    expect(lvServices?.title).toBe(`${title} (Latviešu)`)
-    expect(lvServices?.note).toBe(isPlaceholderCopy(description) ? undefined : description)
-    const lvContact = links.find((link) => link.url === `${SITE_URL}/lv/contact`)
-    expect(lvContact?.note).toBe(resources.lv.contact.meta.description)
+  it("titles each link from the locale's meta, with no language name on a one-language site", () => {
+    const about = links.find((link) => link.url === `${SITE_URL}${ROUTES.about}`)
+    const { title, description } = resources.lv.about.meta
+    expect(about?.title).toBe(title)
+    expect(about?.note).toBe(isPlaceholderCopy(description) ? undefined : description)
+    const setPassword = links.find((link) => link.url === `${SITE_URL}${ROUTES.setPassword}`)
+    expect(setPassword?.title).toBe(resources.lv.account.setPassword.meta.title)
   })
 
   it('publishes no placeholder contact or company detail', () => {
@@ -112,8 +112,8 @@ describe('crawlerFiles', () => {
   })
 
   it('names the file and key when a locale is missing a page title', () => {
-    const broken: NamespaceReader = (locale, namespace) => (namespace === 'about' && locale === 'ru' ? {} : read(locale, namespace))
-    expect(() => crawlerFiles({ siteUrl: SITE_URL, site, read: broken, pages: EVERY_PAGE })).toThrow(/ru\/about\.json/)
+    const broken: NamespaceReader = (locale, namespace) => (namespace === 'about' ? {} : read(locale, namespace))
+    expect(() => crawlerFiles({ siteUrl: SITE_URL, site, read: broken, pages: EVERY_PAGE })).toThrow(/lv\/about\.json/)
   })
 })
 
@@ -123,15 +123,15 @@ describe('crawlerFiles for a style that renders one document at several routes',
 
   it('lists in the sitemap only the URLs the pages name as canonical', () => {
     expect(locsOf(one.get('sitemap.xml') ?? '').sort()).toEqual([...canonicals].sort())
-    expect(one.get('sitemap.xml')).not.toContain(`<loc>${SITE_URL}/lv/services</loc>`)
+    expect(one.get('sitemap.xml')).not.toContain(`<loc>${SITE_URL}${ROUTES.about}</loc>`)
   })
 
   it('gives each the alternates its page declares', () => {
-    const entry = (one.get('sitemap.xml') ?? '').split('<url>').find((block) => block.includes(`<loc>${SITE_URL}/lv</loc>`)) ?? ''
+    const entry = (one.get('sitemap.xml') ?? '').split('<url>').find((block) => block.includes(`<loc>${SITE_URL}/</loc>`)) ?? ''
     for (const alternate of declared(ROUTES.home, 'lv').alternates) {
       expect(entry).toContain(`hreflang="${alternate.hrefLang}" href="${alternate.href}"`)
     }
-    expect(entry).not.toContain('/services')
+    expect(entry).not.toContain(ROUTES.about)
   })
 
   it('links llms.txt to each canonical page once, and to nothing else', () => {
@@ -141,8 +141,8 @@ describe('crawlerFiles for a style that renders one document at several routes',
 
 describe('crawlerFiles refuses', () => {
   it('a canonical that no page declares as its own', () => {
-    const astray = [...EVERY_PAGE.filter((page) => page.route !== ROUTES.home), declared(ROUTES.about, 'en', ROUTES.home)]
-    expect(() => build(astray)).toThrow(/\/en\/about declares canonical https:\/\/www\.hagroup\.lv\/en, which no page declares as its own/)
+    const astray = [...EVERY_PAGE.filter((page) => page.route !== ROUTES.home && page.route !== ROUTES.about), declared(ROUTES.about, 'lv', ROUTES.home)]
+    expect(() => build(astray)).toThrow(/\/par-projektu declares canonical https:\/\/www\.hagroup\.lv\/, which no page declares as its own/)
   })
 
   it('an empty site', () => {

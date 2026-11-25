@@ -1,0 +1,434 @@
+{
+  "meta": {
+    "title": "Kļūt par saņēmēju",
+    "description": "Reģistrējiet savu iestādi Dodar prieku kartē: pastāstiet, kas jums vajadzīgs, un ļaujiet cilvēkiem to atnest."
+  },
+  "eyebrow": "Pieteikums",
+  "title": "Kļūt par saņēmēju",
+  "intro": "Pastāstiet par savu iestādi un to, kas jums šobrīd noderētu. Kad administrators pieteikumu apstiprinās, jūs parādīsieties kartē un cilvēki varēs atnest vajadzīgo.",
+  "common": {
+    "optional": "nav obligāts"
+  },
+  "steps": {
+    "organization": "Organizācija",
+    "about": "Par jums",
+    "location": "Atrašanās vieta",
+    "needs": "Vajadzības",
+    "delivery": "Saņemšana",
+    "review": "Pārskats un iesniegšana"
+  },
+  "stepIntro": {
+    "organization": "Oficiālie dati un kontakti, pēc kuriem ziedotāji jūs atradīs.",
+    "about": "Izvēlieties iestādes veidu, īsi pastāstiet par sevi un pievienojiet dažas fotogrāfijas.",
+    "location": "Adrese un precīza vieta kartē, kur jūs atrast.",
+    "needs": "Atzīmējiet, kas jums noder. Katrai lietai varat pievienot piezīmi vai atzīmēt, ka tā vajadzīga steidzami.",
+    "delivery": "Kā ziedotāji var jums nodot lietas? Izvēlieties vienu vai vairākus veidus.",
+    "review": "Pārbaudiet, vai viss ir pareizi, un iesniedziet pieteikumu."
+  },
+  "progress": {
+    "label": "Reģistrācijas soļi",
+    "stepOf": "{{n}}. solis no {{total}}: {{name}}",
+    "stepShort": "{{n}}. solis no {{total}}",
+    "done": "pabeigts"
+  },
+  "draft": {
+    "restored": "Turpinām no vietas, kur palikāt",
+    "restoredBody": "Jūsu iepriekš ievadītais ir saglabāts šajā pārlūka cilnē.",
+    "startOver": "Sākt no jauna"
+  },
+  "stepErrors": {
+    "title": "Lūdzu, izlabojiet atzīmētos laukus",
+    "body": "Zem katra lauka ir paskaidrots, kas jāmaina."
+  },
+  "nav": {
+    "back": "Atpakaļ",
+    "next": "Tālāk",
+    "submit": "Iesniegt pieteikumu",
+    "submitting": "Iesniedz..."
+  },
+  "submitErrors": {
+    "validation": {
+      "title": "Daži lauki nav aizpildīti pareizi",
+      "body": "Mēs jūs aizvedām uz soli, kurā jāizlabo. Pēc tam iesniedziet pieteikumu vēlreiz."
+    },
+    "rate_limited": {
+      "title": "Pārāk daudz pieteikumu īsā laikā",
+      "body": "No šī tīkla nesen iesniegti vairāki pieteikumi. Lūdzu, mēģiniet vēlreiz pēc stundas. Jūsu ievadītais ir saglabāts."
+    },
+    "conflict": {
+      "title": "Šāds pieteikums jau ir saņemts",
+      "body": "Ar šo e-pasta adresi jau ir pieteikums vai konts. Ja esat aizmirsis paroli, atjaunojiet to konta lapā."
+    },
+    "network": {
+      "title": "Neizdevās sazināties ar serveri",
+      "body": "Pārbaudiet interneta savienojumu un mēģiniet vēlreiz. Jūsu ievadītais ir saglabāts."
+    },
+    "timeout": {
+      "title": "Serveris neatbildēja laikā",
+      "body": "Lūdzu, pēc brīža mēģiniet vēlreiz. Jūsu ievadītais ir saglabāts."
+    },
+    "server": {
+      "title": "Serverī radās kļūda",
+      "body": "Tā nav jūsu vaina. Lūdzu, mēģiniet vēlreiz pēc dažām minūtēm."
+    },
+    "generic": {
+      "title": "Pieteikumu neizdevās iesniegt",
+      "body": "Lūdzu, mēģiniet vēlreiz. Ja kļūda atkārtojas, rakstiet mums uz {{email}}."
+    }
+  },
+  "success": {
+    "title": "Paldies! Pieteikums saņemts.",
+    "body": "Kad administrators to apstiprinās, saņemsiet e-pastu ar saiti paroles izveidei.",
+    "email": "E-pastu nosūtīsim uz {{email}}.",
+    "spam": "Ja vēstule neparādās dažu dienu laikā, ieskatieties arī mēstuļu mapē.",
+    "home": "Uz karti"
+  },
+  "organization": {
+    "legend": "Par organizāciju",
+    "hint": "Dati, kā tie norādīti reģistrā.",
+    "name": "Nosaukums, kā to redzēs cilvēki",
+    "nameHint": "Piemēram, Dzīvnieku patversme \"Ulubele\".",
+    "legalName": "Juridiskais nosaukums",
+    "legalNameHint": "Kā reģistrā, piemēram, Biedrība \"Ulubele\".",
+    "regNumber": "Reģistrācijas numurs",
+    "regNumberHint": "Uzņēmumu reģistra numurs vai iestādes kods.",
+    "legalForm": "Juridiskā forma",
+    "legalFormPlaceholder": "Izvēlieties",
+    "publicBenefit": "Sabiedriskā labuma organizācija",
+    "publicBenefitHint": "Ieslēdziet, ja organizācijai ir piešķirts sabiedriskā labuma organizācijas statuss.",
+    "contactsLegend": "Publiskie kontakti",
+    "contactsHint": "Šie dati būs redzami jūsu lapā, lai ziedotāji varētu sazināties.",
+    "email": "E-pasts",
+    "phone": "Tālrunis",
+    "phoneHint": "Ar valsts kodu, piemēram, +371 26123456.",
+    "website": "Mājaslapa",
+    "websitePlaceholder": "https://",
+    "facebook": "Facebook lapa",
+    "facebookPlaceholder": "https://facebook.com/",
+    "instagram": "Instagram profils",
+    "instagramPlaceholder": "https://instagram.com/",
+    "personLegend": "Kontaktpersona",
+    "personHint": "Šie dati netiek publicēti. Tos redz tikai administrators, lai vajadzības gadījumā ar jums sazinātos par pieteikumu.",
+    "firstName": "Vārds",
+    "lastName": "Uzvārds",
+    "personEmail": "E-pasts",
+    "personPhone": "Tālrunis"
+  },
+  "about": {
+    "categoryLegend": "Iestādes veids",
+    "categoryHint": "Pēc tā cilvēki jūs atradīs kartē, un no tā atkarīgs vajadzību saraksts.",
+    "description": "Apraksts",
+    "descriptionHint": "Dažos teikumos: ko jūs darāt, kam palīdzat un kāpēc ziedojumi ir svarīgi.",
+    "counter": "{{len}} / {{max}}",
+    "logoLegend": "Logotips",
+    "logoHint": "Nav obligāts. Vislabāk izskatās kvadrātveida attēls.",
+    "logoAlt": "{{name}} logotips",
+    "photosLegend": "Fotogrāfijas",
+    "photosHint": "Līdz {{max}} foto. Pirmā būs titulbilde. Lielus attēlus pirms augšupielādes samazināsim paši."
+  },
+  "categoryChange": {
+    "title": "Mainīt iestādes veidu?",
+    "body_zero": "Katram iestādes veidam ir savs vajadzību saraksts, tāpēc atzīmētās vajadzības ({{count}}) tiks notīrītas.",
+    "body_one": "Katram iestādes veidam ir savs vajadzību saraksts, tāpēc atzīmētās vajadzības ({{count}}) tiks notīrītas.",
+    "body_other": "Katram iestādes veidam ir savs vajadzību saraksts, tāpēc atzīmētās vajadzības ({{count}}) tiks notīrītas.",
+    "confirm": "Mainīt un notīrīt",
+    "cancel": "Atstāt kā ir"
+  },
+  "upload": {
+    "dropzone": "Ievelciet attēlus šeit",
+    "dropzoneLogo": "Ievelciet logotipu šeit",
+    "pick": "Izvēlēties foto",
+    "pickLogo": "Izvēlēties logotipu",
+    "photosLeft_zero": "Vēl var pievienot: {{count}} no {{max}}",
+    "photosLeft_one": "Vēl var pievienot: {{count}} no {{max}}",
+    "photosLeft_other": "Vēl var pievienot: {{count}} no {{max}}",
+    "full": "Pievienots lielākais iespējamais foto skaits ({{max}}). Lai pievienotu citu, vispirms kādu noņemiet.",
+    "photoAlt": "{{n}}. fotogrāfija",
+    "cover": "Titulbilde",
+    "makeCover": "Padarīt par titulbildi",
+    "makeCoverN": "Padarīt {{n}}. fotogrāfiju par titulbildi",
+    "remove": "Noņemt",
+    "removeN": "Noņemt {{n}}. fotogrāfiju",
+    "removeLogo": "Noņemt logotipu",
+    "dismiss": "Aizvērt paziņojumu par {{name}}",
+    "stage": {
+      "resizing": "Sagatavo attēlu {{name}}",
+      "uploading": "Augšupielādē {{name}}"
+    },
+    "errors": {
+      "unsupported": "Šis faila veids netiek atbalstīts. Izvēlieties JPEG, PNG vai WebP attēlu.",
+      "unreadable": "Attēlu neizdevās atvērt. Pamēģiniet citu failu.",
+      "too_large": "Attēls ir par lielu pat pēc samazināšanas (vairāk nekā {{max}} MB). Pamēģiniet citu foto.",
+      "rate_limited": "Īsā laikā augšupielādēts pārāk daudz attēlu. Lūdzu, mēģiniet vēlreiz pēc stundas.",
+      "network": "Neizdevās sazināties ar serveri. Pārbaudiet savienojumu un mēģiniet vēlreiz.",
+      "timeout": "Augšupielāde ilga pārāk ilgi. Lūdzu, mēģiniet vēlreiz.",
+      "server": "Serverī radās kļūda. Lūdzu, mēģiniet vēlreiz pēc brīža.",
+      "generic": "Attēlu neizdevās augšupielādēt. Lūdzu, mēģiniet vēlreiz."
+    }
+  },
+  "location": {
+    "addressLegend": "Adrese",
+    "addressHint": "Kur iestāde atrodas.",
+    "street": "Iela un mājas numurs",
+    "city": "Pilsēta vai pagasts",
+    "postalCode": "Pasta indekss",
+    "postalHint": "Piemēram, LV-1050.",
+    "mapLegend": "Vieta kartē",
+    "mapHint": "Noklikšķiniet kartē vai pavelciet spraudīti uz iestādes ieeju. Varat arī atrast adresi ar pogu.",
+    "search": "Meklēt adresi",
+    "searching": "Meklē...",
+    "searchHint": "Meklēs augstāk ierakstīto adresi OpenStreetMap kartē.",
+    "searchErrors": {
+      "empty": {
+        "title": "Nav ko meklēt",
+        "body": "Vispirms ierakstiet ielu un pilsētu."
+      },
+      "not_found": {
+        "title": "Adrese netika atrasta",
+        "body": "Pārbaudiet rakstību vai novietojiet spraudīti kartē pats."
+      },
+      "outside": {
+        "title": "Atrastā vieta ir ārpus Latvijas",
+        "body": "Precizējiet adresi vai novietojiet spraudīti kartē pats."
+      },
+      "network": {
+        "title": "Adreses meklēšana nav pieejama",
+        "body": "Neizdevās sazināties ar meklēšanas pakalpojumu. Novietojiet spraudīti kartē pats."
+      },
+      "timeout": {
+        "title": "Meklēšana ilga pārāk ilgi",
+        "body": "Mēģiniet vēlreiz vai novietojiet spraudīti kartē pats."
+      },
+      "server": {
+        "title": "Meklēšanas pakalpojums atbildēja ar kļūdu",
+        "body": "Mēģiniet vēlreiz pēc brīža vai novietojiet spraudīti kartē pats."
+      }
+    },
+    "found": "Adrese atrasta. Pārbaudiet, vai spraudīte ir īstajā vietā.",
+    "mapLabel": "Karte iestādes atrašanās vietas izvēlei",
+    "mapLoading": "Ielādē karti...",
+    "mapError": {
+      "title": "Karti neizdevās ielādēt",
+      "body": "Atrašanās vietu joprojām var noteikt ar adreses meklēšanu."
+    },
+    "pinAt": "Spraudīte novietota: {{lat}}, {{lng}}",
+    "noPin": "Spraudīte vēl nav novietota."
+  },
+  "needs": {
+    "legend": "Kas jums vajadzīgs",
+    "hint": "Atzīmējiet visu, kas noder. Sarakstu vēlāk varēsiet mainīt savā kontā.",
+    "chooseCategoryFirst": "Vispirms solī \"Par jums\" izvēlieties iestādes veidu: no tā atkarīgs vajadzību saraksts.",
+    "tickedCount_zero": "Atzīmēts: {{count}}",
+    "tickedCount_one": "Atzīmēts: {{count}}",
+    "tickedCount_other": "Atzīmēts: {{count}}",
+    "limit": "Sasniegts lielākais vajadzību skaits. Lai pievienotu citu, vispirms kādu noņemiet.",
+    "groupCount": "{{ticked}} no {{total}}",
+    "noteLabel": "Piezīme pie: {{item}}",
+    "notePlaceholder": "piem., tikai jauni dvieļi",
+    "urgent": "Steidzami",
+    "urgentBadge": "Steidzami",
+    "urgentFor": "Steidzami: {{item}}",
+    "customLegend": "Kaut kas cits",
+    "customHint": "Ja sarakstā nav tā, kas jums vajadzīgs, pievienojiet to šeit.",
+    "customLabel": "Kas vajadzīgs",
+    "customLabelPlaceholder": "piem., veļas mašīna",
+    "customLabelRequired": "Ierakstiet, kas jums vajadzīgs.",
+    "customNote": "Piezīme",
+    "add": "Pievienot",
+    "customRemoveHint": "Lai noņemtu pašu pievienotu lietu, noņemiet tai atzīmi."
+  },
+  "delivery": {
+    "legend": "Kā ziedotāji var nodot lietas",
+    "hint": "Vajadzīgs vismaz viens veids.",
+    "hours": "Darba laiks",
+    "hoursPlaceholder": "piem., P-Pk 9:00-17:00",
+    "inPerson": {
+      "title": "Klātienē",
+      "desc": "Lietas var atnest uz pašu iestādi.",
+      "address": "Adrese"
+    },
+    "dropOff": {
+      "title": "Nodošanas punkts",
+      "desc": "Cita vieta, kur lietas pieņem jūsu vārdā, piemēram, veikals vai partneru birojs.",
+      "address": "Nodošanas punkta adrese"
+    },
+    "lockers": {
+      "title": "Pakomāts",
+      "desc": "Ziedotāji var sūtīt pakas uz vienu vai vairākiem jūsu norādītiem pakomātiem."
+    },
+    "post": {
+      "title": "Pa pastu",
+      "desc": "Sūtījumus var adresēt uz pasta adresi.",
+      "address": "Pasta adrese"
+    }
+  },
+  "lockers": {
+    "provider": "Pakomātu tīkls",
+    "providerPlaceholder": "Izvēlieties tīklu",
+    "loading": "Ielādē pakomātu sarakstu...",
+    "loadError": "Pakomātu sarakstu neizdevās ielādēt. Ierakstiet pakomāta nosaukumu un adresi paši.",
+    "noList": "Šim tīklam mums nav pakomātu saraksta. Ierakstiet pakomāta nosaukumu un adresi paši.",
+    "search": "Meklēt pakomātu",
+    "searchPlaceholder": "Pilsēta, iela vai veikals",
+    "noMatches": "Nekas netika atrasts. Pamēģiniet citu vārdu vai ierakstiet pakomātu paši.",
+    "showing": "Rādīti {{shown}} no {{total}}. Rakstiet, lai sašaurinātu.",
+    "alreadyAdded": "jau pievienots",
+    "manual": "Mana pakomāta nav sarakstā",
+    "manualName": "Pakomāta nosaukums",
+    "manualAddress": "Pakomāta adrese",
+    "manualAdd": "Pievienot pakomātu",
+    "backToList": "Atpakaļ uz sarakstu",
+    "limit": "Pievienots lielākais iespējamais pakomātu skaits ({{max}}).",
+    "removeN": "Noņemt pakomātu {{name}}"
+  },
+  "sponsors": {
+    "legend": "Atbalstītāji",
+    "intro": "Uzņēmumi un cilvēki, kas jūs atbalsta. Tie būs redzami jūsu publiskajā lapā šādā secībā un tiks ieskaitīti atbalstītāju topā kartē.",
+    "empty": "Atbalstītāju vēl nav.",
+    "item": "{{n}}. atbalstītājs",
+    "moveUp": "Pārvietot uz augšu: {{name}}",
+    "moveDown": "Pārvietot uz leju: {{name}}",
+    "remove": "Noņemt: {{name}}",
+    "name": "Nosaukums",
+    "url": "Mājaslapa",
+    "logo": "Logotips",
+    "logoAlt": "{{name}} logotips",
+    "add": "Pievienot atbalstītāju",
+    "limit": "Pievienots lielākais iespējamais atbalstītāju skaits ({{max}})."
+  },
+  "review": {
+    "none": "Nav norādīts",
+    "yes": "Jā",
+    "no": "Nē",
+    "edit": "Labot sadaļu: {{section}}",
+    "editShort": "Labot",
+    "publicContacts": "Publiskie kontakti",
+    "contactPerson": "Kontaktpersona",
+    "accountLegend": "Konts",
+    "accountHint": "Pēc apstiprināšanas ar šo e-pastu pieteiksieties savā kontā, lai labotu lapu un redzētu ziedotāju atzīmes.",
+    "accountEmail": "Pieteikšanās e-pasts",
+    "accountEmailHint": "Uz šo adresi nosūtīsim saiti paroles izveidei.",
+    "termsBefore": "Esmu iepazinies ar",
+    "termsLink": "lietošanas noteikumiem",
+    "termsMiddle": "un",
+    "privacyLink": "privātuma politiku",
+    "termsAfter": ", un apliecinu, ka drīkstu iesniegt šo pieteikumu organizācijas vārdā.",
+    "honeypot": "Neaizpildiet šo lauku"
+  },
+  "errors": {
+    "required": "Šis lauks ir obligāts.",
+    "too_long": "Teksts ir par garu. Lūdzu, saīsiniet to.",
+    "invalid": "Pārbaudiet, vai šeit viss ir ierakstīts pareizi.",
+    "out_of_range": "Vērtība ir ārpus atļautā diapazona.",
+    "too_many": "Pievienots par daudz ierakstu.",
+    "fields": {
+      "organization": {
+        "regNumber": {
+          "invalid": "Numurā var būt tikai cipari, burti un defise, no 5 līdz 20 zīmēm."
+        },
+        "legalForm": {
+          "required": "Izvēlieties juridisko formu."
+        },
+        "email": {
+          "invalid": "Ievadiet derīgu e-pasta adresi, piemēram, info@patversme.lv."
+        },
+        "phone": {
+          "invalid": "Ievadiet tālruņa numuru ar vismaz 7 cipariem, piemēram, +371 26123456."
+        },
+        "website": {
+          "invalid": "Ievadiet pilnu adresi, kas sākas ar https://."
+        },
+        "facebook": {
+          "invalid": "Ievadiet pilnu adresi, kas sākas ar https://."
+        },
+        "instagram": {
+          "invalid": "Ievadiet pilnu adresi, kas sākas ar https://."
+        }
+      },
+      "contactPerson": {
+        "email": {
+          "invalid": "Ievadiet derīgu e-pasta adresi, piemēram, vards@pasts.lv."
+        },
+        "phone": {
+          "invalid": "Ievadiet tālruņa numuru ar vismaz 7 cipariem, piemēram, +371 26123456."
+        }
+      },
+      "address": {
+        "postalCode": {
+          "invalid": "Pasta indekss ir četri cipari, piemēram, LV-1050."
+        }
+      },
+      "location": {
+        "required": "Novietojiet spraudīti kartē vai atrodiet adresi ar meklēšanu.",
+        "out_of_range": "Spraudīte ir ārpus Latvijas. Pārvietojiet to uz iestādes atrašanās vietu."
+      },
+      "category": {
+        "required": "Izvēlieties, kāda veida iestāde jūs esat."
+      },
+      "description": {
+        "required": "Pastāstiet dažos teikumos par savu iestādi."
+      },
+      "photos": {
+        "too_many": "Var pievienot ne vairāk kā {{maxPhotos}} fotogrāfijas.",
+        "invalid": "Kāda no fotogrāfijām nav pareizi augšupielādēta. Noņemiet to un pievienojiet vēlreiz."
+      },
+      "logo": {
+        "invalid": "Logotips nav pareizi augšupielādēts. Noņemiet to un pievienojiet vēlreiz."
+      },
+      "needs": {
+        "required": "Atzīmējiet vismaz vienu lietu, kas jums ir vajadzīga.",
+        "too_many": "Var norādīt ne vairāk kā {{maxNeeds}} vajadzības.",
+        "n": {
+          "customLabel": {
+            "required": "Ierakstiet, kas jums vajadzīgs."
+          },
+          "itemId": {
+            "invalid": "Šī vajadzība neatbilst izvēlētajam iestādes veidam. Noņemiet to."
+          }
+        }
+      },
+      "delivery": {
+        "required": "Izvēlieties vismaz vienu veidu, kā ziedotāji var nodot lietas.",
+        "inPerson": {
+          "address": {
+            "required": "Ierakstiet adresi."
+          }
+        },
+        "dropOff": {
+          "address": {
+            "required": "Ierakstiet nodošanas punkta adresi."
+          }
+        },
+        "post": {
+          "address": {
+            "required": "Ierakstiet pasta adresi."
+          }
+        },
+        "parcelLockers": {
+          "too_many": "Var norādīt ne vairāk kā {{maxParcelLockers}} pakomātus."
+        }
+      },
+      "sponsors": {
+        "too_many": "Var norādīt ne vairāk kā {{maxSponsors}} atbalstītājus.",
+        "n": {
+          "name": {
+            "required": "Ierakstiet atbalstītāja nosaukumu."
+          },
+          "url": {
+            "invalid": "Ievadiet pilnu adresi, kas sākas ar https://."
+          },
+          "logo": {
+            "invalid": "Logotips nav pareizi augšupielādēts. Noņemiet to un pievienojiet vēlreiz."
+          }
+        }
+      },
+      "accountEmail": {
+        "required": "Ierakstiet e-pastu, ar kuru pieteiksieties.",
+        "invalid": "Ievadiet derīgu e-pasta adresi."
+      },
+      "acceptTerms": {
+        "required": "Lai iesniegtu pieteikumu, jāpiekrīt lietošanas noteikumiem."
+      }
+    }
+  }
+}

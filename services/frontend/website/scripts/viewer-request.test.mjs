@@ -67,10 +67,10 @@ describe('viewer-request: the locale list', () => {
 describe('viewer-request: a page at its own address', () => {
   it.each([
     ['/', '/index.html'],
-    ['/en', '/en/index.html'],
-    ['/lv/about', '/lv/about/index.html'],
-    ['/ru/legal/privacy', '/ru/legal/privacy/index.html'],
-    ['/en/no-such-page', '/en/no-such-page/index.html'],
+    ['/par-projektu', '/par-projektu/index.html'],
+    ['/konts/parole', '/konts/parole/index.html'],
+    ['/legal/privacy', '/legal/privacy/index.html'],
+    ['/no-such-page', '/no-such-page/index.html'],
   ])('points the page %s at its file %s', (uri, file) => {
     expect(rewrite(uri)).toBe(file)
   })
@@ -91,7 +91,7 @@ describe('viewer-request: a page at its own address', () => {
   })
 
   it('returns the request, with its query string, rather than answering it', () => {
-    const result = answer('/lv')
+    const result = answer('/par-projektu')
     expect(result.method).toBe('GET')
     expect(result.querystring).toEqual(UTM)
     expect(result.statusCode).toBeUndefined()
@@ -104,66 +104,41 @@ describe('viewer-request: a page at its own address', () => {
   })
 })
 
+describe('viewer-request: a single-language site', () => {
+  // One language, so no address carries a prefix and none is added.
+  it('publishes one language, so no address is sent to a prefixed one', () => {
+    expect(LOCALE_CODES).toHaveLength(1)
+    for (const uri of ['/par-projektu', '/legal/privacy', '/de/par-projektu', '/lv', '/en/about']) {
+      expect(redirect(uri), uri).toBeNull()
+    }
+  })
+
+  it('agrees with fallbackPath, which keeps an unprefixed address as it is', () => {
+    expect(fallbackPath('/par-projektu')).toBe('/par-projektu')
+  })
+})
+
 describe('viewer-request: every other spelling is a 301 to the one address', () => {
   it.each([
-    ['//en//about', '/en/about'],
-    ['//en/about', '/en/about'],
-    ['/en//about', '/en/about'],
-    ['/en/about/', '/en/about'],
-    ['/en/about//', '/en/about'],
-    ['/en/', '/en'],
-    ['/en/about/index.html', '/en/about'],
-    ['/lv/about/index.html', '/lv/about'],
-    ['/en/index.html', '/en'],
+    ['//par-projektu', '/par-projektu'],
+    ['/legal//privacy', '/legal/privacy'],
+    ['//legal//privacy', '/legal/privacy'],
+    ['/par-projektu/', '/par-projektu'],
+    ['/par-projektu//', '/par-projektu'],
+    ['/par-projektu/index.html', '/par-projektu'],
+    ['/konts/parole/index.html', '/konts/parole'],
     ['/index.html', '/'],
     ['//', '/'],
     ['//index.html', '/'],
     ['/assets//index-Bgo04jES.js', '/assets/index-Bgo04jES.js'],
     ['/og-image.png/', '/og-image.png'],
+    ['/organizacija/patversme-x/', '/organizacija/patversme-x'],
   ])('%s is %s', (uri, location) => {
     expect(redirect(uri)).toBe(location)
   })
 
-  // Old links and hand-typed ones: the page exists, in the default language.
-  // Before the edge did this, these got a 404 status and painted the
-  // not-found page until the app redirected them in the browser.
-  it.each([
-    ['/services', `/${DEFAULT_LOCALE}/services`],
-    ['/about', `/${DEFAULT_LOCALE}/about`],
-    ['/legal/privacy', `/${DEFAULT_LOCALE}/legal/privacy`],
-    ['/de/services', `/${DEFAULT_LOCALE}/services`],
-    ['/pt-BR/about', `/${DEFAULT_LOCALE}/about`],
-    ['/de', `/${DEFAULT_LOCALE}`],
-    ['/services/index.html', `/${DEFAULT_LOCALE}/services`],
-    ['/de/about/', `/${DEFAULT_LOCALE}/about`],
-    ['//services', `/${DEFAULT_LOCALE}/services`],
-  ])('%s, which names no published language, is %s', (uri, location) => {
-    expect(redirect(uri)).toBe(location)
-  })
-
-  // One rule, two copies: the app's for an in-app navigation (LocaleLayout),
-  // this one for everything that arrives from outside.
-  it.each([
-    '/services',
-    '/about',
-    '/contact',
-    '/legal/company',
-    '/de/services',
-    '/de',
-    '/pt-BR/about',
-    '/x-y/about',
-    '/ok',
-    '/EN/about',
-    '/404',
-    '/foo.bar/baz',
-    '/%E0%A4%A',
-    '/%65n/about',
-  ])('sends %s where fallbackPath does', (uri) => {
-    expect(redirect(uri)).toBe(fallbackPath(uri))
-  })
-
   it('sends every other spelling of every prerendered page to that page, in one step', () => {
-    for (const page of prerenderPages().filter((candidate) => candidate.route !== null)) {
+    for (const page of prerenderPages().filter((candidate) => candidate.route !== null && candidate.url !== '/')) {
       const inner = page.url.slice(1)
       const doubled = inner.includes('/') ? [`/${inner.replace('/', '//')}`] : []
       for (const spelling of [`${page.url}/`, `${page.url}/index.html`, `//${inner}`, ...doubled]) {
@@ -173,23 +148,111 @@ describe('viewer-request: every other spelling is a 301 to the one address', () 
   })
 
   it('keeps the query string, as the viewer sent it', () => {
-    expect(redirect('/services', UTM)).toBe(`/${DEFAULT_LOCALE}/services?utm_source=x`)
-    expect(redirect('/en/about/', { q: { value: 'a%20b' }, flag: { value: '' } })).toBe('/en/about?q=a%20b&flag')
+    expect(redirect('/par-projektu/', UTM)).toBe('/par-projektu?utm_source=x')
+    expect(redirect('/par-projektu/', { q: { value: 'a%20b' }, flag: { value: '' } })).toBe('/par-projektu?q=a%20b&flag')
     expect(
       redirect('/index.html', { tag: { value: 'a', multiValue: [{ value: 'a' }, { value: 'b' }] }, x: { value: '1' } }),
     ).toBe('/?tag=a&tag=b&x=1')
   })
 
   it('redirects with no query string when there is none, or CloudFront sent none', () => {
-    expect(redirect('/about', {})).toBe(`/${DEFAULT_LOCALE}/about`)
-    expect(handler({ request: { method: 'GET', uri: '/about' } }).headers.location.value).toBe(`/${DEFAULT_LOCALE}/about`)
+    expect(redirect('/par-projektu/', {})).toBe('/par-projektu')
+    expect(handler({ request: { method: 'GET', uri: '/par-projektu/' } }).headers.location.value).toBe('/par-projektu')
   })
 
-  it('leaves the bare root, the language pages and the files where they are', () => {
-    for (const uri of ['/', ...LOCALE_CODES.map((code) => `/${code}`), '/og-image.png', `/${NOT_FOUND_FILE}`, '/en/no-such-page']) {
+  it('leaves the bare root, the pages and the files where they are', () => {
+    for (const uri of ['/', '/par-projektu', '/og-image.png', `/${NOT_FOUND_FILE}`, '/no-such-page']) {
       expect(redirect(uri), uri).toBeNull()
     }
   })
+})
+
+describe('viewer-request: the charity pages share one shell', () => {
+  it.each([
+    ['/organizacija', '/organizacija/index.html'],
+    ['/organizacija/patversme-ausma', '/organizacija/index.html'],
+    ['/organizacija/b%C4%93rnu-nams', '/organizacija/index.html'],
+    ['/organizacija/a/b', '/organizacija/index.html'],
+  ])('serves %s from %s', (uri, file) => {
+    expect(rewrite(uri)).toBe(file)
+  })
+
+  it('leaves a file under /organizacija alone', () => {
+    expect(rewrite('/organizacija/logo.png')).toBe('/organizacija/logo.png')
+  })
+
+  it('does not treat a page that only starts with the word as a charity', () => {
+    expect(rewrite('/organizacijas/x')).toBe('/organizacijas/x/index.html')
+  })
+})
+
+const withHost = (uri, host) => handler({ ...viewerRequest(uri, {}), request: { ...viewerRequest(uri, {}).request, headers: { host: { value: host } } } })
+
+describe('viewer-request: the admin host serves only the admin app', () => {
+  const ADMIN = 'admin.dodarprieku.hagroup.lv'
+
+  it.each([
+    ['/', '/admin/index.html'],
+    ['/charities', '/admin/index.html'],
+    ['/charities/abc/', '/admin/index.html'],
+    ['/admin', '/admin/index.html'],
+    ['/admin/', '/admin/index.html'],
+    ['/admin/applications', '/admin/index.html'],
+    ['/favicon.ico', '/admin/index.html'],
+    ['/index.html', '/admin/index.html'],
+  ])('sends %s to the SPA at %s', (uri, file) => {
+    const result = withHost(uri, ADMIN)
+    expect(result.statusCode).toBeUndefined()
+    expect(result.uri).toBe(file)
+  })
+
+  it.each(['/admin/assets/index-abc123.js', '/admin/favicon.svg', '/admin/index.html'])('passes the admin file %s through', (uri) => {
+    expect(withHost(uri, ADMIN).uri).toBe(uri)
+  })
+
+  it('recognises the host whatever its case', () => {
+    expect(withHost('/x', 'Admin.Dodarprieku.hagroup.lv').uri).toBe('/admin/index.html')
+  })
+
+  it('never redirects on the admin host', () => {
+    for (const uri of ['/charities/', '//x', '/x/index.html']) {
+      expect(withHost(uri, ADMIN).statusCode, uri).toBeUndefined()
+    }
+  })
+})
+
+describe('viewer-request: the public host hides the admin app', () => {
+  it.each(['/admin', '/admin/', '/admin/index.html', '/admin/assets/index-abc.js', '//admin', '/admin/charities/x'])(
+    'answers %s with 404',
+    (uri) => {
+      const result = withHost(uri, 'dodarprieku.hagroup.lv')
+      expect(result.statusCode).toBe(404)
+      expect(result.statusDescription).toBe('Not Found')
+      expect(result.headers['content-type'].value).toMatch(/^text\/plain/)
+      expect(result.body.data).toBe('Not Found')
+    },
+  )
+
+  it('answers it with 404 when no Host header arrives', () => {
+    expect(answer('/admin').statusCode).toBe(404)
+  })
+
+  it('leaves a page that only starts with the word alone', () => {
+    expect(rewrite('/administracija')).toBe('/administracija/index.html')
+  })
+})
+
+describe('viewer-request: the other behaviours are left alone', () => {
+  it.each(['/api/auth/me', '/api/', '/media/abc/photo.webp', '/data/charities.json', '/data/parcel-lockers.json', '/api//x/'])(
+    'returns %s untouched, on either host',
+    (uri) => {
+      for (const host of ['dodarprieku.hagroup.lv', 'admin.dodarprieku.hagroup.lv']) {
+        const result = withHost(uri, host)
+        expect(result.statusCode, `${host}${uri}`).toBeUndefined()
+        expect(result.uri, `${host}${uri}`).toBe(uri)
+      }
+    },
+  )
 })
 
 describe('viewer-request: how long a 301 is kept', () => {
@@ -198,7 +261,7 @@ describe('viewer-request: how long a 301 is kept', () => {
   // returning visitor would keep being sent to the old answer. An hour
   // bounds that, and still spares a repeat visit the round trip.
   it('sends Cache-Control: public, max-age=3600 with every 301', () => {
-    const spellings = ['/services', '/de/about', '/en/about/', '/en/about/index.html', '//en//about', '/index.html', '/og-image.png/']
+    const spellings = ['/par-projektu/', '/par-projektu/index.html', '//legal//privacy', '/index.html', '/og-image.png/']
     for (const uri of spellings) {
       const result = answer(uri)
       expect(result.statusCode, uri).toBe(301)
@@ -217,7 +280,7 @@ describe('viewer-request: how long a 301 is kept', () => {
   })
 
   it('adds nothing to a request it lets through', () => {
-    const result = answer('/en/about')
+    const result = answer('/par-projektu')
     expect(result.statusCode).toBeUndefined()
     expect(result.headers).toEqual({})
   })
@@ -228,10 +291,10 @@ describe('viewer-request: a Location is always a path on this site', () => {
   // "//evil.com": another host.
   it.each([
     ['/\\evil.com/', '/evil.com'],
-    ['/\\evil/', `/${DEFAULT_LOCALE}/evil`],
+    ['/\\evil/', '/evil'],
     ['/\\evil.com/a.png', '/evil.com/a.png'],
     ['//\\evil.com//a.png', '/evil.com/a.png'],
-    ['/en\\about', '/en/about'],
+    ['/legal\\privacy/', '/legal/privacy'],
     ['//evil.com', '/evil.com'],
     ['///evil.com//', '/evil.com'],
   ])('%s is %s', (uri, location) => {
@@ -240,7 +303,7 @@ describe('viewer-request: a Location is always a path on this site', () => {
 
   // ...and it drops tabs and line breaks altogether, so "/\t/evil.com" would
   // be "//evil.com" too. No page has one in its address.
-  it.each(['/\t/evil.com', '/\n/evil.com/', '/en/\r/about/'])('never redirects %j', (uri) => {
+  it.each(['/\t/evil.com', '/\n/evil.com/', '/legal/\r/privacy/'])('never redirects %j', (uri) => {
     expect(redirect(uri)).toBeNull()
   })
 

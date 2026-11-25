@@ -4,26 +4,13 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import { DEFAULT_LOCALE, LOCALE_CODES, STORAGE_KEYS } from '@/config/site'
 
-import enCommon from './locales/en/common.json'
-import enHome from './locales/en/home.json'
-import enServices from './locales/en/services.json'
-import enAbout from './locales/en/about.json'
-import enContact from './locales/en/contact.json'
-import enLegal from './locales/en/legal.json'
-
 import lvCommon from './locales/lv/common.json'
-import lvHome from './locales/lv/home.json'
-import lvServices from './locales/lv/services.json'
+import lvMap from './locales/lv/map.json'
+import lvCharity from './locales/lv/charity.json'
+import lvRegister from './locales/lv/register.json'
+import lvAccount from './locales/lv/account.json'
 import lvAbout from './locales/lv/about.json'
-import lvContact from './locales/lv/contact.json'
 import lvLegal from './locales/lv/legal.json'
-
-import ruCommon from './locales/ru/common.json'
-import ruHome from './locales/ru/home.json'
-import ruServices from './locales/ru/services.json'
-import ruAbout from './locales/ru/about.json'
-import ruContact from './locales/ru/contact.json'
-import ruLegal from './locales/ru/legal.json'
 
 /**
  * Namespaces are per PAGE, plus `common` for the chrome.
@@ -34,46 +21,35 @@ import ruLegal from './locales/ru/legal.json'
  */
 export const NAMESPACES = [
   'common',
-  'home',
-  'services',
+  'map',
+  'charity',
+  'register',
+  'account',
   'about',
-  'contact',
   'legal',
 ] as const
 
 export type Namespace = (typeof NAMESPACES)[number]
 
 /**
- * All locales are bundled rather than fetched.
+ * All locales are bundled rather than fetched: a network round-trip means a
+ * visible flash of untranslated keys on first paint, and a broken page
+ * whenever that request fails. The site is Latvian only.
  *
- * Three languages of JSON is a few tens of kilobytes; a network round-trip per
- * language means a visible flash of untranslated keys on first paint, and a
- * broken page whenever that request fails.
+ * Owners: `map` and `charity` the public pages, `register` and `account` the
+ * registration wizard and the charity's account pages. `map.meta` is also the
+ * site's own description (structured data, `llms.txt`), and `map.share.headline`
+ * the share card's headline (`npm run images`).
  */
 export const resources = {
-  en: {
-    common: enCommon,
-    home: enHome,
-    services: enServices,
-    about: enAbout,
-    contact: enContact,
-    legal: enLegal,
-  },
   lv: {
     common: lvCommon,
-    home: lvHome,
-    services: lvServices,
+    map: lvMap,
+    charity: lvCharity,
+    register: lvRegister,
+    account: lvAccount,
     about: lvAbout,
-    contact: lvContact,
     legal: lvLegal,
-  },
-  ru: {
-    common: ruCommon,
-    home: ruHome,
-    services: ruServices,
-    about: ruAbout,
-    contact: ruContact,
-    legal: ruLegal,
   },
 } as const
 
@@ -104,7 +80,7 @@ void i18n
     },
 
     // A missing key should be loud in development and invisible in production:
-    // showing "home.hero.title" to a customer is worse than showing the
+    // showing "map.title" to a customer is worse than showing the
     // English fallback.
     returnEmptyString: false,
     saveMissing: false,

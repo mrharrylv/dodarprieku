@@ -16,7 +16,7 @@ import { ThemeProvider } from '@/context/ThemeProvider'
  */
 export const renderWithProviders = (
   ui: ReactElement,
-  { route = '/en' }: { route?: string } = {},
+  { route = '/' }: { route?: string } = {},
 ): RenderResult => {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <I18nextProvider i18n={i18n}>

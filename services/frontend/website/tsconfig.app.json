@@ -15,7 +15,7 @@
     "jsx": "react-jsx",
     "resolveJsonModule": true,
 
-    "paths": { "@/*": ["./src/*"] },
+    "paths": { "@/*": ["./src/*"], "@shared/*": ["../../shared/src/*"] },
 
     "strict": true,
     "noUnusedLocals": true,

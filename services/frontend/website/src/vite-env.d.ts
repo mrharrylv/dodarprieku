@@ -10,14 +10,6 @@
 interface ImportMetaEnv {
   /** Canonical origin, e.g. https://example.com */
   readonly VITE_SITE_URL?: string
-  /** HTTPS endpoint that accepts contact-form submissions. */
-  readonly VITE_CONTACT_ENDPOINT?: string
-  /**
-   * `mock` (the default) renders the form and discards submissions in the
-   * browser; `live` sends to `VITE_CONTACT_ENDPOINT`; `off` shows the
-   * call-or-email notice instead of a form.
-   */
-  readonly VITE_CONTACT_MODE?: string
   /** HTTPS endpoint that records consent decisions. */
   readonly VITE_CONSENT_ENDPOINT?: string
   /**
@@ -25,6 +17,8 @@ interface ImportMetaEnv {
    * (HA Group's CRM). `off`: no statistics at all.
    */
   readonly VITE_ANALYTICS_ENDPOINT?: string
+  /** GA4 measurement id (`G-...`). Only the prod environment sets it; GA loads after consent. */
+  readonly VITE_GA_MEASUREMENT_ID?: string
   /**
    * Overrides the `style` in `site.config.json`. For previewing a style in CI
    * without a commit; the committed file is the source of truth.

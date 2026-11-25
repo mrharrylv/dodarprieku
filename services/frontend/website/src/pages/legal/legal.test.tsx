@@ -15,10 +15,10 @@ import { CompanyPage } from './CompanyPage'
  */
 
 const PAGES = [
-  ['privacy', <PrivacyPage key="p" />, /privacy policy/i],
-  ['cookies', <CookiesPage key="c" />, /cookie policy/i],
-  ['terms', <TermsPage key="t" />, /terms of service/i],
-  ['company', <CompanyPage key="co" />, /company details/i],
+  ['privacy', <PrivacyPage key="p" />, /privātuma politika/i],
+  ['cookies', <CookiesPage key="c" />, /sīkdatņu politika/i],
+  ['terms', <TermsPage key="t" />, /lietošanas noteikumi/i],
+  ['company', <CompanyPage key="co" />, /uzņēmuma rekvizīti/i],
 ] as const
 
 describe.each(PAGES)('the %s page', (_name, element, heading) => {
@@ -29,7 +29,7 @@ describe.each(PAGES)('the %s page', (_name, element, heading) => {
 
   it('shows a last-updated date', () => {
     renderWithProviders(element)
-    expect(screen.getByText(/last updated/i)).toBeInTheDocument()
+    expect(screen.getByText(/atjaunināts/i)).toBeInTheDocument()
   })
 
   it('renders translated prose, not raw keys', () => {
@@ -55,9 +55,15 @@ describe('the cookie policy', () => {
     }
   })
 
-  it('states that no third party is contacted', () => {
+  it('names the map tiles and the address search, the only third parties', () => {
     renderWithProviders(<CookiesPage />)
-    expect(screen.getByText(/no request to any third party/i)).toBeInTheDocument()
+    expect(screen.getByText(/tiles\.openfreemap\.org/)).toBeInTheDocument()
+    expect(screen.getByText(/tiles\.openfreemap\.org/).textContent).toMatch(/nominatim\.openstreetmap\.org/)
+  })
+
+  it('describes the session cookie, by name', () => {
+    renderWithProviders(<CookiesPage />)
+    expect(screen.getByText(/dodar_session/)).toBeInTheDocument()
   })
 })
 
@@ -84,7 +90,7 @@ describe('the company page', () => {
 
   it('says "not published" instead, so the gap is visible', () => {
     renderWithProviders(<CompanyPage />)
-    expect(screen.getAllByText(/not published/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/nav publicēts/i).length).toBeGreaterThan(0)
   })
 })
 
@@ -92,12 +98,18 @@ describe('the privacy policy', () => {
   it('names the supervisory authority a complaint goes to', () => {
     renderWithProviders(<PrivacyPage />)
     // GDPR Art. 13(2)(d): the notice must say where to complain.
-    expect(screen.getByText(/data state inspectorate/i)).toBeInTheDocument()
+    expect(screen.getByText(/datu valsts inspekcij/i)).toBeInTheDocument()
   })
 
   it('lists the data subject rights', () => {
     renderWithProviders(<PrivacyPage />)
-    expect(screen.getByText(/Art. 15/)).toBeInTheDocument()
-    expect(screen.getByText(/Art. 17/)).toBeInTheDocument()
+    expect(screen.getByText(/15\. pants/)).toBeInTheDocument()
+    expect(screen.getByText(/17\. pants/)).toBeInTheDocument()
+  })
+
+  it('says where the data is stored and who sends the emails', () => {
+    renderWithProviders(<PrivacyPage />)
+    expect(screen.getByText(/eu-north-1/)).toBeInTheDocument()
+    expect(screen.getByText(/Amazon Simple Email Service/).textContent).toContain('info@hagroup.lv')
   })
 })
