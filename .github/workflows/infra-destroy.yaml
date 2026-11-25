@@ -1,0 +1,107 @@
+name: Terraform Infrastructure Destroy
+
+# Deletes an environment's infrastructure outright.
+#
+# Destroying the distribution releases its CloudFront domain name, so every DNS
+# record pointing at it must be recreated afterwards against a NEW name. To
+# merely stop serving, use the CloudFront Toggle workflow instead: it costs
+# nothing while off and keeps the domain, aliases and certificate intact.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to destroy"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+      confirm:
+        description: "Type the environment name to confirm (dev or prod)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-north-1
+  TF_WORKING_DIR: infrastructure/terraform
+  PROJECT: dodarprieku
+  AWS_ACCOUNT_ID: "561341419749"
+
+jobs:
+  # Confirmation is its own job so the destroy job never even starts with AWS
+  # credentials in hand unless the typed value matched.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "${{ github.event.inputs.environment }}" ]; then
+            echo "❌ Confirmation mismatch."
+            echo "   You must type '${{ github.event.inputs.environment }}' exactly."
+            exit 1
+          fi
+          echo "⚠️  Destruction confirmed for: ${{ github.event.inputs.environment }}"
+
+  destroy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Warn
+        run: |
+          echo "=============================================="
+          echo "⚠️  DESTROYING ${{ github.event.inputs.environment }} INFRASTRUCTURE"
+          echo "=============================================="
+          echo "The CloudFront domain name will be released. Every DNS record"
+          echo "pointing at it must be recreated against the new name if you"
+          echo "ever re-apply. To merely stop serving, cancel this run and use"
+          echo "the CloudFront Toggle workflow instead."
+          echo "=============================================="
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-${{ env.PROJECT }}-${{ github.event.inputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform setup
+        uses: ./.github/actions/terraform-setup
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          project: ${{ env.PROJECT }}
+
+      - name: Terraform Destroy
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        # The records zone_dns.tf created at Zone.ee are deleted with the rest.
+        # Without the secrets the destroy still completes and warns that they
+        # were left behind.
+        env:
+          ZONE_USERNAME: ${{ secrets.ZONE_USERNAME }}
+          ZONE_API_KEY: ${{ secrets.ZONE_API_KEY }}
+        run: |
+          terraform destroy \
+            -var-file="environments/${{ github.event.inputs.environment }}.tfvars" \
+            -input=false \
+            -auto-approve
+
+      - name: Done
+        run: |
+          {
+            echo "## 🗑️ Destroyed \`${{ github.event.inputs.environment }}\`"
+            echo ""
+            echo "Re-applying will create a **new** CloudFront domain name."
+            echo "Update DNS accordingly."
+          } >> "$GITHUB_STEP_SUMMARY"

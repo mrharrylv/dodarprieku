@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "title": "Services",
+    "description": "Replace with a sentence listing the main things the business offers, in the words a customer would use."
+  },
+  "hero": {
+    "title": "What we do",
+    "subtitle": "A paragraph framing the offer. Keep it to what you actually sell. A list of everything you could conceivably do reads as a list of things you do badly."
+  },
+  "items": {
+    "consulting": {
+      "title": "Consulting",
+      "summary": "Working out what to build before anyone builds it.",
+      "body": "Describe the service in three or four sentences. Say what the customer gets, roughly what it costs, and how long it takes. Vague service descriptions are the most common reason a visitor leaves without asking."
+    },
+    "delivery": {
+      "title": "Delivery",
+      "summary": "Doing the work, to a date we agreed.",
+      "body": "Describe the service in three or four sentences. Say what the customer gets, roughly what it costs, and how long it takes."
+    },
+    "support": {
+      "title": "Support",
+      "summary": "Keeping it working after it ships.",
+      "body": "Describe the service in three or four sentences. Say what the customer gets, roughly what it costs, and how long it takes."
+    },
+    "training": {
+      "title": "Training",
+      "summary": "Handing it over so your team can run it.",
+      "body": "Describe the service in three or four sentences. Say what the customer gets, roughly what it costs, and how long it takes."
+    }
+  },
+  "process": {
+    "title": "How it works",
+    "steps": {
+      "talk": {
+        "title": "We talk",
+        "body": "A short call to work out whether we are the right fit. No charge."
+      },
+      "quote": {
+        "title": "You get a price",
+        "body": "A written scope and a fixed number, usually within two working days."
+      },
+      "work": {
+        "title": "We do the work",
+        "body": "You get an update at each agreed checkpoint."
+      }
+    }
+  },
+  "cta": {
+    "title": "Not sure which you need?",
+    "body": "Describe the problem and we will tell you honestly whether we can help.",
+    "button": "Get in touch"
+  }
+}

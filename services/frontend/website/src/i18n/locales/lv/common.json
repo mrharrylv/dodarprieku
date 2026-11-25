@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "home": "Sākums",
+    "services": "Pakalpojumi",
+    "about": "Par mums",
+    "contact": "Kontakti",
+    "openMenu": "Atvērt izvēlni",
+    "closeMenu": "Aizvērt izvēlni",
+    "scrollToTop": "Atgriezties lapas augšā"
+  },
+  "legal": {
+    "privacy": "Privātuma politika",
+    "cookies": "Sīkdatņu politika",
+    "terms": "Lietošanas noteikumi",
+    "company": "Uzņēmuma rekvizīti",
+    "updated": "Atjaunināts"
+  },
+  "cta": {
+    "contactUs": "Sazinieties ar mums",
+    "learnMore": "Uzzināt vairāk",
+    "seeServices": "Skatiet, ko mēs darām",
+    "backHome": "Atpakaļ uz sākumu"
+  },
+  "footer": {
+    "tagline": "Skaidrs darbs, paveikts tad, kad solījām.",
+    "navHeading": "Vietne",
+    "legalHeading": "Juridiskā informācija",
+    "contactHeading": "Kontakti",
+    "rights": "Visas tiesības aizsargātas.",
+    "followUs": "Sekojiet mums",
+    "developedBy": "Mājaslapas izstrāde: <1>{{developer}}</1>"
+  },
+  "theme": {
+    "label": "Tēma",
+    "light": "Gaišā",
+    "dark": "Tumšā",
+    "toggle": "Pārslēgt tēmu: {{mode}}"
+  },
+  "language": {
+    "label": "Valoda",
+    "switchTo": "Pārslēgt valodu: {{language}}"
+  },
+  "a11y": {
+    "skipToContent": "Pāriet uz galveno saturu",
+    "mainNavigation": "Galvenā navigācija",
+    "footerNavigation": "Kājenes navigācija",
+    "breadcrumb": "Navigācijas ceļš",
+    "quickActions": "Ātrās darbības"
+  },
+  "notFound": {
+    "title": "Lapa nav atrasta",
+    "description": "Meklētā lapa ir pārvietota vai nekad nav pastāvējusi.",
+    "action": "Atpakaļ uz sākumu"
+  },
+  "contactDetails": {
+    "email": "E-pasts",
+    "phone": "Tālrunis",
+    "address": "Adrese",
+    "hours": "Darba laiks",
+    "weekdays": "No pirmdienas līdz piektdienai",
+    "saturday": "Sestdiena",
+    "sunday": "Svētdiena",
+    "closed": "Slēgts"
+  },
+  "whatsapp": {
+    "ariaLabel": "Atvērt WhatsApp sarunu ar {{brand}}",
+    "prefill": "Labdien, {{brand}}! Rakstu no jūsu mājaslapas. "
+  },
+  "lightbox": {
+    "close": "Aizvērt fotoattēlus",
+    "previous": "Iepriekšējais attēls",
+    "next": "Nākamais attēls",
+    "counter": "Attēls {{current}} no {{total}}",
+    "show": "Rādīt attēlu {{current}} no {{total}}"
+  },
+  "map": {
+    "showOnMap": "Skatīt kartē"
+  }
+}

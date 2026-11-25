@@ -1,0 +1,154 @@
+name: CI
+
+# Verification on pull requests. The verify job has the same steps, in the
+# same order, as the build job of deploy.yaml, so a green PR means a green
+# deploy and neither can surprise the other. Plus one step deploy does not
+# need: building every style, not only the active one.
+#
+# `make verify` runs the same set locally: the verify job's steps (all but the
+# per-style one, which is `make verify-styles`), then the pipeline job, then
+# the terraform job. A check added to one of the three belongs in the other.
+#
+# Deliberately has no AWS credentials and no id-token permission: a pull request
+# from a fork must never be able to reach the account.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  FRONTEND_DIR: services/frontend/website
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci
+
+      - name: Lint
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run lint
+
+      - name: Test with coverage
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run test:coverage
+
+      - name: Type-check
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npx tsc -b
+
+      - name: Build
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      # Everything above exercises the ACTIVE style only, so two defects hide
+      # from it: a style on disk that does not build (the symptom, weeks later,
+      # is a module-resolution stack trace naming a bundler internal rather
+      # than the style), and a route test quietly asserting the active style's
+      # own markup. Both have happened here. Make each style active in turn:
+      # route it, prerender and hydrate it, and build it (the build includes
+      # the prerender and its checks). Same list as `make verify-styles`.
+      - name: Route and build every style
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          set -uo pipefail
+          failed=0
+          for id in $(ls src/styles | while read -r d; do [ -f "src/styles/$d/style.ts" ] && echo "$d"; done); do
+            log="/tmp/style-$id.log"
+            if VITE_SITE_STYLE="$id" npx vitest run src/App.test.tsx src/entry-server.test.tsx src/hydration.test.tsx >"$log" 2>&1 \
+               && VITE_SITE_STYLE="$id" npm run build >>"$log" 2>&1; then
+              echo "  ok      $id"
+            else
+              echo "  FAILED  $id"
+              tail -30 "$log"
+              failed=1
+            fi
+          done
+          exit $failed
+
+      # A regression in bundle size is a user-visible regression. Print it so
+      # it shows up in the PR without anyone having to go looking.
+      - name: Report bundle size
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: |
+          {
+            echo "## Bundle"
+            echo ""
+            echo "| File | Size | Gzipped |"
+            echo "|------|------|---------|"
+            for f in dist/assets/*.js dist/assets/*.css; do
+              [ -e "$f" ] || continue
+              raw=$(wc -c < "$f" | tr -d ' ')
+              gz=$(gzip -c "$f" | wc -c | tr -d ' ')
+              printf '| `%s` | %s KB | %s KB |\n' \
+                "$(basename "$f")" \
+                "$(awk "BEGIN{printf \"%.1f\", $raw/1024}")" \
+                "$(awk "BEGIN{printf \"%.1f\", $gz/1024}")"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # The deploy pipeline's own shell, which the website's test suite does not
+  # reach: the canonical-origin check deploy.yaml runs before it builds, the
+  # deploy action's preflight, and the policy setup.sh writes for the deploy
+  # roles. Every test stubs the AWS CLI, so this job has no credentials either.
+  # Locally: make test-pipeline
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # resolve-site-url.sh reads VITE_SITE_URL with Node's URL parser, as the
+      # build does, and deploy.yaml runs it after this same setup step.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Deploy pipeline tests
+        run: bash .github/tests/run.sh
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Format check
+        working-directory: infrastructure/terraform
+        run: terraform fmt -check -recursive -diff
+
+      # -backend=false validates the configuration without reaching S3, so this
+      # job needs no credentials.
+      - name: Validate
+        working-directory: infrastructure/terraform
+        run: |
+          terraform init -backend=false
+          terraform validate

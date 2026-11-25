@@ -1,0 +1,87 @@
+/* Editorial: a magazine, set in type rather than in boxes.
+
+   Everything here serves one decision: structure is carried by rules and by
+   white space, never by a tinted band or a floating card. See doc/design.md
+   for what a style MAY change in this file. */
+
+@import '@fontsource-variable/fraunces';
+
+:root {
+  /* Fraunces is the whole voice of the style. The fallbacks are the serifs
+     that are already on a Mac, a Windows box and an Android phone, in that
+     order, so a slow font load degrades to a serif and not to Inter.
+
+     The stack also carries the Cyrillic: Fraunces ships latin, latin-ext and
+     vietnamese only (see metadata.json in the package), so lv is covered but
+     ru is not. Fallback is per glyph, so a Russian heading lands on Palatino
+     Linotype, Georgia or the platform serif while lv and en get Fraunces.
+     Swapping in a Cyrillic-capable display serif means adding a package to
+     package.json, which is outside this folder and therefore the owner's
+     call. */
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', 'Palatino Linotype',
+    Palatino, Georgia, 'Times New Roman', serif;
+
+  /* Square corners everywhere. A radius and a hairline rule are competing
+     structural devices and this style commits to the rule: one rounded button
+     in the middle of a ruled page reads as a mistake. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+
+  /* Nothing floats above the page. Depth comes from a line, not from a
+     shadow. Set here rather than per component so the shared primitives
+     (Card, Alert, the contact form) go flat too, without each one needing an
+     override it would then have to keep in sync. */
+  --shadow-subtle: none;
+  --shadow-card: none;
+  --shadow-lifted: none;
+
+  /* The narrow measure is the point of the style: about 65 characters at the
+     body size, which is where the eye stops losing its place on the return
+     sweep. Running text uses Container width="prose"; everything else uses
+     the content width, pulled in a little for wider margins. */
+  --container-prose: 38rem;
+  --container-content: 68rem;
+
+  /* Paper, not screen white, and very slightly warm. --surface-raised stays
+     pure white, so the few raised things left read as something laid ON the
+     page. This is a hex rather than a brand-hue oklch on purpose: paper does
+     not change colour when the brand hue does. */
+  --surface-page: #fcfbf9;
+
+  /* Rules carry the structure, so they have to survive at 1px on paper.
+     ink-200 was tuned to sit under a background band and is too faint once
+     the bands are gone. */
+  --border-subtle: var(--color-ink-300);
+
+  /* The heavy rules ARE the structure here: the double rule under the
+     nameplate, the rule that opens every section, the one above the colophon
+     and the closing call to action. They are drawn at full ink strength, so
+     the token is repointed once rather than every rule reaching past the
+     border layer for --text-primary. One decision in one place, and the
+     contrast test measures it the way it measures every other border. The
+     shared form fields inherit the same black edge, which is what the rest of
+     the page already looks like. */
+  --border-strong: var(--color-ink-900);
+}
+
+[data-theme='dark'] {
+  /* The paper has a counterpart: the deepest ink step, so the dark page reads
+     as printed rather than as a dimmed screen. Stated explicitly here and not
+     left to the base, because the light --surface-page above is overridden in
+     :root and the two have to be decided together. */
+  --surface-page: var(--color-ink-950);
+
+  /* Same reasoning inverted: a hairline on a dark page has to be lighter than
+     the default border or every section break disappears and the page becomes
+     one undifferentiated column. */
+  --border-subtle: var(--color-ink-700);
+
+  /* The same rule inverted. Set here because --border-strong above is an
+     unqualified :root in layer(components), which would otherwise override the
+     base stylesheet's dark block too and leave the dark page drawing black
+     rules on near-black paper. */
+  --border-strong: var(--color-ink-100);
+}

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "title": "Par mums",
+    "description": "Aizstājiet ar teikumu par to, kas vada uzņēmumu un kādas vērtības tas pārstāv."
+  },
+  "hero": {
+    "title": "Par mums",
+    "subtitle": "Viena rindkopa. Kas jūs esat, cik ilgi ar to nodarbojaties un kur atrodaties."
+  },
+  "story": {
+    "title": "Kā mēs nonācām šeit",
+    "body": "Divas vai trīs rindkopas patiesas vēstures. Kad uzņēmums tika dibināts, ar ko tas sāka, kas mainījās. Konkrētība ir vērtīgāka par iespaidīgumu: dibināšanas gads un pirmais klients ir vairāk vērts nekā lappuse ar misijas formulējumu."
+  },
+  "values": {
+    "title": "Kā mēs strādājam",
+    "items": {
+      "honest": {
+        "title": "Mēs protam atteikt",
+        "body": "Ja darbs mums neder, mēs to pasakām, nevis uzņemamies to un paveicam slikti."
+      },
+      "direct": {
+        "title": "Mēs atbildam",
+        "body": "Uz ziņām atbildam tajā pašā darba dienā, arī uz neērtajām."
+      },
+      "finish": {
+        "title": "Mēs pabeidzam",
+        "body": "Darbs ir padarīts tad, kad tas strādā jūsu rokās, nevis tad, kad mums beigušās apmaksātās stundas."
+      }
+    }
+  },
+  "cta": {
+    "title": "Vēlaties parunāt?",
+    "body": "Pirmā saruna neko nemaksā un parasti izšķir, vai ir vērts sarunāt otro.",
+    "button": "Sazinieties ar mums"
+  }
+}

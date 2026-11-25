@@ -1,0 +1,165 @@
+{
+  "privacy": {
+    "meta": {
+      "title": "Privātuma politika",
+      "description": "Kādus personas datus šī vietne vāc, kāpēc, cik ilgi tos glabā un kādas ir jūsu tiesības attiecībā uz tiem."
+    },
+    "title": "Privātuma politika",
+    "intro": "Šī politika skaidro, kādus personas datus {{legalName}} vāc vietnē {{domain}}, kāpēc un ko jūs varat ar tiem darīt. Tā ir sagatavota atbilstoši Vispārīgās datu aizsardzības regulas (VDAR) 13. un 14. pantam, turklāt tā, lai to būtu iespējams izlasīt.",
+    "controller": {
+      "title": "Kas ir atbildīgs",
+      "body": "Datu pārzinis ir {{legalName}}, reģistrācijas numurs {{registrationNumber}}, juridiskā adrese: {{address}}. Ar jebkuru jautājumu par saviem datiem rakstiet uz {{email}}."
+    },
+    "collected": {
+      "title": "Ko mēs vācam",
+      "body": "Tikai to, ko ierakstāt saziņas formā: vārdu, e-pasta adresi, neobligātu tālruņa numuru, tematu un pašu ziņu. Neko citu par jums šī vietne nevāc: nav ne analītikas, ne reklāmas pikseļa, ne trešo pušu skriptu.",
+      "bodyWithStats": "To, ko ierakstāt saziņas formā: vārdu, e-pasta adresi, neobligātu tālruņa numuru, tematu un pašu ziņu. Turklāt vietne anonīmi uzskaita apmeklējumus, kā aprakstīts sadaļā \"Apmeklējumu statistika\". Nav ne reklāmas pikseļa, ne sīkdatņu, ne trešo pušu skriptu.",
+      "serverLead": "Mūsu mitināšanas pakalpojuma sniedzējs par katru pieprasījumu reģistrē standarta servera datus, kas tam nepieciešami, lai lapu vispār varētu parādīt:",
+      "server": {
+        "ip": "jūsu IP adresi",
+        "agent": "jūsu pārlūkprogrammu un operētājsistēmu tādas, kādas tās uzrāda pati pārlūkprogramma",
+        "time": "pieprasījuma laiku un pieprasīto lapu"
+      }
+    },
+    "purpose": {
+      "title": "Kāpēc mēs tos izmantojam",
+      "body": "Jūsu kontaktinformāciju izmantojam, lai atbildētu uz jūsu pieprasījumu un, ja no tā izriet sadarbība, lai izpildītu ar jums noslēgto līgumu. Tiesiskais pamats pašam pieprasījumam ir jūsu piekrišana (VDAR 6. panta 1. punkta a) apakšpunkts), bet sadarbības laikā tas ir līguma izpilde (6. panta 1. punkta b) apakšpunkts). Servera žurnālus glabājam, pamatojoties uz mūsu leģitīmajām interesēm uzturēt darbojošos un drošu vietni (6. panta 1. punkta f) apakšpunkts)."
+    },
+    "statistics": {
+      "title": "Apmeklējumu statistika",
+      "body": "Katra lapa, ko atverat, nosūta īsu anonīmu ziņojumu mūsu tīmekļa izstrādātājam {{developer}} uz {{statsHost}}: lapas adresi bez vaicājuma daļas, laiku, cik ilgi lapa bija redzama un cik tālu to ritinājāt, vietni, no kuras atnācāt (tikai tās domēnu), ekrāna izmēra grupu, kā arī pārlūkprogrammas valodu un laika joslu. Sīkdatnes netiek izmantotas, un jūsu ierīcē nekas netiek saglabāts: apmeklējuma numurs, kas sasaista viena apmeklējuma lapas, pastāv tikai atvērtajā cilnē un pazūd, kad to aizverat. Jūsu IP adrese tiek izmantota tikai ziņojuma piegādei un netiek glabāta. Ja jūsu pārlūkprogramma sūta Global Privacy Control vai Do Not Track signālu, ziņojums netiek sūtīts vispār. Statistiku izmantojam, lai redzētu, vai vietni lasa un kuras lapas darbojas, pamatojoties uz mūsu leģitīmajām interesēm (VDAR 6. panta 1. punkta f) apakšpunkts), un glabājam to 13 mēnešus."
+    },
+    "sharing": {
+      "title": "Kas vēl tos redz",
+      "lead": "Mēs nepārdodam jūsu datus un nenododam tos nevienam mārketinga vajadzībām. Tos apstrādā apstrādātāji, kuri mums nepieciešami darbības nodrošināšanai:",
+      "hosting": "Amazon Web Services, lai mitinātu šo vietni un piegādātu tās saturu.",
+      "email": "Amazon Simple Email Service, lai piegādātu paziņojuma e-pastu, ar kuru jūsu pieprasījums nonāk pie mums.",
+      "map": "Google, kartei kontaktu lapā: kad karte tiek ielādēta, Google saņem jūsu IP adresi un pārlūkprogrammas datus.",
+      "note": "Abi darbojas saskaņā ar datu apstrādes līgumu. Ja dati tiek nodoti ārpus EEZ, tas notiek, pamatojoties uz Eiropas Komisijas standarta līguma klauzulām.",
+      "statistics": "{{developer}}, mūsu tīmekļa izstrādātājs, kas mūsu vārdā saņem un glabā anonīmo apmeklējumu statistiku."
+    },
+    "retention": {
+      "title": "Cik ilgi mēs tos glabājam",
+      "body": "Pieprasījumus glabājam 24 mēnešus no pēdējās saziņas, lai vajadzības gadījumā varētu turpināt sarunu no tās vietas, kur tā apstājās. Ja no pieprasījuma izriet līgums, ar to saistītos grāmatvedības dokumentus glabājam tik ilgi, cik to prasa Latvijas likumi. Servera žurnālus glabājam 90 dienas."
+    },
+    "rights": {
+      "title": "Jūsu tiesības",
+      "lead": "Saskaņā ar VDAR jūs varat lūgt mums:",
+      "access": "izsniegt jums kopiju ar datiem, kas mums par jums ir (15. pants)",
+      "rectify": "labot visu neprecīzo (16. pants)",
+      "erase": "dzēst tos (17. pants)",
+      "restrict": "ierobežot to izmantošanu (18. pants)",
+      "portability": "nosūtīt tos jums vai citam pārzinim mašīnlasāmā formātā (20. pants)",
+      "object": "iebilst pret to izmantošanu (21. pants)",
+      "withdraw": "jebkurā brīdī atsaukt doto piekrišanu, neietekmējot apstrādes likumību, kas veikta pirms atsaukuma (7. panta 3. punkts)",
+      "how": "Rakstiet uz {{email}}. Atbildam viena mēneša laikā. Ja atbilde jūs neapmierina, varat iesniegt sūdzību Datu valsts inspekcijā (dvi.gov.lv)."
+    },
+    "security": {
+      "title": "Kā dati tiek aizsargāti",
+      "body": "Vietne ir pieejama tikai caur HTTPS. Pieprasījumi tiek pārsūtīti šifrēti un šifrēti arī glabāti. Piekļuve ir tikai tiem cilvēkiem, kuriem tā vajadzīga, lai jums atbildētu."
+    },
+    "children": {
+      "title": "Bērni",
+      "body": "Šī vietne nav paredzēta bērniem, un mēs apzināti nevācam datus par personām, kas jaunākas par 16 gadiem. Ja jums ir pamats domāt, ka bērns mums ir atsūtījis savus datus, rakstiet uz {{email}}, un mēs tos dzēsīsim."
+    },
+    "changes": {
+      "title": "Izmaiņas šajā politikā",
+      "body": "Ja šī politika būtiski mainīsies, mēs to norādīsim šajā lapā un mainīsim zemāk redzamo datumu. Turpinot lietot vietni pēc izmaiņām, uz jums attiecas jaunā versija."
+    }
+  },
+  "cookies": {
+    "meta": {
+      "title": "Sīkdatņu politika",
+      "description": "Šī vietne neizmanto sīkdatnes. Tā jūsu pārlūkprogrammā saglabā dažus iestatījumus, kas šeit ir uzskaitīti pilnībā."
+    },
+    "title": "Sīkdatņu politika",
+    "intro": "Šī vietne neizmanto nekādas sīkdatnes: ne analītikai, ne reklāmai, ne kam citam. Tā gan jūsu pārlūkprogrammas lokālajā krātuvē saglabā dažus iestatījumus, lai vietne atcerētos, kā jums patīk. Tie nekad neatstāj jūsu ierīci un netiek nosūtīti ne mums, ne kādam citam.",
+    "tableTitle": "Kas tiek glabāts jūsu ierīcē",
+    "table": {
+      "key": "Atslēga",
+      "purpose": "Nolūks",
+      "duration": "Glabāšanas ilgums",
+      "untilCleared": "Līdz jūs to notīrāt",
+      "oneYear": "Viens gads",
+      "tenMinutes": "Desmit minūtes",
+      "themePurpose": "Atceras, vai izvēlējāties gaišo vai tumšo tēmu.",
+      "localePurpose": "Atceras, kuru valodu izvēlējāties.",
+      "consentPurpose": "Atceras jūsu atbildi uz jautājumu par piekrišanu, lai to nevajadzētu jautāt atkārtoti.",
+      "rateLimitPurpose": "Skaita nesenos saziņas formas nosūtījumus, lai novērstu nejaušu dubultu nosūtīšanu."
+    },
+    "control": {
+      "title": "Kā to izdzēst",
+      "body": "Notīrot vietnes {{domain}} datus savā pārlūkprogrammā, tiek izdzēsts viss. Vietne pēc tam turpina darboties; tā vienkārši aizmirst jūsu izvēlēto tēmu un valodu."
+    },
+    "statistics": {
+      "title": "Apmeklējumu statistika bez sīkdatnēm",
+      "body": "Vietne uzskaita apmeklējumus bez sīkdatnēm un neko neieraksta jūsu ierīcē. Katra lapa nosūta anonīmu ziņojumu uz {{statsHost}}, ko uztur mūsu tīmekļa izstrādātājs {{developer}}; kas tieši tajā ir, norādīts privātuma politikā. Ja pārlūkprogrammā ieslēdzat Global Privacy Control vai Do Not Track, ziņojumi netiek sūtīti."
+    },
+    "thirdParty": {
+      "title": "Trešās puses",
+      "body": "Šī lapa neveic nevienu pieprasījumu nevienai trešajai pusei. Fonti tiek piegādāti no šīs pašas vietnes, nevis no fontu pakalpojuma, jo pieprasījums pēc fonta nogādātu jūsu IP adresi un pārlūkprogrammas datus šim pakalpojumam vēl pirms esat kaut kam piekrituši. Ja kādreiz tiks pievienots trešās puses iegults saturs, tas būs pieejams tikai pēc jūsu piekrišanas, un šajā lapā tas tiks norādīts.",
+      "bodyWithMap": "Šī lapa neveic nevienu pieprasījumu nevienai trešajai pusei, izņemot zemāk minēto karti. Fonti tiek piegādāti no šīs pašas vietnes, nevis no fontu pakalpojuma, jo pieprasījums pēc fonta nogādātu jūsu IP adresi un pārlūkprogrammas datus šim pakalpojumam vēl pirms esat kaut kam piekrituši.",
+      "map": "Kontaktu lapā ir Google Maps karte. Tā tiek ielādēta no Google, kad līdz tai nonākat, tāpēc Google saņem jūsu IP adresi un pārlūkprogrammas datus un var iestatīt savas sīkdatnes saskaņā ar Google privātuma politiku. Pārējās lapas no Google neko neielādē."
+    }
+  },
+  "terms": {
+    "meta": {
+      "title": "Lietošanas noteikumi",
+      "description": "Noteikumi, ar kādiem tiek nodrošināta šī vietne un tajā aprakstītie pakalpojumi."
+    },
+    "title": "Lietošanas noteikumi",
+    "intro": "Šie noteikumi attiecas uz vietnes {{domain}} lietošanu un pakalpojumiem, ko ar tās starpniecību sniedz {{legalName}}. Lietojot vietni, jūs tiem piekrītat.",
+    "provider": {
+      "title": "Kas nodrošina šo vietni",
+      "body": "{{legalName}}, reģistrācijas numurs {{registrationNumber}}, juridiskā adrese: {{address}}. Saziņai: {{email}}."
+    },
+    "use": {
+      "title": "Vietnes lietošana",
+      "body": "Jūs drīkstat lasīt šo vietni un sazināties ar mums caur to jebkurā likumīgā nolūkā. Jūs nedrīkstat mēģināt traucēt tās darbību, piekļūt tās nepubliskajām daļām vai ar automatizētiem līdzekļiem iegūt tās saturu tādā apjomā, kas ietekmē citus apmeklētājus."
+    },
+    "content": {
+      "title": "Saturs un precizitāte",
+      "body": "Mēs uzturam šīs vietnes informāciju aktuālu un pareizu, taču tā ir aprakstoša, nevis līgumiska. Cenas, pieejamību un specifikācijas apstiprinām rakstiski, sagatavojot piedāvājumu konkrētam darbam; nekas šajā lapā nav uzskatāms par saistošu piedāvājumu jeb oferti."
+    },
+    "ip": {
+      "title": "Intelektuālais īpašums",
+      "body": "Šīs vietnes teksts, dizains un attēli pieder {{legalName}}, ja vien nav norādīts citādi. Jūs drīkstat tos citēt un atsaukties uz tiem ar saiti; jūs nedrīkstat tos pilnībā pārpublicēt kā savus."
+    },
+    "liability": {
+      "title": "Atbildība",
+      "body": "Vietni piedāvājam tādu, kāda tā ir. Ciktāl to pieļauj likums, mēs neatbildam par zaudējumiem, kas radušies no tās lietošanas vai no tās nepieejamības. Nekas šajos noteikumos neierobežo atbildību, ko pēc likuma ierobežot nedrīkst, tostarp par nāvi vai personas veselībai nodarītu kaitējumu neuzmanības dēļ, kā arī par krāpšanu. Jūsu kā patērētāja likumā noteiktās tiesības netiek ietekmētas."
+    },
+    "links": {
+      "title": "Saites uz citām vietnēm",
+      "body": "Ja mēs norādām saiti uz citu vietni, mēs nekontrolējam, kas atrodas tās otrā galā, un par to neatbildam."
+    },
+    "law": {
+      "title": "Piemērojamie tiesību akti",
+      "body": "Šiem noteikumiem piemēro Latvijas Republikas tiesību aktus. Strīdus izskata Latvijas tiesas, un tas neietekmē jūsu kā patērētāja tiesības celt prasību savā dzīvesvietas valstī."
+    },
+    "changes": {
+      "title": "Izmaiņas",
+      "body": "Mēs varam šos noteikumus mainīt. Spēkā ir šajā lapā redzamā versija, un zemāk norādītais datums liecina, kad tā pēdējoreiz mainīta."
+    }
+  },
+  "company": {
+    "meta": {
+      "title": "Uzņēmuma rekvizīti",
+      "description": "Reģistrētais nosaukums, reģistrācijas numurs, PVN numurs un juridiskā adrese."
+    },
+    "title": "Uzņēmuma rekvizīti",
+    "intro": "Juridiskā persona, kas stāv aiz zīmola {{brandName}}.",
+    "labels": {
+      "legalName": "Reģistrētais nosaukums",
+      "registrationNumber": "Reģistrācijas numurs",
+      "vatNumber": "PVN numurs",
+      "address": "Juridiskā adrese",
+      "email": "E-pasts",
+      "phone": "Tālrunis",
+      "iban": "IBAN",
+      "bank": "Banka"
+    },
+    "notProvided": "Nav publicēts",
+    "note": "Šie ir rekvizīti, kas saskaņā ar Latvijas Komerclikumu jānorāda komercdarbības dokumentos."
+  }
+}

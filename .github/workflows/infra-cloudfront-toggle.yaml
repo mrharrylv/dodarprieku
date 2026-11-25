@@ -1,0 +1,107 @@
+name: CloudFront Toggle
+
+# Turn the site on or off without touching DNS.
+#
+# off → the distribution is DISABLED: it stops serving and incurs no request or
+#       data-transfer charges. The distribution, its CloudFront domain name,
+#       aliases and ACM certificate are all PRESERVED, so no DNS record changes.
+# on  → re-enabled, serving on the exact same URLs.
+#
+# This is the cheap "stop the site" switch. Unlike infra-destroy, which deletes
+# the distribution and forces every DNS record to be recreated.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+      state:
+        description: "Turn CloudFront on or off"
+        required: true
+        default: "off"
+        type: choice
+        options:
+          - "on"
+          - "off"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: infra-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-north-1
+  TF_WORKING_DIR: infrastructure/terraform
+  PROJECT: dodarprieku
+  AWS_ACCOUNT_ID: "561341419749"
+
+jobs:
+  toggle:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve desired state
+        id: resolve
+        run: |
+          if [ "${{ github.event.inputs.state }}" = "on" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "🔁 ${{ github.event.inputs.environment }} → CloudFront ${{ github.event.inputs.state }}"
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-${{ env.PROJECT }}-${{ github.event.inputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform setup
+        uses: ./.github/actions/terraform-setup
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          project: ${{ env.PROJECT }}
+
+      # cloudfront_enabled is passed on the command line rather than edited into
+      # the tfvars, so the toggle leaves no diff in the repo and the next
+      # ordinary apply returns the distribution to its committed state.
+      - name: Terraform Apply (toggle only)
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        # zone_dns.tf creates the records in zone_dns_zone through the Zone.ee
+        # API during the apply. Unused when zone_dns_zone is empty.
+        env:
+          ZONE_USERNAME: ${{ secrets.ZONE_USERNAME }}
+          ZONE_API_KEY: ${{ secrets.ZONE_API_KEY }}
+        run: |
+          terraform apply \
+            -var-file="environments/${{ github.event.inputs.environment }}.tfvars" \
+            -var="cloudfront_enabled=${{ steps.resolve.outputs.enabled }}" \
+            -input=false \
+            -auto-approve
+
+      - name: Result
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          CF_DOMAIN=$(terraform output -raw cloudfront_domain_name 2>/dev/null || echo "")
+          {
+            echo "## CloudFront is now **${{ github.event.inputs.state }}** in \`${{ github.event.inputs.environment }}\`"
+            echo ""
+            echo "Distribution, CloudFront domain, aliases and certificate are preserved."
+            echo "No DNS changes needed. Allow 5–15 min for the change to reach every edge."
+            [ -n "$CF_DOMAIN" ] && echo "" && echo "CloudFront domain: \`$CF_DOMAIN\`"
+            echo ""
+            echo "> Note: \`cloudfront_enabled\` was overridden for this run only."
+            echo "> The next ordinary infra apply restores the value in the tfvars."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,232 @@
+name: Build & Deploy Website
+
+# Every push to main deploys to DEV. There is no paths filter, so a change to a
+# doc triggers a build too: do not push a half-finished change to main
+# expecting it to sit there quietly.
+#
+# PROD is a manual workflow_dispatch and stays that way.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+# Two runs deploying the same bucket at once corrupt it: the older run's
+# orphan-cleanup diffs S3 against ITS OWN manifest and deletes the newer run's
+# freshly uploaded assets, leaving a live index.html pointing at files that no
+# longer exist. Queue instead of cancelling: cancelling mid-deploy leaves the
+# bucket half-swapped, which is worse.
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-north-1
+  NODE_VERSION: "22"
+  FRONTEND_DIR: services/frontend/website
+  PROJECT: dodarprieku
+  AWS_ACCOUNT_ID: "561341419749"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Which environment is this run for?
+  #
+  # Computed once and reused, so the build and the deploy can never disagree,
+  # the build is environment-specific (it bakes in VITE_* values) and shipping a
+  # dev-configured bundle to prod would be silent and wrong.
+  # ---------------------------------------------------------------------------
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.pick.outputs.environment }}
+    steps:
+      - name: Pick target environment
+        id: pick
+        run: |
+          ENV="${{ github.event.inputs.environment || 'dev' }}"
+          echo "environment=$ENV" >> "$GITHUB_OUTPUT"
+          echo "🎯 Target environment: $ENV"
+
+  # ---------------------------------------------------------------------------
+  # Build: lint, test, type-check, then bundle
+  # ---------------------------------------------------------------------------
+  build:
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci
+
+      # The canonical origin goes into every page's canonical, hreflang,
+      # og:url and og:image, and into robots.txt, sitemap.xml and llms.txt, at
+      # build time. When no VITE_SITE_URL variable is configured for the
+      # environment (a site still on its CloudFront URL), read the
+      # distribution's domain and use that, so link previews carry the logo
+      # from the very first deploy.
+      #
+      # No origin, no build. A build without one exits 0 with relative URLs
+      # and no sitemap.xml or llms.txt, and the deploy's cleanup would then
+      # delete the live copies. So a configured value that is not an https
+      # origin, a lookup that errors and a missing distribution all fail this
+      # step (.github/scripts/resolve-site-url.sh) instead of building. It
+      # reads the value with Node's URL parser, as the build will (so
+      # https://kafejnīca.lv is its punycode form), and so runs after Setup
+      # Node.js.
+      - name: Configure AWS OIDC (to read the CloudFront domain)
+        if: ${{ vars.VITE_SITE_URL == '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-${{ env.PROJECT }}-${{ needs.resolve.outputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve site URL
+        id: site
+        env:
+          CONFIGURED: ${{ vars.VITE_SITE_URL }}
+          ENV: ${{ needs.resolve.outputs.environment }}
+        run: bash .github/scripts/resolve-site-url.sh
+
+      - name: Lint
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run lint
+
+      # Tests run before the type-check so a broken behaviour fails the pipeline
+      # at the cheapest failing signal.
+      - name: Test
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run test
+
+      - name: Type-check
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npx tsc -b
+
+      - name: Build
+        working-directory: ${{ env.FRONTEND_DIR }}
+        env:
+          # Public, non-secret build-time config. Set these as GitHub Actions
+          # *variables* on the dev and prod Environments. VITE_SITE_URL comes
+          # from "Resolve site URL" and is never empty here; every other one
+          # is optional, and unset means its feature stays off.
+          VITE_SITE_URL: ${{ steps.site.outputs.url }}
+          VITE_CONTACT_ENDPOINT: ${{ vars.VITE_CONTACT_ENDPOINT }}
+          VITE_CONTACT_MODE: ${{ vars.VITE_CONTACT_MODE }}
+          VITE_CONSENT_ENDPOINT: ${{ vars.VITE_CONSENT_ENDPOINT }}
+          # Unset: visits go to HA Group's CRM (ANALYTICS_ENDPOINT in
+          # src/config/site.ts). "off" turns visit statistics off.
+          VITE_ANALYTICS_ENDPOINT: ${{ vars.VITE_ANALYTICS_ENDPOINT }}
+          VITE_SITE_STYLE: ${{ vars.VITE_SITE_STYLE }}
+          # The share guard (scripts/verify-share.mjs, the last step of the
+          # build) treats the template's placeholder copy and placeholder
+          # favicon as WARNINGS, so a template deploys for review. A real site
+          # sets the repository variable SHARE_STRICT to 1 and the same build
+          # then FAILS on them. Unset here means "warn": do not default it.
+          SHARE_STRICT: ${{ vars.SHARE_STRICT }}
+        run: npm run build
+
+      # The manifest is what the deploy's cleanup phase diffs S3 against.
+      - name: Generate file manifest
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: cd dist && find . -type f | sort > ../manifest.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-dist-${{ needs.resolve.outputs.environment }}
+          path: |
+            ${{ env.FRONTEND_DIR }}/dist
+            ${{ env.FRONTEND_DIR }}/manifest.txt
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Deploy, one job for both environments; the target comes from `resolve`.
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve.outputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: website-dist-${{ needs.resolve.outputs.environment }}
+          path: artifact
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-${{ env.PROJECT }}-${{ needs.resolve.outputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve deploy target
+        id: target
+        env:
+          ENV: ${{ needs.resolve.outputs.environment }}
+        run: |
+          set -euo pipefail
+          BUCKET="${ENV}-${PROJECT}-website"
+
+          # The distribution's Comment is set by Terraform to exactly
+          # "<env> - <project> website", so it is a stable lookup key.
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='${ENV} - ${PROJECT} website'].Id | [0]" \
+            --output text)
+
+          if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ] || [ "$DIST_ID" = "null" ]; then
+            echo "❌ CloudFront distribution not found for '${ENV} - ${PROJECT} website'."
+            echo "   Run the 'Terraform Infrastructure' workflow first."
+            exit 1
+          fi
+
+          echo "bucket=$BUCKET" >> "$GITHUB_OUTPUT"
+          echo "distribution_id=$DIST_ID" >> "$GITHUB_OUTPUT"
+          echo "📦 S3 bucket:  $BUCKET"
+          echo "🌐 CloudFront: $DIST_ID"
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-site
+        with:
+          bucket: ${{ steps.target.outputs.bucket }}
+          distribution-id: ${{ steps.target.outputs.distribution_id }}
+
+      - name: Summary
+        env:
+          ENV: ${{ needs.resolve.outputs.environment }}
+        run: |
+          {
+            echo "## ✅ Deployed to \`${ENV}\`"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Bucket | \`${{ steps.target.outputs.bucket }}\` |"
+            echo "| Distribution | \`${{ steps.target.outputs.distribution_id }}\` |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

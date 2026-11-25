@@ -1,0 +1,4 @@
+/* Classic: the template's default look.
+   It overrides nothing. The file exists so every style has the same shape,
+   and so `vite.config.ts` has something to import for whichever style is
+   active. See doc/design.md for what a style MAY change here. */

@@ -1,0 +1,625 @@
+/* =============================================================================
+   Design tokens
+   =============================================================================
+   Everything visual is defined here and nowhere else. A component never writes
+   a hex value, a raw pixel font size, or a bespoke easing curve: it reaches
+   for a token. See doc/design.md for which token to pick and why.
+
+   Re-theming a site is a change to the BRAND RAMP below and nothing else.
+   The ramp is OKLCH, so rotating --brand-hue moves every shade together and
+   keeps the lightness (and therefore the contrast ratios) intact. Chroma is
+   deliberately lower at the extremes, where high chroma reads as neon.
+   ============================================================================= */
+
+/* Self-hosted. Never link fonts.googleapis.com: a font request carries the
+   visitor's IP, User-Agent and Referer to Google on the first paint, before any
+   consent, which is exactly what the privacy policy promises does not happen.
+   (LG München 3 O 17493/20.) */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/outfit';
+
+@import 'tailwindcss';
+
+/* The active style's token overrides. vite.config.ts replaces the marker on
+   the next line with `@import './styles/<id>/tokens.css' layer(components);`
+   where <id> comes from site.config.json. The components layer beats the base
+   layer below, which is what lets a style repoint a semantic token. */
+/* @active-style:tokens */
+
+/* Only the ACTIVE style's classes are generated. Tailwind scans the whole
+   source tree by default, which would put all ten styles' utilities into the
+   CSS every visitor downloads. vite.config.ts replaces the marker below with
+   one `@source not` line per INACTIVE style.
+
+   Excluding "./styles/**" and re-including the active folder does NOT work:
+   an exclusion wins over a later inclusion, so the active style's classes
+   vanish and the site ships unstyled while every test still passes, because
+   jsdom does no layout. The build check in doc/styles.md is what catches it. */
+/* @active-style:source */
+
+/* Dark mode is driven by an explicit attribute on <html>, set by ThemeProvider,
+   rather than by the media query alone, so the visitor's own choice wins over
+   the OS setting. Two themes only, light and dark: there is no "system" mode. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme {
+  /* ---------------------------------------------------------------------
+     Brand ramp: the one thing a new site changes.
+     Swap the hue (0–360) and the whole site re-themes coherently.
+       210 blue · 265 violet · 150 green · 25 orange · 350 rose
+     --------------------------------------------------------------------- */
+  --brand-hue: 255;
+
+  --color-brand-50: oklch(0.971 0.014 var(--brand-hue));
+  --color-brand-100: oklch(0.943 0.029 var(--brand-hue));
+  --color-brand-200: oklch(0.894 0.057 var(--brand-hue));
+  --color-brand-300: oklch(0.823 0.094 var(--brand-hue));
+  --color-brand-400: oklch(0.731 0.135 var(--brand-hue));
+  --color-brand-500: oklch(0.646 0.168 var(--brand-hue));
+  --color-brand-600: oklch(0.573 0.176 var(--brand-hue));
+  --color-brand-700: oklch(0.497 0.157 var(--brand-hue));
+  --color-brand-800: oklch(0.421 0.129 var(--brand-hue));
+  --color-brand-900: oklch(0.363 0.104 var(--brand-hue));
+  --color-brand-950: oklch(0.256 0.072 var(--brand-hue));
+
+  /* ---------------------------------------------------------------------
+     Neutrals: a hint of the brand hue keeps greys from looking muddy
+     beside the accent, without reading as coloured.
+     --------------------------------------------------------------------- */
+  --color-ink-50: oklch(0.985 0.002 var(--brand-hue));
+  --color-ink-100: oklch(0.967 0.003 var(--brand-hue));
+  --color-ink-200: oklch(0.925 0.005 var(--brand-hue));
+  --color-ink-300: oklch(0.868 0.008 var(--brand-hue));
+  --color-ink-400: oklch(0.704 0.012 var(--brand-hue));
+  /* 0.530, not the 0.554 a regular ramp would put here: --text-muted uses this
+     step, and at 0.554 it measured 4.33:1 on --surface-sunken. See
+     contrast.test.ts, which fails the build if this drifts back up. */
+  --color-ink-500: oklch(0.530 0.014 var(--brand-hue));
+  --color-ink-600: oklch(0.446 0.013 var(--brand-hue));
+  --color-ink-700: oklch(0.372 0.011 var(--brand-hue));
+  --color-ink-800: oklch(0.279 0.009 var(--brand-hue));
+  /* 900 and 950 are softened (Harry, 2026-11-06: "the black should not be so
+     black"): the dark theme's page and the hero bands are a deep charcoal,
+     not near-black. Were 0.208 and 0.145. */
+  --color-ink-900: oklch(0.245 0.009 var(--brand-hue));
+  --color-ink-950: oklch(0.19 0.008 var(--brand-hue));
+
+  /* Status. Kept off the brand hue on purpose: a success message must not be
+     mistakable for an accent, and an error must never be brand-coloured. */
+  --color-success-500: oklch(0.65 0.16 150);
+  --color-success-600: oklch(0.56 0.15 150);
+  --color-warning-500: oklch(0.75 0.16 75);
+  --color-warning-600: oklch(0.64 0.15 75);
+  --color-danger-500: oklch(0.62 0.21 25);
+  --color-danger-600: oklch(0.55 0.20 25);
+  /* White on danger-500 is 4.04:1 and on danger-600 is 5.38:1, so a destructive
+     button fills with 600 and hovers to 700. 500 stays for borders and tints,
+     which are non-text and need only 3:1. */
+  --color-danger-700: oklch(0.47 0.18 25);
+
+  /* WhatsApp's own brand green, for the chat bubble and nothing else. A fixed
+     third-party colour: it does not follow the hue, and as a logotype it is
+     exempt from the contrast rule (WCAG 1.4.3, logotypes). */
+  --color-whatsapp: #25d366;
+
+  /* Sparks: the optional hero decoration (<Sparks>, a canvas), never text and
+     never a signal. A fixed warm yellow, off the brand hue on purpose. */
+  --color-spark-200: oklch(0.93 0.09 85);
+  --color-spark-400: oklch(0.86 0.15 88);
+  --color-spark-600: oklch(0.68 0.2 45);
+
+  /* ---------------------------------------------------------------------
+     Type
+     --------------------------------------------------------------------- */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Outfit Variable', 'Inter Variable', ui-sans-serif, system-ui,
+    sans-serif;
+
+  /* A fluid scale: each step interpolates between a phone and a desktop size,
+     so there is no breakpoint at which the headline jumps. */
+  --text-xs: clamp(0.75rem, 0.73rem + 0.1vw, 0.8rem);
+  --text-sm: clamp(0.875rem, 0.85rem + 0.12vw, 0.925rem);
+  --text-base: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
+  --text-lg: clamp(1.125rem, 1.08rem + 0.22vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.18rem + 0.35vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.38rem + 0.6vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.65rem + 1.1vw, 2.5rem);
+  --text-4xl: clamp(2.25rem, 1.9rem + 1.75vw, 3.25rem);
+  --text-5xl: clamp(2.75rem, 2.1rem + 3.2vw, 4.5rem);
+
+  /* ---------------------------------------------------------------------
+     Space, radius, shadow, motion
+     --------------------------------------------------------------------- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  --shadow-subtle: 0 1px 2px oklch(0.145 0.006 var(--brand-hue) / 0.06);
+  --shadow-card: 0 1px 3px oklch(0.145 0.006 var(--brand-hue) / 0.08),
+    0 8px 24px -8px oklch(0.145 0.006 var(--brand-hue) / 0.10);
+  --shadow-lifted: 0 2px 6px oklch(0.145 0.006 var(--brand-hue) / 0.10),
+    0 16px 40px -12px oklch(0.145 0.006 var(--brand-hue) / 0.16);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --container-content: 72rem;
+  --container-prose: 44rem;
+}
+
+/* =============================================================================
+   Semantic surface tokens
+   =============================================================================
+   Components reference these, not the ramps above. That indirection is what
+   makes one component correct in both themes without a single `dark:` class
+   sprinkled through its markup.
+
+   Both themes are defined here explicitly. Never give a colour its only
+   definition inside a dark block: a missing light value renders as an
+   inherited or transparent surface. */
+@layer base {
+  :root {
+    /* Softened (Harry, 2026-11-06: "the white should not be so white"): the
+       page is a soft off-white, cards sit a step lighter on it, and nothing
+       is pure #fff. Were ink-50, #fff and ink-100. */
+    --surface-page: oklch(0.968 0.004 var(--brand-hue));
+    --surface-raised: oklch(0.988 0.002 var(--brand-hue));
+    --surface-sunken: oklch(0.952 0.005 var(--brand-hue));
+    --surface-inverted: var(--color-ink-900);
+
+    /* Decorative only: a divider, a card edge. Nothing depends on seeing it. */
+    --border-subtle: var(--color-ink-200);
+    /* The boundary of a CONTROL: a text input, a checkbox, a secondary button.
+       That boundary is what identifies the control, so WCAG 1.4.11 wants 3:1
+       against the surface behind it. ink-300 measured 1.49:1 and every input
+       on the site had an edge nobody could see. Measured 3.16-3.48:1 across
+       all six hues; index.contrast.test.ts holds it there. */
+    --border-strong: oklch(0.63 0.013 var(--brand-hue));
+
+    --text-primary: var(--color-ink-900);
+    --text-secondary: var(--color-ink-600);
+    --text-muted: var(--color-ink-500);
+    --text-inverted: var(--color-ink-50);
+
+    /* Accent colours are chosen by measurement, not by eye. Every ratio below
+       was computed across all six suggested brand hues and is asserted in
+       contrast.test.ts, which fails the build if a token is repointed at a step
+       that does not clear the bar.
+
+       brand-500 is neither an accent text colour NOR a fill behind white text:
+       white on brand-500 measures 3.06-3.58:1 depending on hue, and brand-500
+       on white measures about the same. It survives here only as the focus
+       ring, which is a non-text indicator needing 3:1 (WCAG 1.4.11). */
+    --text-accent: var(--color-brand-700); /* 5.19-6.64:1 on light surfaces */
+    --fill-accent: var(--color-brand-700); /* white label 5.70-6.64:1 */
+    --fill-accent-hover: var(--color-brand-800);
+    /* brand-600, not 500. A focus indicator needs 3:1 against what surrounds it
+       (WCAG 1.4.11), and brand-500 measures 2.93:1 against the light page at
+       hue 150. It passes at the other five hues, which is exactly how a green
+       re-theme would have shipped an invisible focus ring. */
+    --ring-accent: var(--color-brand-600);
+
+    /* The label colour on --fill-accent. A token rather than a hardcoded
+       `text-white`, because the two themes need opposite answers. */
+    --text-on-accent: #fff;
+
+    /* A brand-tinted surface for decorative fills: icon badges, chips, the wash
+       behind a call to action. It is a SURFACE, so --text-accent has to stay
+       legible on it, which is why it sits at the pale end of the ramp in light
+       and at the dark end in dark rather than being one shade used twice. */
+    --surface-accent-soft: var(--color-brand-50);
+    --border-accent-soft: var(--color-brand-200);
+
+    color-scheme: light;
+  }
+
+  [data-theme='dark'] {
+    --surface-page: var(--color-ink-950);
+    --surface-raised: var(--color-ink-900);
+    /* The bands that alternate with the page: a shade below it, still
+       charcoal rather than black. Was 0.115. */
+    --surface-sunken: oklch(0.165 0.007 var(--brand-hue));
+    --surface-inverted: var(--color-ink-50);
+
+    --border-subtle: oklch(0.31 0.009 var(--brand-hue));
+    /* 0.36 measured 1.64:1 against the raised surface. 3.36-3.84:1 here. */
+    --border-strong: oklch(0.53 0.011 var(--brand-hue));
+
+    --text-primary: var(--color-ink-100);
+    --text-secondary: var(--color-ink-300);
+    --text-muted: var(--color-ink-400);
+    --text-inverted: var(--color-ink-950);
+
+    --text-accent: var(--color-brand-400); /* 7.80-8.76:1 on the dark page */
+
+    /* Dark mode inverts the button: a LIGHT fill with a DARK label.
+       Keeping a brand-700 fill with a white label would give a good label
+       contrast but leave the button itself at only ~3.0:1 against the page,
+       which is the button disappearing rather than the text being unreadable.
+       brand-400 with an ink-950 label measures 7.80-8.76:1 both ways. */
+    --fill-accent: var(--color-brand-400);
+    --fill-accent-hover: var(--color-brand-300);
+    --text-on-accent: var(--color-ink-950);
+    --ring-accent: var(--color-brand-400);
+
+    /* Not brand-950: at that chroma it reads as a flat near-black beside the
+       page. A little lightness and much less chroma keeps it a tint. */
+    --surface-accent-soft: oklch(0.23 0.045 var(--brand-hue));
+    --border-accent-soft: oklch(0.34 0.06 var(--brand-hue));
+
+    color-scheme: dark;
+  }
+
+  /* ---------------------------------------------------------------------
+     Base element styles
+     --------------------------------------------------------------------- */
+
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  html {
+    /* No horizontal scrolling, ever, on any device. `clip` rather than
+       `hidden`: hidden makes the element a scroll container, which breaks
+       position: sticky inside it on some browsers, while clip only clips. It
+       has to be on html as well as body, or iOS Safari still pans sideways. */
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    /* Anchored headings must clear the sticky header. */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Never let a wide element (a table, a code block) scroll the whole page
+       sideways: the element scrolls inside its own container instead. */
+    overflow-x: clip;
+  }
+
+  img,
+  svg,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Photos and links are not dragged around. A drag on a photo, or on a card
+     made of one, pulled a ghost copy across the page instead of doing
+     anything useful; a click still opens whatever it links to. Set
+     draggable={false} on <img> too, for Firefox. */
+  img,
+  a {
+    -webkit-user-drag: none;
+  }
+
+  img {
+    user-select: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* iOS zooms the page in on focus when an input's font-size is under 16px.
+     This is why every form control here is at least 1rem. */
+  input,
+  select,
+  textarea {
+    font-size: max(1rem, var(--text-base));
+    font-family: inherit;
+  }
+
+  /* One focus treatment for the whole site, visible on every surface and in
+     both themes. Removing an outline without replacing it makes the site
+     unusable by keyboard: do not. */
+  :focus-visible {
+    outline: 2px solid var(--ring-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background-color: var(--color-brand-200);
+    color: var(--color-ink-950);
+  }
+
+  [data-theme='dark'] ::selection {
+    background-color: var(--color-brand-800);
+    color: var(--color-ink-50);
+  }
+
+  /* Honour the OS setting. Animation that cannot be turned off is a WCAG 2.3.3
+     failure and, for some visitors, a genuine physical problem. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* =============================================================================
+   Utilities
+   ============================================================================= */
+@layer utilities {
+  /* Visible only to screen readers, and to sighted keyboard users on focus,
+     which is how the skip link works. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Long-form legal and editorial copy. Deliberately narrow: a measure beyond
+     roughly 75 characters costs the reader the line they were on. */
+  .prose-page {
+    max-width: var(--container-prose);
+    line-height: 1.75;
+  }
+
+  .prose-page h2 {
+    font-size: var(--text-2xl);
+    margin-block: 2.5rem 0.75rem;
+  }
+
+  .prose-page h3 {
+    font-size: var(--text-lg);
+    margin-block: 1.75rem 0.5rem;
+  }
+
+  .prose-page p,
+  .prose-page ul,
+  .prose-page ol {
+    margin-block: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .prose-page ul,
+  .prose-page ol {
+    padding-inline-start: 1.5rem;
+  }
+
+  .prose-page ul {
+    list-style: disc;
+  }
+
+  .prose-page ol {
+    list-style: decimal;
+  }
+
+  .prose-page li {
+    margin-block: 0.375rem;
+  }
+
+  .prose-page a {
+    color: var(--text-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .prose-page a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .prose-page table {
+    width: 100%;
+    margin-block: 1.25rem;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    /* Fixed, so a long unbreakable cell (a storage key) cannot widen the table
+       past the page. The clip on body would otherwise hide the last column
+       rather than scroll to it. */
+    table-layout: fixed;
+  }
+
+  .prose-page th,
+  .prose-page td {
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border-subtle);
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+
+  .prose-page th {
+    background-color: var(--surface-sunken);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* ---------------------------------------------------------------------
+     Motion
+
+     Two entrances, plus one ambient drift for decorative washes and nothing
+     else. The vocabulary is deliberately small: a site where every element
+     arrives differently reads as a demo, and each additional easing curve is
+     one more thing to keep consistent. Both entrances are opt-in from a
+     component, usually through <Reveal>.
+
+     The prefers-reduced-motion block in the base layer zeroes the DURATION
+     of everything here, not the fill mode, so an element still ends at
+     opacity 1. Never animate from display: none, or a reduced-motion visitor
+     gets a blank page.
+     --------------------------------------------------------------------- */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-rise-in {
+    animation: rise-in 0.5s var(--ease-out-soft) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s var(--ease-out-soft) both;
+  }
+
+  /* The only ambient animation: a very slow drift for the decorative washes
+     behind a hero. It never finishes and nothing readable moves with it.
+     `alternate` so there is no jump at the seam; 24s because a wash that
+     reads as "moving" competes with the headline on top of it. */
+  @keyframes drift {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      transform: translate3d(4%, -3%, 0) scale(1.12);
+    }
+  }
+
+  .animate-drift {
+    animation: drift 24s var(--ease-in-out-soft) infinite alternate;
+  }
+
+  /* A new page arriving after a click: a short fade and rise, so moving
+     between pages never blinks. Played by <PageTransition>. */
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Only the light sections fade. A dark band (data-theme="dark") stays put:
+     fading it would let the light page show through for a moment between two
+     dark heroes, which is the blink this is here to stop. */
+  .animate-page-in > :not([data-theme='dark']) {
+    animation: page-in 0.5s var(--ease-out-soft) 0.08s both;
+  }
+
+  /* A hero photo settles: a slow pull back from a slight zoom, once. */
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.08);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .animate-hero-zoom {
+    animation: hero-zoom 2.4s var(--ease-out-soft) both;
+  }
+
+  /* Children of a revealed group arrive one after another rather than all at
+     once. <Reveal stagger> adds the class; each child takes its turn from its
+     position, capped so a long list does not keep the reader waiting. */
+  .reveal-stagger > * {
+    opacity: 0;
+    animation: rise-in 0.6s var(--ease-out-soft) both;
+  }
+  .reveal-stagger > *:nth-child(2) { animation-delay: 0.07s; }
+  .reveal-stagger > *:nth-child(3) { animation-delay: 0.14s; }
+  .reveal-stagger > *:nth-child(4) { animation-delay: 0.21s; }
+  .reveal-stagger > *:nth-child(5) { animation-delay: 0.28s; }
+  .reveal-stagger > *:nth-child(6) { animation-delay: 0.35s; }
+  .reveal-stagger > *:nth-child(n + 7) { animation-delay: 0.42s; }
+
+  /* While a photo is on its way, its frame shimmers rather than sitting
+     blank; once the file has arrived the photo fades in over it (<Photo>). */
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  .photo-frame {
+    background-image: linear-gradient(
+      100deg,
+      var(--surface-sunken) 30%,
+      var(--surface-raised) 50%,
+      var(--surface-sunken) 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  .photo-frame[data-loaded] {
+    animation: none;
+  }
+
+  .photo-frame img {
+    transition: opacity 0.6s var(--ease-out-soft), transform 0.6s var(--ease-out-soft);
+  }
+
+  .photo-frame[data-loading] img {
+    opacity: 0;
+  }
+
+  /* ---------------------------------------------------------------------
+     Decorative surfaces
+     --------------------------------------------------------------------- */
+
+  /* A faint dot grid, faded towards the edges by a mask so it never ends in a
+     hard line. Decorative only: it sits under aria-hidden markup and nothing
+     may depend on seeing it. Colour comes from currentColor, so set the text
+     colour on the element. */
+  .bg-dot-grid {
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 1.75rem 1.75rem;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 20%, transparent 75%);
+  }
+}

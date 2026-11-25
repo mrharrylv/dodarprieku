@@ -1,0 +1,165 @@
+{
+  "privacy": {
+    "meta": {
+      "title": "Privacy policy",
+      "description": "What personal data this site collects, why, how long it is kept, and the rights you have over it."
+    },
+    "title": "Privacy policy",
+    "intro": "This policy explains what personal data {{legalName}} collects through {{domain}}, why, and what you can do about it. It is written to satisfy Articles 13 and 14 of the GDPR, and to be readable.",
+    "controller": {
+      "title": "Who is responsible",
+      "body": "The data controller is {{legalName}}, registration number {{registrationNumber}}, registered at {{address}}. For any question about your data, write to {{email}}."
+    },
+    "collected": {
+      "title": "What we collect",
+      "body": "Only what you type into the contact form: your name, email address, an optional phone number, the subject, and your message. Nothing else about you is collected by this site: there is no analytics, no advertising pixel, and no third-party script.",
+      "bodyWithStats": "What you type into the contact form: your name, email address, an optional phone number, the subject, and your message. Apart from that, the site counts visits anonymously, as described under \"Visit statistics\". There is no advertising pixel, no cookie and no third-party script.",
+      "serverLead": "Our hosting provider records standard server data for each request, which it needs in order to serve the page at all:",
+      "server": {
+        "ip": "your IP address",
+        "agent": "your browser and operating system, as your browser reports them",
+        "time": "the time of the request and the page requested"
+      }
+    },
+    "purpose": {
+      "title": "Why we use it",
+      "body": "Your contact details are used to answer your enquiry and, where it leads to work, to carry out the contract with you. The legal bases are your consent (Art. 6(1)(a)) for the enquiry itself, and performance of a contract (Art. 6(1)(b)) once we are working together. Server logs are kept on the basis of our legitimate interest in a working, secure website (Art. 6(1)(f))."
+    },
+    "statistics": {
+      "title": "Visit statistics",
+      "body": "Each page you open sends a short, anonymous report to our web developer, {{developer}}, at {{statsHost}}: the page address without its query, the time, how long the page was in view and how far you scrolled, the site you came from (its domain only), your screen size class, and your browser's language and time zone. No cookie is set and nothing is stored on your device: the visit number that ties the pages of one visit together lives only in the open tab and is gone when you close it. Your IP address is used to deliver the report and is not stored. If your browser sends Global Privacy Control or Do Not Track, no report is sent at all. We use the statistics to see whether the site is read and which pages work, on the basis of our legitimate interest (Art. 6(1)(f)), and keep them for 13 months."
+    },
+    "sharing": {
+      "title": "Who else sees it",
+      "lead": "We do not sell your data, and we do not share it for anyone's marketing. It is handled by the processors we need in order to operate:",
+      "hosting": "Amazon Web Services, for hosting and content delivery.",
+      "email": "Amazon Simple Email Service, for delivering the notification email that carries your enquiry to us.",
+      "map": "Google, for the map on the contact page: when the map loads, Google receives your IP address and browser details.",
+      "note": "Both operate under a data processing agreement. Where data leaves the EEA it does so under the European Commission's standard contractual clauses.",
+      "statistics": "{{developer}}, our web developer, which receives and keeps the anonymous visit statistics for us."
+    },
+    "retention": {
+      "title": "How long we keep it",
+      "body": "Enquiries are kept for 24 months from the last contact, so we can pick up a conversation where it left off. Where an enquiry becomes a contract, the accounting records that result are kept for the period Latvian law requires. Server logs are kept for 90 days."
+    },
+    "rights": {
+      "title": "Your rights",
+      "lead": "Under the GDPR you may ask us to:",
+      "access": "give you a copy of the data we hold about you (Art. 15)",
+      "rectify": "correct anything inaccurate (Art. 16)",
+      "erase": "delete it (Art. 17)",
+      "restrict": "restrict how we use it (Art. 18)",
+      "portability": "send it to you or another controller in a machine-readable form (Art. 20)",
+      "object": "object to our using it (Art. 21)",
+      "withdraw": "withdraw a consent you have given, at any time, without affecting what was lawful before you did (Art. 7(3))",
+      "how": "Write to {{email}}. We answer within one month. If you are not satisfied you may complain to the Latvian Data State Inspectorate (Datu valsts inspekcija, dvi.gov.lv)."
+    },
+    "security": {
+      "title": "How it is protected",
+      "body": "The site is served only over HTTPS. Enquiries travel encrypted and are stored encrypted at rest. Access is limited to the people who need it to answer you."
+    },
+    "children": {
+      "title": "Children",
+      "body": "This site is not directed at children, and we do not knowingly collect data from anyone under 16. If you believe a child has sent us their data, write to {{email}} and we will delete it."
+    },
+    "changes": {
+      "title": "Changes to this policy",
+      "body": "If this policy changes materially we will say so on this page, and the date below will change. Continuing to use the site after a change means the new version applies."
+    }
+  },
+  "cookies": {
+    "meta": {
+      "title": "Cookie policy",
+      "description": "This site sets no cookies. It stores a small number of settings in your browser, listed here in full."
+    },
+    "title": "Cookie policy",
+    "intro": "This site sets no cookies at all: not for analytics, not for advertising, not for anything. It does store a few settings in your browser's local storage so the site remembers how you like it. Those never leave your device and are never sent to us or to anyone else.",
+    "tableTitle": "What is stored on your device",
+    "table": {
+      "key": "Key",
+      "purpose": "Purpose",
+      "duration": "Kept for",
+      "untilCleared": "Until you clear it",
+      "oneYear": "One year",
+      "tenMinutes": "Ten minutes",
+      "themePurpose": "Remembers whether you chose the light or dark theme.",
+      "localePurpose": "Remembers which language you chose.",
+      "consentPurpose": "Remembers your answer to the consent question, so you are not asked again.",
+      "rateLimitPurpose": "Counts recent contact-form submissions to stop accidental double-sends."
+    },
+    "control": {
+      "title": "How to remove it",
+      "body": "Clearing site data for {{domain}} in your browser removes all of it. The site keeps working afterwards; it simply forgets your theme and language."
+    },
+    "statistics": {
+      "title": "Visit statistics without cookies",
+      "body": "The site counts visits without a cookie and without writing anything to your device. Each page sends an anonymous report to {{statsHost}}, run by our web developer {{developer}}; the privacy policy lists exactly what it contains. Turning on Global Privacy Control or Do Not Track in your browser stops it."
+    },
+    "thirdParty": {
+      "title": "Third parties",
+      "body": "This page makes no request to any third party. Fonts are served from this domain rather than from a font service, because a font request would carry your IP address and browser details to that service before you had agreed to anything. If a third-party embed is ever added, it will be behind a consent question and this page will say so.",
+      "bodyWithMap": "This site makes no request to any third party, apart from the map described below. Fonts are served from this domain rather than from a font service, because a font request would carry your IP address and browser details to that service before you had agreed to anything.",
+      "map": "The contact page shows a Google Maps map. It is loaded from Google when you scroll to it, so Google then receives your IP address and browser details and may set its own cookies, under Google's privacy policy. The other pages load nothing from Google."
+    }
+  },
+  "terms": {
+    "meta": {
+      "title": "Terms of service",
+      "description": "The terms on which this website and the services described on it are provided."
+    },
+    "title": "Terms of service",
+    "intro": "These terms govern your use of {{domain}} and the services {{legalName}} provides through it. Using the site means accepting them.",
+    "provider": {
+      "title": "Who provides this site",
+      "body": "{{legalName}}, registration number {{registrationNumber}}, registered at {{address}}. Contact: {{email}}."
+    },
+    "use": {
+      "title": "Using the site",
+      "body": "You may read this site, and contact us through it, for any lawful purpose. You may not attempt to disrupt it, gain access to parts of it that are not public, or use automated means to extract its content at a scale that affects other visitors."
+    },
+    "content": {
+      "title": "Content and accuracy",
+      "body": "We keep the information on this site current and correct, but it is descriptive rather than contractual. Prices, availability and specifications are confirmed in writing when we quote for actual work; nothing on this page is an offer capable of acceptance."
+    },
+    "ip": {
+      "title": "Intellectual property",
+      "body": "The text, design, and images on this site belong to {{legalName}} unless credited otherwise. You may quote and link to them; you may not republish them wholesale as your own."
+    },
+    "liability": {
+      "title": "Liability",
+      "body": "We provide this site as it is. To the extent the law allows, we are not liable for loss arising from your use of it, or from it being unavailable. Nothing here limits liability that cannot lawfully be limited, including for death or personal injury caused by negligence, or for fraud. Your statutory rights as a consumer are unaffected."
+    },
+    "links": {
+      "title": "Links to other sites",
+      "body": "Where we link elsewhere, we do not control what is on the other end and are not responsible for it."
+    },
+    "law": {
+      "title": "Governing law",
+      "body": "These terms are governed by the law of the Republic of Latvia. Disputes fall to the courts of Latvia, without affecting any right you have as a consumer to bring proceedings where you live."
+    },
+    "changes": {
+      "title": "Changes",
+      "body": "We may change these terms. The version on this page is the one that applies, and the date below tells you when it last changed."
+    }
+  },
+  "company": {
+    "meta": {
+      "title": "Company details",
+      "description": "Registered name, registration number, VAT number and registered address."
+    },
+    "title": "Company details",
+    "intro": "The legal entity behind {{brandName}}.",
+    "labels": {
+      "legalName": "Registered name",
+      "registrationNumber": "Registration number",
+      "vatNumber": "VAT number",
+      "address": "Registered address",
+      "email": "Email",
+      "phone": "Phone",
+      "iban": "IBAN",
+      "bank": "Bank"
+    },
+    "notProvided": "Not published",
+    "note": "These are the details required on commercial communications under the Latvian Commercial Law."
+  }
+}

@@ -1,0 +1,31 @@
+/* Split: square the corners, put out the shadows.
+
+   This style states structure with straight rules, a change of surface and a
+   hard vertical edge between the halves. It owns its own pages, so it can
+   simply not draw a rounded box; it does NOT own the shared primitives, and a
+   pill-shaped Button or a 10px-rounded Input sitting on a 1px straight rule
+   reads as two sites glued together. Bringing every radius down to a hairline
+   is how the Button, the Field, the Alert and the LanguageSwitcher join the
+   style instead of fighting it. Not 0: a true square corner looks like an
+   unstyled control, and 2px still reads as intentional at any size.
+
+   Shadows go the same way. Depth here is the rule and the surface change, not
+   a blur, so the two shadows the pages and cards use are switched off.
+   --shadow-lifted is deliberately LEFT ALONE: the back-to-top and WhatsApp
+   buttons float above the content and need to look like they do, and the skip
+   link has to be unmistakable the moment it takes focus.
+
+   No colour token is touched. The hue, the ramps and every semantic colour
+   stay exactly as index.css defines them, which is why this file needs no
+   dark-theme block: a radius does not change with the theme. */
+
+:root {
+  --radius-sm: 0.125rem;
+  --radius-md: 0.125rem;
+  --radius-lg: 0.125rem;
+  --radius-xl: 0.125rem;
+  --radius-2xl: 0.125rem;
+
+  --shadow-subtle: none;
+  --shadow-card: none;
+}

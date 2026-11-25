@@ -1,0 +1,77 @@
+/* Paged: token overrides, plus the rules that make the home page a deck.
+   See doc/design.md for what a style MAY change here, and doc/styles.md for
+   the page-level rule a style is allowed to carry alongside its tokens. */
+
+:root {
+  /* One typeface, set large. Outfit is already imported by index.css
+     (@fontsource-variable/outfit, self-hosted) as the display face, so using
+     it for body text too costs no extra font request, and it is what makes a
+     screen of eight words look deliberate rather than empty.
+     Two dependencies follow from that: if index.css ever stops importing
+     Outfit, or subsets it to display weights, this file needs its own
+     @import; and if you swap this face, swap --font-display with it, because
+     two geometric faces fighting on one screen is worse than either alone. */
+  --font-sans:
+    'Outfit Variable', 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+
+  /* Rounder than the base. At size lg a button becomes a pill, which is what a
+     screen carrying one call to action wants. */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2.25rem;
+  --radius-2xl: 3rem;
+
+  /* Narrower than the base 72rem. A screen holds one idea, and a centred column
+     with wide margins either side is most of what makes it read as one. */
+  --container-content: 64rem;
+  --container-prose: 40rem;
+
+  /* A little more decisive on the way out, for the dot and arrow transitions. */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* The sticky header's height, written once.
+     Five things depend on it and they have to agree: the header itself
+     (Header.tsx), the overlay menu that hangs below it (MobileMenu.tsx), the
+     height of a deck panel, where a snapped panel comes to rest, and where an
+     anchor on the services page lands. Change this and all five follow. */
+  --paged-header-h: 4rem;
+}
+
+/* Dark theme: nothing. Every surface and text colour is the base semantic
+   token, so both themes already work and there is nothing here to drift. */
+
+/* ---------------------------------------------------------------------------
+   The deck.
+
+   Scoped with :has() to the page that renders .paged-deck, because only the
+   home page is a deck: the services, about, contact and legal pages scroll
+   normally and snapping them would fight the reader. Scoping it here rather
+   than with a class on <html> keeps it out of JavaScript, and a browser without
+   :has() simply gets a long scrolling home page, which still reads correctly.
+
+   PROXIMITY, not mandatory. Mandatory snapping takes the scroll away from
+   someone reading a panel taller than their screen, and on a short viewport
+   that is most panels.
+   --------------------------------------------------------------------------- */
+html:has(.paged-deck) {
+  scroll-snap-type: y proximity;
+  scroll-padding-block-start: var(--paged-header-h);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.paged-deck) {
+    scroll-behavior: auto;
+  }
+}
+
+.paged-panel {
+  min-block-size: calc(100vh - var(--paged-header-h)); /* fallback, no dvh */
+  min-block-size: calc(100dvh - var(--paged-header-h));
+  scroll-snap-align: start;
+  /* scrollIntoView honours this, which is how the dot indicator lands a panel
+     below the header instead of behind it. */
+  scroll-margin-block-start: var(--paged-header-h);
+}

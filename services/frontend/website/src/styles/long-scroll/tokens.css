@@ -1,0 +1,40 @@
+/* Long scroll: token overrides.
+
+   Three changes, all in service of the same thing: a page made of rules and
+   bands rather than of boxes.
+
+   1. One typeface. --font-display points at Inter, the same family the body
+      text already uses, so headings are told apart by weight, size and
+      tracking instead of by a second voice. On a page with six large headings
+      stacked down one scroll, a display face turns into wallpaper. Inter is
+      already imported by index.css (self-hosted, @fontsource-variable), so
+      this adds no font request and no @import line.
+
+   2. Near-square corners. A rounded card reads as a separate object sitting on
+      the page; this style has no cards, and its edges are rules, seams and
+      band boundaries. Radius survives where it is functional, on buttons and
+      inputs, at a size you notice only if you look.
+
+   3. A wider band and a narrower measure, for the reason written above the
+      two container widths below.
+
+   Colour is untouched: the semantic tokens, both themes and every brand hue
+   are the base palette's, already measured by index.contrast.test.ts. A style
+   that repoints --text-muted at a paler step is exactly the trap that test
+   exists to catch, and this one has no reason to.  */
+
+:root {
+  --font-display: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.1875rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+
+  /* A wider measure for the bands, a narrower one for prose. The page is one
+     long read, and 44rem of body text under a 72rem heading looks stranded. */
+  --container-content: 78rem;
+  --container-prose: 42rem;
+}

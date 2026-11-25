@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./infrastructure/bootstrap.sh:*)",
+      "Bash(bash infrastructure/bootstrap.sh:*)",
+      "Bash(./infrastructure/aws/setup.sh:*)",
+      "Bash(bash infrastructure/aws/setup.sh:*)",
+      "Bash(bash .github/scripts/zone-dns.sh:*)",
+      "Bash(bash .github/tests/run.sh:*)",
+      "Bash(make install:*)",
+      "Bash(make verify:*)",
+      "Bash(make test-pipeline:*)",
+      "Bash(make build:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(gh secret set:*)",
+      "Bash(gh secret list:*)",
+      "Bash(gh variable set:*)",
+      "Bash(gh variable get:*)",
+      "Bash(gh variable list:*)",
+      "Bash(aws sts get-caller-identity:*)",
+      "Bash(aws cloudfront list-distributions:*)",
+      "Bash(aws acm list-certificates:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl -I:*)",
+      "Bash(dig:*)"
+    ]
+  }
+}

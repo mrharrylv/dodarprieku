@@ -1,0 +1,72 @@
+name: Terraform setup
+description: >-
+  Install Terraform, init against this environment's state key, and adopt an
+  Origin Access Control that exists in AWS but not in state. Shared by every
+  infrastructure workflow so they cannot drift apart.
+
+inputs:
+  environment:
+    description: dev or prod
+    required: true
+  project:
+    description: Project slug
+    required: true
+  working-directory:
+    description: Terraform working directory
+    required: false
+    default: infrastructure/terraform
+  terraform-version:
+    description: Terraform version to install
+    required: false
+    default: 1.6.6
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        terraform init \
+          -backend-config="key=${{ inputs.project }}/${{ inputs.environment }}/terraform.tfstate"
+
+    # An Origin Access Control is account-global, its name is deterministic, and
+    # it survives a `terraform destroy` that failed part-way. Creating a second
+    # one with the same name is an API error, so if AWS already has ours and
+    # state does not, adopt it rather than failing every subsequent apply.
+    - name: Adopt existing OAC if missing from state
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ENV: ${{ inputs.environment }}
+        PROJECT: ${{ inputs.project }}
+      run: |
+        set -euo pipefail
+        OAC_NAME="${ENV}-${PROJECT}-oac"
+
+        if terraform state show aws_cloudfront_origin_access_control.website >/dev/null 2>&1; then
+          echo "OAC already in state, nothing to adopt."
+          exit 0
+        fi
+
+        echo "OAC not in state: looking up '${OAC_NAME}' in AWS..."
+        # `| [0].Id` forces a scalar: the ID string, or "None" when not found.
+        OAC_ID=$(aws cloudfront list-origin-access-controls \
+          --query "OriginAccessControlList.Items[?Name=='${OAC_NAME}'] | [0].Id" \
+          --output text)
+
+        if [ -z "$OAC_ID" ] || [ "$OAC_ID" = "None" ]; then
+          echo "Not found in AWS either: Terraform will create it."
+          exit 0
+        fi
+
+        echo "Importing OAC '${OAC_NAME}' (id: ${OAC_ID}) into state..."
+        terraform import \
+          -var-file="environments/${ENV}.tfvars" \
+          aws_cloudfront_origin_access_control.website "$OAC_ID"

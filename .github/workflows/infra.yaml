@@ -1,0 +1,221 @@
+name: Terraform Infrastructure
+
+# Creates or updates the S3 bucket, CloudFront distribution and ACM certificate
+# for one environment. Records inside zone_dns_zone (dev: hagroup.lv) are
+# created at Zone.ee in the same apply; every other record is printed for you
+# to create by hand.
+#
+# Manual only. Infrastructure never applies itself on a push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod
+      apply:
+        description: "Apply the plan (unchecked = plan only)"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+# One apply per environment at a time. Two concurrent applies against the same
+# state produce a lock error at best and a corrupted state at worst.
+concurrency:
+  group: infra-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-north-1
+  TF_WORKING_DIR: infrastructure/terraform
+  PROJECT: dodarprieku
+  AWS_ACCOUNT_ID: "561341419749"
+
+jobs:
+  plan-apply:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show what is about to happen
+        run: |
+          {
+            echo "## Terraform: ${{ github.event.inputs.environment }}"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Project | \`${PROJECT}\` |"
+            echo "| Mode | ${{ github.event.inputs.apply == 'true' && 'plan + apply' || 'plan only' }} |"
+            echo "| Ref | \`${{ github.ref }}\` |"
+            echo "| SHA | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-oidc-${{ env.PROJECT }}-${{ github.event.inputs.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform setup
+        uses: ./.github/actions/terraform-setup
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          project: ${{ env.PROJECT }}
+
+      # Fails in seconds, rather than after CloudFront has been created, when
+      # the tfvars ask for Zone.ee records and the secrets are missing.
+      - name: Zone.ee credentials
+        if: github.event.inputs.apply == 'true'
+        env:
+          ZONE_USERNAME: ${{ secrets.ZONE_USERNAME }}
+          ZONE_API_KEY: ${{ secrets.ZONE_API_KEY }}
+          TFVARS: ${{ env.TF_WORKING_DIR }}/environments/${{ github.event.inputs.environment }}.tfvars
+        run: |
+          ZONE=$(sed -n 's/^[[:space:]]*zone_dns_zone[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$TFVARS")
+          if [ -z "$ZONE" ]; then
+            echo "zone_dns_zone is empty: DNS records are added by hand."
+          elif [ -z "$ZONE_USERNAME" ] || [ -z "$ZONE_API_KEY" ]; then
+            echo "::error title=Zone.ee secrets missing::$TFVARS sets zone_dns_zone = \"$ZONE\", so Terraform creates the DNS records at Zone.ee. Add the repository secrets ZONE_USERNAME (the ZoneID login) and ZONE_API_KEY (My Zone, Account settings, Security, API keys), then re-run."
+            exit 1
+          else
+            echo "Terraform will create the records in $ZONE at Zone.ee."
+          fi
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan \
+            -var-file="environments/${{ github.event.inputs.environment }}.tfvars" \
+            -input=false \
+            -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.apply == 'true'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        # zone_dns.tf creates the records in zone_dns_zone through the Zone.ee
+        # API during the apply. Unused when zone_dns_zone is empty.
+        env:
+          ZONE_USERNAME: ${{ secrets.ZONE_USERNAME }}
+          ZONE_API_KEY: ${{ secrets.ZONE_API_KEY }}
+        run: terraform apply -input=false -auto-approve tfplan
+
+      # -----------------------------------------------------------------------
+      # Tell the operator which DNS records exist and which they must still
+      # create. Hosts in zone_dns_managed were created at Zone.ee by the apply.
+      # -----------------------------------------------------------------------
+      - name: DNS records and next step
+        if: github.event.inputs.apply == 'true'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          set -euo pipefail
+
+          DOMAIN=$(terraform output -raw domain_name 2>/dev/null || echo "")
+          PHASE=$(terraform output -raw custom_domain_phase 2>/dev/null || echo "")
+          URL=$(terraform output -raw website_url)
+          CF_DOMAIN=$(terraform output -raw cloudfront_domain_name)
+          MANAGED=$(terraform output -json zone_dns_managed 2>/dev/null | jq -r 'join(" ")' || echo "")
+
+          echo "=============================================="
+          terraform output
+          echo "=============================================="
+
+          if [ -z "$DOMAIN" ]; then
+            {
+              echo "### ℹ️ No custom domain configured"
+              echo ""
+              echo "The site serves from its CloudFront URL: <$URL>"
+              echo ""
+              echo "To attach a real domain, set \`domain_name\` in"
+              echo "\`environments/${{ github.event.inputs.environment }}.tfvars\` and re-run."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "ℹ️  No custom domain. Site URL: $URL"
+            exit 0
+          fi
+
+          echo "📌 ROLLOUT PHASE: $PHASE"
+
+          if [ -n "$MANAGED" ]; then
+            echo "✅ Created at Zone.ee by this apply (validation + CloudFront CNAMEs): $MANAGED"
+            {
+              echo "### ✅ DNS created at Zone.ee"
+              echo ""
+              echo "Terraform created the validation and CloudFront records for: \`$MANAGED\`."
+              echo "Nothing to add by hand for these hosts. Any host not listed here still"
+              echo "needs the matching rows below."
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
+            echo "### 📌 Rollout phase: \`$PHASE\`"
+            echo ""
+            if [ "$PHASE" = "phase_1_cert_only" ]; then
+              echo "Certificate requested. The site is still on its CloudFront URL."
+              echo "**Create the records below, wait for the certificate to reach ISSUED,"
+              echo "then set \`enable_custom_domain = true\` and re-run this workflow.**"
+            else
+              echo "Alias attached. Once the CNAMEs below are live the site answers at"
+              echo "<https://$DOMAIN> (allow CloudFront 5–10 min to deploy)."
+            fi
+            echo ""
+            echo "### DNS records required"
+            echo ""
+            echo "| # | Purpose | Type | Name | Value | TTL |"
+            echo "|---|---------|------|------|-------|-----|"
+            terraform output -json dns_records_required | jq -r '
+              to_entries[]
+              | "| \(.key+1) | \(.value.purpose) | \(.value.type) | `\(.value.name)` | `\(.value.value)` | \(.value.ttl) |"
+            '
+            echo ""
+            echo "<details><summary>Zone-file format</summary>"
+            echo ""
+            echo '```'
+            terraform output -json dns_records_required | jq -r '.[] | "\(.name)\t\(.ttl)\tIN\t\(.type)\t\(.value)"'
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo ""
+          echo "📌 DNS RECORDS REQUIRED (trailing dots shown for clarity; most UIs strip them)"
+          terraform output -json dns_records_required | jq -r '
+            (["#","PURPOSE","TYPE","NAME","VALUE","TTL"] | @tsv),
+            (["-","-------","----","----","-----","---"] | @tsv),
+            (to_entries[] | [(.key+1|tostring), .value.purpose, .value.type, .value.name, .value.value, (.value.ttl|tostring)] | @tsv)
+          ' | column -t -s $'\t'
+
+          # The apex caveat applies only to a bare two-label domain; a subdomain
+          # can always hold a CNAME.
+          if [ "$(echo "$DOMAIN" | awk -F. '{print NF}')" -eq 2 ]; then
+            echo ""
+            echo "⚠️  $DOMAIN is a zone apex. If your DNS provider has no ALIAS/ANAME"
+            echo "    record type, the apex cannot CNAME to CloudFront. Either add a"
+            echo "    provider-side URL forward (301) from the apex to the www host,"
+            echo "    or move the zone to Route 53. See doc/dns.md."
+            {
+              echo ""
+              echo "> ⚠️ \`$DOMAIN\` is a zone apex: see \`doc/dns.md\` for the two ways to point it at CloudFront."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo ""
+          echo "✅ Verify once DNS propagates (5–30 min):"
+          echo "  dig +short CNAME $DOMAIN            # expect $CF_DOMAIN."
+          echo "  aws acm list-certificates --region us-east-1 \\"
+          echo "    --query \"CertificateSummaryList[?DomainName=='$DOMAIN'].[Status]\" --output text   # expect ISSUED"
+          echo "  curl -I https://$DOMAIN             # expect HTTP/2 200"

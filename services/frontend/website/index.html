@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="lv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!--
+      This file is the TEMPLATE for every page the build writes.
+
+      `npm run build` prerenders each route in each language into its own
+      HTML file (src/entry-server.tsx, scripts/prerender.mjs), and every one
+      gets its own head in place of the block below: its title, description,
+      canonical, hreflang, share card and JSON-LD, from the same function the
+      runtime <Seo> uses (src/lib/head.ts). That is what social crawlers,
+      Bing's first pass and AI crawlers read, since none of them runs the
+      JavaScript.
+
+      What is here is the default for the dev server, and the home page's copy
+      in the default locale: src/components/seo/static-head.test.ts fails the
+      build when it drifts from home.json. Every tag <Seo> also writes carries
+      data-seo, and both the prerender and <Seo> remove the marked tags before
+      writing their own, so a page holds ONE description, not two.
+    -->
+    <title>Konsultācijas, izpilde un atbalsts Rīgā · Dodar prieku</title>
+    <meta name="description" content="Aizstājiet šo ar vienu teikumu par to, ko uzņēmums dara un kam tas ir domāts. Šī ir rindiņa, kas meklēšanas rezultātos parādās zem vietnes nosaukuma." data-seo />
+    <meta name="robots" content="max-image-preview:large" data-seo />
+    <meta name="application-name" content="Dodar prieku" data-seo />
+    <meta name="apple-mobile-web-app-title" content="Dodar prieku" data-seo />
+
+    <!--
+      __SITE_URL__ is replaced at build time from VITE_SITE_URL (vite.config.ts).
+      The image URL MUST be absolute: WhatsApp, Facebook and LinkedIn ignore a
+      relative og:image and render the link with no picture at all.
+    -->
+    <meta property="og:type" content="website" data-seo />
+    <meta property="og:site_name" content="Dodar prieku" data-seo />
+    <meta property="og:title" content="Konsultācijas, izpilde un atbalsts Rīgā · Dodar prieku" data-seo />
+    <meta property="og:description" content="Aizstājiet šo ar vienu teikumu par to, ko uzņēmums dara un kam tas ir domāts. Šī ir rindiņa, kas meklēšanas rezultātos parādās zem vietnes nosaukuma." data-seo />
+    <meta property="og:url" content="__SITE_URL__/" data-seo />
+    <meta property="og:image" content="__SITE_URL__/og-image.png?v=__SHARE_VERSION__" data-seo />
+    <meta property="og:image:width" content="1200" data-seo />
+    <meta property="og:image:height" content="630" data-seo />
+    <meta property="og:image:alt" content="Dodar prieku" data-seo />
+    <meta property="og:image:type" content="image/png" data-seo />
+    <meta property="og:locale" content="lv_LV" data-seo />
+    <meta property="og:locale:alternate" content="en_US" data-seo />
+    <meta property="og:locale:alternate" content="ru_RU" data-seo />
+    <meta name="twitter:card" content="summary_large_image" data-seo />
+    <meta name="twitter:title" content="Konsultācijas, izpilde un atbalsts Rīgā · Dodar prieku" data-seo />
+    <meta name="twitter:description" content="Aizstājiet šo ar vienu teikumu par to, ko uzņēmums dara un kam tas ir domāts. Šī ir rindiņa, kas meklēšanas rezultātos parādās zem vietnes nosaukuma." data-seo />
+    <meta name="twitter:image" content="__SITE_URL__/og-image.png?v=__SHARE_VERSION__" data-seo />
+
+    <!--
+      Icons, in the order a browser should weigh them. favicon.ico first:
+      Google's favicon fetcher, Bing and older browsers ask for it by name.
+      Then the 96 px PNG, because Google Search wants a square raster in a
+      multiple of 48 px. `npm run images` generates every raster here from
+      favicon.svg; none of them is transparent.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Matches the resolved theme so the browser chrome does not flash white. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9fafb" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090a0d" />
+
+    <!--
+      Sets data-theme before the first paint. A same-origin file, not an inline
+      script: production's CSP (script-src 'self') blocks inline scripts.
+      Synchronous on purpose: it must run before the body is painted.
+    -->
+    <script src="/theme-init.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

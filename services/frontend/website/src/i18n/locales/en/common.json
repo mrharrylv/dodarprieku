@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "scrollToTop": "Back to top of page"
+  },
+  "legal": {
+    "privacy": "Privacy policy",
+    "cookies": "Cookie policy",
+    "terms": "Terms of service",
+    "company": "Company details",
+    "updated": "Last updated"
+  },
+  "cta": {
+    "contactUs": "Get in touch",
+    "learnMore": "Learn more",
+    "seeServices": "See what we do",
+    "backHome": "Back to home"
+  },
+  "footer": {
+    "tagline": "Clear work, delivered when we said it would be.",
+    "navHeading": "Site",
+    "legalHeading": "Legal",
+    "contactHeading": "Contact",
+    "rights": "All rights reserved.",
+    "followUs": "Follow us",
+    "developedBy": "Developed by <1>{{developer}}</1>"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "toggle": "Switch to {{mode}} theme"
+  },
+  "language": {
+    "label": "Language",
+    "switchTo": "Switch language to {{language}}"
+  },
+  "a11y": {
+    "skipToContent": "Skip to main content",
+    "mainNavigation": "Main navigation",
+    "footerNavigation": "Footer navigation",
+    "breadcrumb": "Breadcrumb",
+    "quickActions": "Quick actions"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you were looking for has moved, or never existed.",
+    "action": "Back to home"
+  },
+  "contactDetails": {
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "hours": "Opening hours",
+    "weekdays": "Monday to Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "closed": "Closed"
+  },
+  "whatsapp": {
+    "ariaLabel": "Open a WhatsApp chat with {{brand}}",
+    "prefill": "Hello {{brand}}, I am writing from your website. "
+  },
+  "lightbox": {
+    "close": "Close photos",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "counter": "Photo {{current}} of {{total}}",
+    "show": "Show photo {{current}} of {{total}}"
+  },
+  "map": {
+    "showOnMap": "Show on the map"
+  }
+}

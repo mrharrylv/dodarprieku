@@ -1,0 +1,31 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Terraform: state must never be committed; it can contain resource metadata,
+# and the real state lives in the shared S3 backend.
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+
+# Local environment. VITE_* values are public and ship in the bundle anyway,
+# but .env.local is still not the repo's business.
+.env
+.env.*
+!.env.example
+
+# Claude Code session worktrees: other checkouts of this repository.
+.claude/worktrees/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

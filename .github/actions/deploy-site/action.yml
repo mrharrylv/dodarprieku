@@ -1,0 +1,237 @@
+name: Deploy site to S3 + CloudFront
+description: >-
+  Zero-downtime deploy of a built, prerendered site: a check that the build
+  carries its canonical origin, additive asset upload, then every page's HTML,
+  cache invalidation, then orphan cleanup. Shared by the dev and prod jobs so
+  the two paths cannot drift apart.
+
+inputs:
+  bucket:
+    description: Target S3 bucket name
+    required: true
+  distribution-id:
+    description: CloudFront distribution ID
+    required: true
+  dist-path:
+    description: Path to the built dist/ directory
+    required: false
+    default: artifact/dist
+  manifest-path:
+    description: Path to the build's file manifest
+    required: false
+    default: artifact/manifest.txt
+
+runs:
+  using: composite
+  steps:
+    # -------------------------------------------------------------------------
+    # Phase 0: refuse a build without its canonical origin.
+    #
+    # Such a build still exits 0, but with relative canonical, hreflang and
+    # og:url links and no sitemap.xml or llms.txt. Phase 4 deletes whatever
+    # the manifest does not name, so deploying it would also take the live
+    # sitemap.xml and llms.txt down. Local files only: nothing has touched the
+    # bucket when this fails.
+    # -------------------------------------------------------------------------
+    - name: "Phase 0: Check the build carries its canonical origin"
+      shell: bash
+      env:
+        DIST: ${{ inputs.dist-path }}
+        MANIFEST: ${{ inputs.manifest-path }}
+      run: bash "$GITHUB_ACTION_PATH/preflight.sh"
+
+    # -------------------------------------------------------------------------
+    # Phase 1: upload assets additively.
+    #
+    # Nothing is deleted here, so the old build keeps working for anyone
+    # mid-session while the new files land alongside it.
+    #
+    # Vite content-hashes everything it emits into assets/, so a URL there names
+    # one exact build forever and can be cached for a year. Every other file in
+    # dist/ has a FIXED name: copied from public/ (favicon.ico, favicon.svg,
+    # og-image.png, logo.png, site.webmanifest, ...) or written by the build
+    # (robots.txt, sitemap.xml, llms.txt). Marking those immutable would keep
+    # a replacement image off a returning visitor's screen for a year, so they
+    # get a short TTL and are revalidated instead.
+    # -------------------------------------------------------------------------
+    - name: "Phase 1: Upload assets (additive, no delete)"
+      shell: bash
+      env:
+        BUCKET: ${{ inputs.bucket }}
+        DIST: ${{ inputs.dist-path }}
+      run: |
+        set -euo pipefail
+
+        IMMUTABLE="public, max-age=31536000, immutable"
+        REVALIDATE="public, max-age=3600, must-revalidate"
+
+        echo "📤 Uploading hashed assets/ (immutable)..."
+
+        aws s3 sync "$DIST/assets/" "s3://$BUCKET/assets" \
+          --no-guess-mime-type \
+          --exclude "*" --include "*.js" \
+          --content-type "application/javascript" \
+          --cache-control "$IMMUTABLE"
+
+        aws s3 sync "$DIST/assets/" "s3://$BUCKET/assets" \
+          --exclude "*" --include "*.css" \
+          --content-type "text/css" \
+          --cache-control "$IMMUTABLE"
+
+        aws s3 sync "$DIST/assets/" "s3://$BUCKET/assets" \
+          --exclude "*" --include "*.svg" \
+          --content-type "image/svg+xml" \
+          --cache-control "$IMMUTABLE"
+
+        # Fonts, bitmaps and anything else Vite emitted with a hash in its name.
+        aws s3 sync "$DIST/assets/" "s3://$BUCKET/assets" \
+          --exclude "*.js" --exclude "*.css" --exclude "*.svg" \
+          --cache-control "$IMMUTABLE"
+
+        echo "📤 Uploading unhashed public/ files (revalidated hourly)..."
+
+        # Filters apply in order, so the trailing --exclude "assets/*" keeps the
+        # hashed upload above from being overwritten with a short TTL.
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" --include "*.svg" --exclude "assets/*" \
+          --content-type "image/svg+xml" \
+          --cache-control "$REVALIDATE"
+
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" \
+          --include "*.png" --include "*.jpg" --include "*.jpeg" \
+          --include "*.gif" --include "*.webp" --include "*.ico" \
+          --include "*.avif" \
+          --exclude "assets/*" \
+          --cache-control "$REVALIDATE"
+
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" --include "*.json" --exclude "assets/*" \
+          --content-type "application/json" \
+          --cache-control "$REVALIDATE"
+
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" --include "*.xml" --exclude "assets/*" \
+          --content-type "application/xml" \
+          --cache-control "$REVALIDATE"
+
+        # theme-init.js, the pre-paint theme script index.html loads by name.
+        # A fixed name, so revalidated rather than immutable. The type is
+        # explicit: the CSP's nosniff refuses to run a script served as
+        # anything but JavaScript.
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" --include "*.js" --exclude "assets/*" \
+          --content-type "text/javascript; charset=utf-8" \
+          --cache-control "$REVALIDATE"
+
+        # robots.txt and llms.txt. The charset is explicit because llms.txt
+        # carries Latvian and Russian, and text/plain without one is read as
+        # Windows-1252 by more than one client.
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "*" --include "*.txt" --exclude "assets/*" \
+          --content-type "text/plain; charset=utf-8" \
+          --cache-control "$REVALIDATE"
+
+        # site.webmanifest, and whatever else lands in public/ later.
+        aws s3 sync "$DIST/" "s3://$BUCKET" \
+          --exclude "assets/*" \
+          --exclude "*.html" \
+          --exclude "*.svg" \
+          --exclude "*.png" --exclude "*.jpg" --exclude "*.jpeg" \
+          --exclude "*.gif" --exclude "*.webp" --exclude "*.ico" --exclude "*.avif" \
+          --exclude "*.json" --exclude "*.xml" --exclude "*.txt" --exclude "*.js" \
+          --cache-control "$REVALIDATE"
+
+        echo "✅ Phase 1 complete: assets/ immutable, public/ files revalidated"
+
+    # -------------------------------------------------------------------------
+    # Phase 2: the pages. Every HTML file, after every asset it references.
+    #
+    # The build prerenders each route in each language into its own file
+    # (dist/<locale>/<route>/index.html, plus index.html and 404.html), and
+    # they are the only files naming the new hashes, so writing them after
+    # Phase 1 means no page ever points at an asset that is not there yet. The
+    # nested pages go first and the root index.html last, so the bare domain
+    # switches over once everything it links to is in place.
+    #
+    # cp, not sync: sync skips a file whose size and timestamp look unchanged,
+    # and a page is never allowed to lag behind the assets it names.
+    # -------------------------------------------------------------------------
+    - name: "Phase 2: Upload every page (HTML last)"
+      shell: bash
+      env:
+        BUCKET: ${{ inputs.bucket }}
+        DIST: ${{ inputs.dist-path }}
+      run: |
+        set -euo pipefail
+
+        HTML_TYPE="text/html; charset=utf-8"
+        HTML_CACHE="public, max-age=60, s-maxage=300"
+
+        PAGES=$(cd "$DIST" && find . -type f -name "*.html" ! -path "./assets/*" ! -path "./index.html" | sed 's|^\./||' | sort)
+        COUNT=$(printf '%s\n' "$PAGES" | grep -c . || true)
+        echo "📝 Uploading ${COUNT} prerendered page(s)..."
+
+        aws s3 cp "$DIST/" "s3://$BUCKET/" --recursive \
+          --exclude "*" --include "*.html" --exclude "assets/*" --exclude "index.html" \
+          --content-type "$HTML_TYPE" \
+          --cache-control "$HTML_CACHE" \
+          --only-show-errors
+
+        echo "📝 Uploading index.html..."
+        aws s3 cp "$DIST/index.html" "s3://$BUCKET/index.html" \
+          --content-type "$HTML_TYPE" \
+          --cache-control "$HTML_CACHE"
+
+        echo "✅ Phase 2 complete: $((COUNT + 1)) pages now reference the new assets"
+
+    - name: "Phase 3: Invalidate CloudFront and wait"
+      shell: bash
+      env:
+        DIST_ID: ${{ inputs.distribution-id }}
+      run: |
+        set -euo pipefail
+        echo "🔄 Creating CloudFront invalidation..."
+        INVALIDATION_ID=$(aws cloudfront create-invalidation \
+          --distribution-id "$DIST_ID" \
+          --paths "/*" \
+          --query 'Invalidation.Id' --output text)
+
+        echo "   Invalidation ID: $INVALIDATION_ID"
+        echo "⏳ Waiting for it to complete..."
+        aws cloudfront wait invalidation-completed \
+          --distribution-id "$DIST_ID" --id "$INVALIDATION_ID"
+        echo "✅ Phase 3 complete: cache invalidated and propagated"
+
+    # -------------------------------------------------------------------------
+    # Phase 4: remove what the new build no longer contains. Runs last, after
+    # the invalidation, so no visitor can be served a page referencing a file
+    # that has just been deleted.
+    # -------------------------------------------------------------------------
+    - name: "Phase 4: Cleanup orphaned files"
+      shell: bash
+      env:
+        BUCKET: ${{ inputs.bucket }}
+        MANIFEST: ${{ inputs.manifest-path }}
+      run: |
+        set -euo pipefail
+        echo "🧹 Removing files no longer in the build..."
+
+        aws s3api list-objects-v2 --bucket "$BUCKET" \
+          --query 'Contents[].Key' --output text \
+          | tr '\t' '\n' | sed '/^None$/d' | sed '/^$/d' | sort > /tmp/s3-files.txt
+
+        sed 's|^\./||' "$MANIFEST" | sort > /tmp/new-files.txt
+
+        ORPHANS=$(comm -23 /tmp/s3-files.txt /tmp/new-files.txt || true)
+
+        if [ -z "$ORPHANS" ]; then
+          echo "   No orphaned files to remove"
+        else
+          ORPHAN_COUNT=$(printf '%s\n' "$ORPHANS" | grep -c . || true)
+          echo "   Removing ${ORPHAN_COUNT} orphaned file(s)..."
+          printf '%s\n' "$ORPHANS" | while IFS= read -r key; do
+            [ -n "$key" ] && aws s3api delete-object --bucket "$BUCKET" --key "$key" >/dev/null
+          done
+          echo "✅ Phase 4 complete: ${ORPHAN_COUNT} orphaned file(s) removed"
+        fi

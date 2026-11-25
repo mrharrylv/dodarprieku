@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "title": "Consulting, delivery and support in Rīga",
+    "description": "Replace this with one sentence describing what the business does and who it is for. It is the line that appears under the site's name in search results."
+  },
+  "hero": {
+    "eyebrow": "Based in Rīga",
+    "title": "A short, concrete promise",
+    "subtitle": "One or two sentences saying what you do, for whom, and why someone should read further. Say the thing plainly. A visitor decides in about five seconds.",
+    "primaryCta": "Get in touch",
+    "secondaryCta": "What we do"
+  },
+  "highlights": {
+    "title": "Why work with us",
+    "subtitle": "Three reasons, each worth a sentence.",
+    "items": {
+      "clarity": {
+        "title": "A clear price",
+        "body": "You know the cost before the work begins. No hourly surprises at the end of the month."
+      },
+      "speed": {
+        "title": "A real timeline",
+        "body": "We say when it will be done and then it is done then. If something slips you hear it from us first."
+      },
+      "care": {
+        "title": "One person to call",
+        "body": "You deal with the same person from the first conversation to the last, not a queue."
+      }
+    }
+  },
+  "services": {
+    "title": "What we do",
+    "subtitle": "A short line framing the list below.",
+    "cta": "See all services"
+  },
+  "about": {
+    "title": "Who you are dealing with",
+    "body": "Two or three sentences of substance about the business: how long it has been going, what it is good at, and who is behind it. Specifics beat adjectives: a number, a place, a year.",
+    "cta": "More about us"
+  },
+  "cta": {
+    "title": "Tell us what you need",
+    "body": "Send a message and we will answer the same working day.",
+    "button": "Get in touch"
+  }
+}
