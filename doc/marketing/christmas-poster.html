@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<title>Dod ar prieku: Ziemassvētku plakāts</title>
+<!--
+  The Christmas poster (A3 portrait). Rendered to PNG and PDF by
+  doc/marketing/render-poster.mjs; edit this file, then re-run it.
+  Fonts come from the website's own self-hosted packages.
+-->
+<style>
+  @font-face { font-family: Outfit; src: url(../../services/frontend/website/node_modules/@fontsource-variable/outfit/files/outfit-latin-ext-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: Outfit; src: url(../../services/frontend/website/node_modules/@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0000-00FF; }
+  @font-face { font-family: Inter; src: url(../../services/frontend/website/node_modules/@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2) format('woff2'); font-weight: 100 900; }
+  @font-face { font-family: Inter; src: url(../../services/frontend/website/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2) format('woff2'); font-weight: 100 900; unicode-range: U+0000-00FF; }
+  :root { --coral: #e25c57; --coral-deep: #b8403c; --cream: #fff8f1; --ink: #2b1d1c; --pine: #1f5a4a; --snow: #ffffff; }
+  @page { size: 297mm 420mm; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1123px; height: 1587px; }
+  body { font-family: Inter, sans-serif; color: var(--ink); background: var(--cream); overflow: hidden; }
+  .poster { position: relative; width: 1123px; height: 1587px; overflow: hidden;
+    background: radial-gradient(120% 70% at 50% 0%, #ffe9dc 0%, var(--cream) 60%); }
+  .snow { position: absolute; inset: 0; }
+  .top { position: absolute; top: 0; left: 0; right: 0; height: 640px; background: var(--coral);
+    border-radius: 0 0 50% 50% / 0 0 110px 110px; }
+  .brand { position: absolute; top: 70px; left: 90px; display: flex; align-items: center; gap: 22px; color: var(--snow); }
+  .brand svg { width: 86px; height: 86px; }
+  .brand span { font-family: Outfit, sans-serif; font-weight: 700; font-size: 46px; letter-spacing: -0.5px; }
+  .kicker { position: absolute; top: 230px; left: 90px; color: #ffe3dc; font-family: Outfit; font-weight: 600; font-size: 34px; letter-spacing: 3px; text-transform: uppercase; }
+  h1 { position: absolute; top: 280px; left: 86px; right: 80px; color: var(--snow); font-family: Outfit, sans-serif; font-weight: 800; font-size: 132px; line-height: 0.98; letter-spacing: -3px; }
+  .content { position: absolute; top: 690px; left: 90px; right: 90px; bottom: 70px; display: flex; flex-direction: column; gap: 40px; }
+  .lead { font-family: Outfit; font-weight: 600; font-size: 50px; line-height: 1.12; letter-spacing: -0.8px; }
+  .lead em { font-style: normal; color: var(--coral-deep); }
+  .groups { display: flex; gap: 30px; }
+  .group { flex: 1; background: var(--snow); border-radius: 36px; padding: 36px 22px 32px; text-align: center;
+    box-shadow: 0 18px 40px rgba(120, 50, 40, 0.12); }
+  .badge { width: 104px; height: 104px; margin: 0 auto 18px; border-radius: 50%; display: grid; place-items: center; }
+  .badge svg { width: 64px; height: 64px; stroke: var(--snow); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .group h2 { font-family: Outfit; font-weight: 700; font-size: 40px; }
+  .group p { margin-top: 10px; font-size: 23px; line-height: 1.35; color: #5a4644; }
+  .steps { font-size: 30px; line-height: 1.4; font-weight: 500; }
+  .steps b { color: var(--coral-deep); }
+  .cta { margin-top: auto; height: 120px; flex: none; background: var(--pine); color: var(--snow);
+    border-radius: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 56px; }
+  .cta .url { font-family: Outfit; font-weight: 700; font-size: 46px; letter-spacing: -0.5px; }
+  .cta .note { font-size: 26px; opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top"></div>
+  <svg class="snow" viewBox="0 0 1123 1587" aria-hidden="true">
+    <g fill="#ffffff" opacity="0.55">
+      <circle cx="980" cy="90" r="7"/><circle cx="860" cy="180" r="4"/><circle cx="1040" cy="260" r="5"/>
+      <circle cx="760" cy="60" r="3"/><circle cx="930" cy="360" r="6"/><circle cx="1070" cy="460" r="4"/>
+      <circle cx="760" cy="150" r="5"/><circle cx="820" cy="520" r="3"/>
+      <circle cx="1000" cy="560" r="5"/><circle cx="640" cy="560" r="4"/>
+    </g>
+    <g fill="#e25c57" opacity="0.18">
+      <circle cx="80" cy="760" r="6"/><circle cx="1050" cy="840" r="8"/><circle cx="1030" cy="1230" r="5"/>
+      <circle cx="60" cy="1240" r="7"/><circle cx="560" cy="1220" r="4"/>
+    </g>
+  </svg>
+
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="16" fill="#ffffff"/>
+      <path fill="#e25c57" d="M32 7c-10.5 0-19 8.3-19 18.7C13 39.3 32 56 32 56s19-16.7 19-30.3C51 15.3 42.5 7 32 7Z"/>
+      <path fill="#ffffff" d="M32 35.5s-9.5-5.7-9.5-12.3a5.2 5.2 0 0 1 9.5-2.9 5.2 5.2 0 0 1 9.5 2.9c0 6.6-9.5 12.3-9.5 12.3Z"/>
+    </svg>
+    <span>Dod ar prieku</span>
+  </div>
+
+  <div class="kicker">Jauns projekts visai Latvijai</div>
+  <h1>Ziemassvētki<br>tuvojas.</h1>
+
+  <div class="content">
+  <p class="lead">Palīdzēsim tiem, kam tas vajadzīgs visvairāk: <em>bērniem, cilvēkiem un dzīvniekiem.</em></p>
+
+  <div class="groups">
+    <div class="group">
+      <div class="badge" style="background:#2f7fc1">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M8 21v-6l-2-3 4-3h4l4 3-2 3v6"/><path d="M10 15h4"/></svg>
+      </div>
+      <h2>Bērniem</h2>
+      <p>bērnu nami, krīzes centri</p>
+    </div>
+    <div class="group">
+      <div class="badge" style="background:#7a52b3">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="4.5" r="2.5"/><path d="M11 8v6l-3 7"/><path d="M11 14l3 7"/><path d="M8 11h6"/><path d="M17 10v11"/><path d="M14 10h3"/></svg>
+      </div>
+      <h2>Cilvēkiem</h2>
+      <p>pansionāti, slimnīcas</p>
+    </div>
+    <div class="group">
+      <div class="badge" style="background:#c47a1a">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="10" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="10" r="2"/><path d="M12 11c-3 0-5.5 3.5-5.5 6 0 2 1.5 3 3 3 1 0 1.5-.5 2.5-.5s1.5.5 2.5.5c1.5 0 3-1 3-3 0-2.5-2.5-6-5.5-6Z"/></svg>
+      </div>
+      <h2>Dzīvniekiem</h2>
+      <p>dzīvnieku patversmes</p>
+    </div>
+  </div>
+
+  <p class="steps">Kartē redzams, kas katrai iestādei <b>šobrīd vajadzīgs</b>: segas, barība, autiņbiksītes, rotaļlietas. Izvēlies, atzīmē <b>„Es ziedošu”</b> un atnes vai nosūti ar pakomātu.</p>
+
+  <div class="cta">
+    <span class="url">dodarprieku.hagroup.lv</span>
+    <span class="note">Atrodi. Atzīmē. Iepriecini.</span>
+  </div>
+  </div>
+</div>
+</body>
+</html>
