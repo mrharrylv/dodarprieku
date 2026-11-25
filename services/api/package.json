@@ -1,0 +1,36 @@
+{
+  "name": "dodarprieku-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx src/dev/server.ts"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "3.1178.0",
+    "@aws-sdk/client-s3": "3.1178.0",
+    "@aws-sdk/client-sesv2": "3.1178.0",
+    "@aws-sdk/client-ssm": "3.1178.0",
+    "@aws-sdk/lib-dynamodb": "3.1178.0",
+    "@eslint/js": "10.0.1",
+    "@types/aws-lambda": "8.10.164",
+    "@types/node": "22.20.7",
+    "@vitest/coverage-v8": "5.1.0",
+    "aws-sdk-client-mock": "4.1.0",
+    "esbuild": "0.28.2",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "tsx": "4.21.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  }
+}
