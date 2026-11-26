@@ -102,7 +102,8 @@
       "consentPurpose": "Atceras jūsu atbildi uz jautājumu par piekrišanu, lai to nevajadzētu jautāt atkārtoti.",
       "untilTabClosed": "Līdz cilnes aizvēršanai",
       "viewedPurpose": "Sesijas krātuvē atceras, kuru organizāciju lapas šajā cilnē jau esat atvēruši, lai katru apmeklējumu ieskaitītu tikai vienu reizi. Tā netiek nosūtīta nekur.",
-      "registerDraftPurpose": "Sesijas krātuvē glabā nepabeigto reģistrācijas pieteikumu, lai, pārlādējot lapu, ievadītais nepazustu. To izdzēš pēc pieteikuma iesniegšanas vai cilnes aizvēršanas, un tā netiek nosūtīta nekur."
+      "registerDraftPurpose": "Sesijas krātuvē glabā nepabeigto reģistrācijas pieteikumu, lai, pārlādējot lapu, ievadītais nepazustu. To izdzēš pēc pieteikuma iesniegšanas vai cilnes aizvēršanas, un tā netiek nosūtīta nekur.",
+      "signedInPurpose": "Atceras, ka šajā pārlūkā ir atvērts organizācijas konts, lai kartē nerādītu pogu Kļūt par saņēmēju. Tajā nav ne e-pasta, ne paroles. To izdzēš, izejot no konta, un tā netiek nosūtīta nekur."
     },
     "control": {
       "title": "Kā to izdzēst",

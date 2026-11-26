@@ -19,6 +19,7 @@ export const toSummary = (
   c: CharityRecord,
   account: AccountRecord | undefined,
   hasPendingUpdate: boolean,
+  claimTarget?: CharityRecord,
 ): AdminCharitySummary => ({
   id: c.id,
   slug: c.slug,
@@ -33,17 +34,26 @@ export const toSummary = (
   updatedAt: c.updatedAt,
   views: c.views,
   pledges: c.pledges,
+  ...(claimTarget
+    ? { claim: { charityId: claimTarget.id, name: claimTarget.profile.organization.name, slug: claimTarget.slug } }
+    : {}),
 })
+
+/** The imported charity a claim application asks for, when it still exists. */
+export const claimTargetOf = (repo: Repository, c: CharityRecord): Promise<CharityRecord | undefined> =>
+  c.claimCharityId === undefined ? Promise.resolve(undefined) : repo.getCharity(c.claimCharityId)
 
 export const toDetail = (
   c: CharityRecord,
   account: AccountRecord | undefined,
   update: UpdateRecord | undefined,
+  claimTarget?: CharityRecord,
 ): AdminCharityDetail => {
   const pendingUpdate = pendingOf(update)
   return {
-    ...toSummary(c, account, update !== undefined),
+    ...toSummary(c, account, update !== undefined, claimTarget),
     profile: c.profile,
+    ...(claimTarget ? { claimProfile: claimTarget.profile } : {}),
     ...(pendingUpdate ? { pendingUpdate } : {}),
     ...(c.rejectReason ? { rejectReason: c.rejectReason } : {}),
     ...(c.suspendReason ? { suspendReason: c.suspendReason } : {}),
@@ -66,7 +76,7 @@ export const statsOf = (
   recentSupporters: pledges
     .filter((p) => !p.anonymous && p.name)
     .slice(0, MAX_RECENT_SUPPORTERS)
-    .map((p) => ({ name: p.name as string, at: p.createdAt })),
+    .map((p) => ({ name: p.name as string, ...(p.company ? { company: p.company } : {}), at: p.createdAt })),
 })
 
 export const loadStats = async (repo: Repository, c: CharityRecord): Promise<CharityStats> => {
@@ -75,11 +85,12 @@ export const loadStats = async (repo: Repository, c: CharityRecord): Promise<Cha
 }
 
 export const loadDetail = async (repo: Repository, c: CharityRecord): Promise<AdminCharityDetail> => {
-  const [account, update] = await Promise.all([
+  const [account, update, claimTarget] = await Promise.all([
     c.accountEmail === '' ? undefined : repo.getAccount(c.accountEmail),
     repo.getUpdate(c.id),
+    claimTargetOf(repo, c),
   ])
-  return toDetail(c, account, update)
+  return toDetail(c, account, update, claimTarget)
 }
 
 export const loadAccountView = async (repo: Repository, c: CharityRecord): Promise<AccountView> => {

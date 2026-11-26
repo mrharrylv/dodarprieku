@@ -57,16 +57,17 @@ export const postPledge: Handler = async (ctx) => {
     needs: v.needs,
     anonymous: v.anonymous,
     ...(v.anonymous || !v.name ? {} : { name: v.name }),
+    ...(v.anonymous || !v.name || !v.company ? {} : { company: v.company }),
     ...(v.email ? { email: v.email } : {}),
     ...(v.message ? { message: v.message } : {}),
     createdAt: now,
   })
-  if (v.subscribe && v.email) {
+  if ((v.subscribe || v.general === true) && v.email) {
     await ctx.deps.repo.upsertSubscriber({
       email: v.email,
       ...(v.name ? { name: v.name } : {}),
-      charityId: c.id,
-      general: false,
+      ...(v.subscribe ? { charityId: c.id } : {}),
+      general: v.general === true,
       consentAt: now,
       source: 'pledge',
     })

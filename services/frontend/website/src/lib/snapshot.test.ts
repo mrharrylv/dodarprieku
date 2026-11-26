@@ -29,6 +29,8 @@ describe('snapshot guard', () => {
     expect(isPublicCharity(shelter)).toBe(true)
     expect(isPublicCharity({ ...shelter, demoNeeds: true })).toBe(true)
     expect(isPublicCharity({ ...shelter, demoNeeds: 'yes' })).toBe(false)
+    expect(isPublicCharity({ ...shelter, claimable: true })).toBe(true)
+    expect(isPublicCharity({ ...shelter, claimable: 'yes' })).toBe(false)
     expect(parseSnapshot(JSON.parse(JSON.stringify(snapshotFixture)))).toEqual(snapshotFixture)
   })
 

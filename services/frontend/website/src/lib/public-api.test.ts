@@ -87,6 +87,8 @@ describe('endpoints', () => {
     expect(isCharityStats(stats)).toBe(true)
     expect(isCharityStats({ ...stats, pledgesByNeed: { a: 'x' } })).toBe(false)
     expect(isCharityStats({ ...stats, recentSupporters: [{ name: 1 }] })).toBe(false)
+    expect(isCharityStats({ ...stats, recentSupporters: [{ name: 'A', company: 'SIA B', at: 'x' }] })).toBe(true)
+    expect(isCharityStats({ ...stats, recentSupporters: [{ name: 'A', company: 3, at: 'x' }] })).toBe(false)
     expect(await fetchStats('c1', fakeFetch({ '/api/charities/c1/stats': { body: { ok: true, data: { views: 1 } } } }))).toEqual({
       ok: false,
       error: { kind: 'server' },

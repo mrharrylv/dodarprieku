@@ -43,6 +43,13 @@ export const createMemoryRepository = (): MemoryRepository => {
       if (!old) throw new Error('charity missing')
       charities.set(c.id, clone({ ...c, views: old.views, pledges: old.pledges }))
     },
+    saveClaimMerge: async (c) => {
+      const old = charities.get(c.id)
+      if (!old) throw new Error('charity missing')
+      if (!(old.source ?? '').startsWith('import:') || old.accountEmail !== '') return false
+      charities.set(c.id, clone({ ...c, views: old.views, pledges: old.pledges }))
+      return true
+    },
     listCharities: async (status) =>
       [...charities.values()].filter((c) => status === undefined || c.status === status).sort(byNewest).map(clone),
     putCharities: async (list) => {

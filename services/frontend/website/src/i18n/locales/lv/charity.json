@@ -70,24 +70,30 @@
   },
   "supporters": {
     "title": "Jau apsolījuši palīdzēt",
-    "empty": "Vēl neviens nav apsolījis palīdzību publiski. Varat būt pirmie."
+    "empty": "Vēl neviens nav apsolījis palīdzību publiski. Varat būt pirmie.",
+    "withCompany": "{{name}} ({{company}})"
   },
   "pledge": {
     "title": "Es ziedošu",
     "intro": "Jūs atnesīsiet:",
+    "back": "Atpakaļ uz vajadzībām",
     "close": "Aizvērt",
     "identity": "Kā jūs parādīt atbalstītāju sarakstā?",
     "anonymous": "Anonīmi",
     "public": "Ar vārdu",
-    "name": "Vārds vai uzņēmuma nosaukums",
-    "nameHint": "Šis vārds būs redzams organizācijas lapā.",
+    "name": "Vārds",
+    "nameHint": "Būs redzams organizācijas atbalstītāju sarakstā.",
+    "company": "Uzņēmums",
+    "companyHint": "Redzams blakus vārdam, piemēram, Jānis (SIA Koks).",
     "email": "E-pasts",
     "emailHint": "Uz to nosūtīsim pateicību. Organizācija jūsu e-pastu neredz.",
-    "message": "Ziņa organizācijai",
-    "messageHint": "Piemēram, kad plānojat atnest.",
+    "message": "Ziņojums",
+    "messageHint": "Organizācijai, piemēram, kad plānojat atnest.",
     "optional": "nav obligāts",
-    "subscribe": "Pierakstīties jaunumiem",
-    "subscribeHint": "Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
+    "subscribe": "Vēlos saņemt jaunumus par šo iestādi",
+    "subscribeHint": "Kad tai kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
+    "general": "Saņemt arī vispārējos jaunumus",
+    "generalHint": "Par citām iestādēm un pašu projektu.",
     "consent": "Piekrītu, ka Dod ar prieku izmanto manu e-pasta adresi, lai nosūtītu pateicību un, ja to izvēlējos, jaunumus.",
     "privacy": "Privātuma politika",
     "honeypot": "Neaizpildiet šo lauku",
@@ -102,8 +108,11 @@
         "required": "Ierakstiet vārdu vai izvēlieties „Anonīmi”.",
         "too_long": "Vārds ir par garu."
       },
+      "company": {
+        "too_long": "Uzņēmuma nosaukums ir par garu."
+      },
       "email": {
-        "required": "Lai pierakstītos jaunumiem, ierakstiet e-pasta adresi.",
+        "required": "Lai saņemtu jaunumus, ierakstiet e-pasta adresi.",
         "invalid": "Pārbaudiet e-pasta adresi.",
         "too_long": "E-pasta adrese ir par garu."
       },
@@ -120,8 +129,7 @@
       "body": "Jūsu apsolījums ir saņemts. Organizācija redzēs, ka palīdzība ir ceļā.",
       "email": "Pateicību nosūtīsim uz {{email}}.",
       "subscribed": "Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim.",
-      "offer": "Vai vēlaties uzzināt, kad kaut kas būs ļoti vajadzīgs?",
-      "done": "Atpakaļ uz organizācijas lapu"
+      "done": "Atpakaļ uz organizāciju"
     }
   },
   "subscribe": {

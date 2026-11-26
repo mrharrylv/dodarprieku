@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { PublicCharity } from '@shared/contracts'
 import { AboutSection } from '@/components/profile-editor/AboutSection'
 import { ERROR_SELECTOR } from '@/components/profile-editor/control-styles'
 import { DeliverySection } from '@/components/profile-editor/DeliverySection'
@@ -21,10 +22,17 @@ const SECTIONS = [OrganizationSection, AboutSection, LocationSection, NeedsSecti
 
 const SUBMIT_ERRORS = ['validation', 'rate_limited', 'conflict', 'network', 'timeout', 'server'] as const
 
-/** The six-step registration (doc/specs/dodarprieku.md, flow 1). */
-export const RegisterWizard = ({ restore }: { restore: boolean }) => {
+/** The submit error's copy: a refused claim (the charity was claimed meanwhile) has its own. */
+const submitKeyOf = (error: string | null, errors: Readonly<Record<string, string>>): string | null => {
+  if (error === null) return null
+  if (error === 'validation' && errors.claimCharityId !== undefined) return 'claim'
+  return (SUBMIT_ERRORS as readonly string[]).includes(error) ? error : 'generic'
+}
+
+/** The six-step registration (doc/specs/dodarprieku.md, flow 1); with `claim`, a claim of that imported charity. */
+export const RegisterWizard = ({ restore, claim }: { restore: boolean; claim?: PublicCharity | undefined }) => {
   const { t } = useTranslation('register')
-  const wizard = useRegisterWizard(restore)
+  const wizard = useRegisterWizard(restore, claim)
   const { step, attempt, submit } = wizard
   const container = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -44,13 +52,13 @@ export const RegisterWizard = ({ restore }: { restore: boolean }) => {
     first?.focus()
   }, [attempt])
 
-  if (submit.kind === 'done') return <SuccessScreen email={submit.email} />
+  if (submit.kind === 'done') return <SuccessScreen email={submit.email} claim={claim !== undefined} />
 
   const Section = SECTIONS[step]
   const id = WIZARD_STEPS[step] ?? 'review'
   const hasErrors = Object.keys(wizard.errors).length > 0
   const submitError = submit.kind === 'failed' ? submit.error : null
-  const submitKey = submitError === null ? null : (SUBMIT_ERRORS as readonly string[]).includes(submitError) ? submitError : 'generic'
+  const submitKey = submitKeyOf(submitError, wizard.errors)
 
   return (
     <div className="space-y-8">

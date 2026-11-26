@@ -4,24 +4,41 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/cn'
 import { Icon } from '@/components/ui/Icon'
 
-/** Search by name or city. Filters as the visitor types; there is nothing to submit. */
+/**
+ * Search by name or city. Filters as the visitor types; there is nothing to
+ * submit. `onLeave`: the compact top bar folds the field back into its
+ * magnifier when focus leaves it, or on Escape, while it is empty.
+ */
 export const SearchBox = ({
   value,
   onChange,
   className,
   inputClassName = 'bg-(--surface-page)',
+  autoFocus = false,
+  onLeave,
 }: {
   value: string
   onChange: (next: string) => void
   className?: string
   /** The field's own surface; the map floats it, see-through. */
   inputClassName?: string
+  autoFocus?: boolean
+  onLeave?: () => void
 }) => {
   const { t } = useTranslation('map')
   const id = useId()
 
   return (
-    <div role="search" className={className}>
+    <div
+      role="search"
+      className={className}
+      onBlur={(event) => {
+        if (onLeave !== undefined && value === '' && !event.currentTarget.contains(event.relatedTarget)) onLeave()
+      }}
+      onKeyDown={(event) => {
+        if (onLeave !== undefined && event.key === 'Escape' && value === '') onLeave()
+      }}
+    >
       <label htmlFor={id} className="sr-only">
         {t('search.label')}
       </label>
@@ -36,6 +53,8 @@ export const SearchBox = ({
           onChange={(event) => onChange(event.target.value)}
           placeholder={t('search.placeholder')}
           autoComplete="off"
+          // The compact bar opens the field on purpose, from its magnifier: focus belongs in it then.
+          autoFocus={autoFocus}
           className={cn(
             inputClassName,
             'h-11 w-full rounded-full border border-(--border-strong) py-2 pr-12 pl-11 text-(--text-primary) placeholder:text-(--text-muted) focus:border-(--ring-accent) focus:outline-none focus:ring-2 focus:ring-(--ring-accent)/30 [&::-webkit-search-cancel-button]:hidden',

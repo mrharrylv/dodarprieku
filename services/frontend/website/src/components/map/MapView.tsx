@@ -14,7 +14,6 @@ import {
   CLUSTER_ZOOM_EXTRA,
   FLY_DURATION_MS,
   FOCUS_ZOOM,
-  popupPanOffset,
   MAP_BOUNDS,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
@@ -132,7 +131,8 @@ export const MapView = ({
   const splitterRef = useRef<ClusterSplitter | null>(null)
   const [phase, setPhase] = useState<Phase>('loading')
   const [placed, setPlaced] = useState<readonly Placed[]>([])
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  // A shared link can arrive before the map's chunk has loaded: it is already selected, and asks for the card expanded.
+  const [expandedId, setExpandedId] = useState<string | null>(() => (focus?.expand === true && focus.id === selectedId ? selectedId : null))
   /** Which of the card's buttons takes focus next: the collapse button after expanding, "Skatīt vajadzības" after collapsing. */
   const [focusTarget, setFocusTarget] = useState<CardFocus | null>(null)
   /** The selection the expanded state belongs to: a new selection, or none, starts small. */
@@ -325,7 +325,7 @@ export const MapView = ({
     map.flyTo({
       center: drawnAt(target, positions),
       zoom: Math.max(map.getZoom(), FOCUS_ZOOM),
-      offset: focus?.expand === true ? pinOffset(map, true) : popupPanOffset(),
+      offset: pinOffset(map, focus?.expand === true),
       padding: mapPadding(insetRef.current),
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS,
       essential: true,
@@ -373,6 +373,7 @@ export const MapView = ({
   const card =
     selected === undefined ? null : (
       <MapPopupCard
+        key={selected.id}
         charity={selected}
         expanded={expanded}
         sheet={sheet}

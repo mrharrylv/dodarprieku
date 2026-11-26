@@ -134,7 +134,9 @@ export const isCharityStats = (v: unknown): v is CharityStats =>
   isObj(v.pledgesByNeed) &&
   Object.values(v.pledgesByNeed).every((n) => typeof n === 'number') &&
   Array.isArray(v.recentSupporters) &&
-  v.recentSupporters.every((s) => isObj(s) && typeof s.name === 'string' && typeof s.at === 'string')
+  v.recentSupporters.every(
+    (s) => isObj(s) && typeof s.name === 'string' && typeof s.at === 'string' && (s.company === undefined || typeof s.company === 'string'),
+  )
 
 export const fetchStats = async (id: string, fetcher?: typeof fetch): Promise<PublicResult<CharityStats>> =>
   unwrap(await request(charityUrl(id, 'stats'), fetcher ? { fetcher } : {}), isCharityStats)

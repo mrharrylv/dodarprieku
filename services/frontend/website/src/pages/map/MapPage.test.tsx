@@ -147,7 +147,13 @@ describe('MapPage', () => {
     const demo = { ...snapshotFixture, charities: snapshotFixture.charities.map((c, i) => (i === 0 ? { ...c, demoNeeds: true } : c)) }
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: demo } }))
     const { unmount } = renderWithProviders(<MapPage />)
-    expect(await screen.findByRole('note')).toHaveTextContent('Testa vide: daļa vajadzību ir izdomātas demonstrācijai.')
+    // A tiny pill that opens into the whole sentence, so it never covers the pins or the zoom buttons.
+    const note = await screen.findByRole('note')
+    expect(note).toHaveTextContent('Testa vide')
+    expect(note).not.toHaveTextContent('izdomātas')
+    fireEvent.click(within(note).getByRole('button', { name: 'Testa vide: kas tas ir?' }))
+    expect(note).toHaveTextContent('Testa vide: daļa vajadzību ir izdomātas demonstrācijai.')
+    expect(within(note).getByRole('button', { name: 'Testa vide: kas tas ir?' })).toHaveAttribute('aria-expanded', 'true')
     unmount()
     resetSnapshotCache()
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))

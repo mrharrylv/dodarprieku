@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AccountView, Me } from '@shared/contracts'
 
 import { fetchAccount, fetchMe, logout as apiLogout, type ApiFailureKind } from '@/lib/account-api'
+import { setSignedIn } from './useSignedIn'
 
 export type AccountSession =
   | { readonly kind: 'loading' }
@@ -36,6 +37,8 @@ export const useAccountSession = (enabled: boolean) => {
     if (!enabled) return
     let live = true
     void loadSession().then((next) => {
+      if (next.kind === 'anon') setSignedIn(false)
+      if (next.kind === 'ready' || next.kind === 'not_charity') setSignedIn(true)
       if (live) setSession(next)
     })
     return () => {
@@ -59,6 +62,7 @@ export const useAccountSession = (enabled: boolean) => {
     const result = await apiLogout()
     setLoggingOut(false)
     if (result.ok || result.error === 'unauthorized') {
+      setSignedIn(false)
       setSession({ kind: 'anon' })
       return null
     }

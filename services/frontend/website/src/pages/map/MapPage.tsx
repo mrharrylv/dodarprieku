@@ -7,13 +7,14 @@ import { ROUTES } from '@/config/site'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useLocale } from '@/hooks/useLocale'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useSignedIn } from '@/hooks/useSignedIn'
 import { useSnapshot } from '@/hooks/useSnapshot'
 import { localePath } from '@/lib/locale-path'
 import { mapRouteOf } from '@/lib/map-route'
 import { hasDemoNeeds } from '@/lib/need-kinds'
 import { findBySlug, mapCharities, NO_FILTER, type CharityFilter } from '@/lib/snapshot'
 import { ApiErrorNotice } from '@/components/charity/ApiErrorNotice'
-import { FOCUS_PARAM } from '@/components/charity/focus-param'
+import { EXPAND_PARAM, FOCUS_PARAM } from '@/components/charity/focus-param'
 import type { MapFocus } from '@/components/map/MapView'
 import { MapActions } from '@/components/map/chrome/MapActions'
 import { MapPanels } from '@/components/map/chrome/MapPanels'
@@ -22,6 +23,7 @@ import { MapTopBar } from '@/components/map/chrome/MapTopBar'
 import { useMapPanels } from '@/components/map/chrome/useMapPanels'
 import { MapDock } from '@/components/map/dock/MapDock'
 import { DOCK_QUERY, useDockInset } from '@/components/map/dock/useDockInset'
+import { DemoNotice } from './DemoNotice'
 import { MapSeo } from './MapSeo'
 
 /** The map itself is its own chunk: nothing about it belongs in the first paint. */
@@ -58,6 +60,7 @@ export const MapPage = () => {
   const dockRef = useRef<HTMLElement | null>(null)
   const home = localePath(ROUTES.home, locale)
   const docked = useMediaQuery(DOCK_QUERY)
+  const signedIn = useSignedIn(hydrated) === true
 
   // The dock opens only in the browser: the prerendered page and its hydration have every panel closed.
   const dock = hydrated ? route.dock : null
@@ -97,8 +100,10 @@ export const MapPage = () => {
     return () => area.removeEventListener('pointerdown', onPointer)
   }, [close, panelRef])
 
-  // `/organizacija/<slug>` (or the older `?org=`): fly there with the card expanded, once per slug.
+  // `/organizacija/<slug>` (or the older `?org=`): fly there with the card open, once per slug;
+  // expanded when the link says `?vajadzibas=1`, as the expanded card's copy-link button writes it.
   const focusSlug = route.charitySlug ?? params.get(FOCUS_PARAM)
+  const expandFocus = params.get(EXPAND_PARAM) === '1'
   useEffect(() => {
     if (focusSlug === null) {
       handledSlug.current = null
@@ -110,9 +115,9 @@ export const MapPage = () => {
     if (target === undefined) return
     void Promise.resolve().then(() => {
       setSelectedId(target.id)
-      setFocus((prev) => ({ id: target.id, nonce: (prev?.nonce ?? 0) + 1, expand: true }))
+      setFocus((prev) => ({ id: target.id, nonce: (prev?.nonce ?? 0) + 1, expand: expandFocus }))
     })
-  }, [snapshot, focusSlug])
+  }, [snapshot, focusSlug, expandFocus])
 
   // `/par-projektu`: the info panel, over the map at its own address.
   useEffect(() => {
@@ -131,8 +136,10 @@ export const MapPage = () => {
   const charity = route.charitySlug === null ? undefined : findBySlug(charities, route.charitySlug)
   // Below DOCK_QUERY the dock is a full-screen sheet: what is behind it leaves the tab order and the accessibility tree.
   const sheet = dock !== null && !docked
-  // While a dock is open the register button is hidden, so the top bar needs no room for it.
-  const style = { '--dock-inset': `${inset}px`, '--actions-room': dock === null ? '19rem' : '2rem' } as CSSProperties
+  // While a dock is open, or someone is logged in, the register button is hidden, so the top bar needs no room for it.
+  const style = { '--dock-inset': `${inset}px`, '--actions-room': dock === null && !signedIn ? '19rem' : '2rem' } as CSSProperties
+  // A dock beside the map leaves the top bar half the width: it folds into its compact form.
+  const compactBar = dock !== null && docked
 
   return (
     <>
@@ -153,11 +160,11 @@ export const MapPage = () => {
               </Suspense>
             )}
           </div>
-          <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} selectedId={selectedId} onChoose={choose} onRetry={snapshot.retry} />
+          <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} selectedId={selectedId} onChoose={choose} onRetry={snapshot.retry} compact={compactBar} />
           <MapActions hidden={dock !== null} />
           <MapRail panels={panels} accountOpen={dock?.kind === 'account'} />
           <MapPanels panels={panels} state={snapshot} onRetry={snapshot.retry} />
-          {hasDemoNeeds(charities) && <DemoNotice text={t('demo')} />}
+          {hasDemoNeeds(charities) && <DemoNotice />}
           {snapshot.status === 'error' && panels.open === null && (
             <div className="absolute inset-x-3 bottom-20 z-20 md:right-auto md:bottom-6 md:left-20 md:w-96">
               <ApiErrorNotice error={snapshot.error} title={t('loadError')} onRetry={snapshot.retry} />
@@ -169,20 +176,6 @@ export const MapPage = () => {
     </>
   )
 }
-
-/**
- * While any needs on the map were made up (dev's demo-needs task, `make run`),
- * a small chip says so, bottom left: above the register button on a phone,
- * beside the rail's foot on a wider screen.
- */
-const DemoNotice = ({ text }: { text: string }) => (
-  <p
-    role="note"
-    className="pointer-events-none absolute bottom-24 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-full border border-(--border-subtle) bg-(--surface-raised)/90 px-3 py-1.5 text-(length:--text-xs) text-(--text-secondary) shadow-(--shadow-subtle) backdrop-blur-md md:bottom-4 md:left-4 md:max-w-[calc(100%-2rem-var(--dock-inset,0px))]"
-  >
-    {text}
-  </p>
-)
 
 /** A soft, map-like backdrop under the real map while it loads (and in the prerendered HTML). */
 const MapSkeleton = () => (

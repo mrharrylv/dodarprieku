@@ -53,7 +53,7 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
 
 | Item | PK | SK | GSI1PK / GSI1SK | Notes |
 | --- | --- | --- | --- | --- |
-| Charity | `CHARITY#<id>` | `META` | `STATUS#<status>` / `<createdAt>` | status, slug, profile (live, or the application while pending), accountEmail, views (ADD counter), pledges (ADD counter), reasons, timestamps |
+| Charity | `CHARITY#<id>` | `META` | `STATUS#<status>` / `<createdAt>` | status, slug, profile (live, or the application while pending), accountEmail, views (ADD counter), pledges (ADD counter), reasons, timestamps; `source` on an imported one, `claimCharityId` on a claim application, `claimedAt` once a claim merged into it |
 | Pending update | `CHARITY#<id>` | `UPDATE` | `UPDATES` / `<submittedAt>` | proposed profile; replaced by a newer submission |
 | Slug claim | `SLUG#<slug>` | `SLUG` | | conditional put, keeps slugs unique |
 | Account | `ACCOUNT#<email>` | `ACCOUNT` | `ROLE#<role>` / `<email>` | role, charityId, passwordHash (scrypt, N=16384, r=8, p=1, 16-byte salt), sessionVersion |
@@ -96,15 +96,24 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
 6. **Visitor**: the map (`/`) shows pins with the category icon, clusters
    when zoomed out, filters by category, a list/search panel. A pin opens a
    small popup (photo, name, category, city, three top needs, "Skatīt
-   vajadzības"), which expands in place (a sheet on a phone; its shareable
-   address is `/organizacija/<slug>`) into the description, public
-   contacts, the needs with notes and urgent badges and live pledge counts,
-   delivery options, the sponsor wall, and "Es ziedošu": tick needs, then a
-   dialog asks anonymous or named (name shown publicly), optional email for a
-   thank-you, an optional message, and offers the newsletter subscription
-   ("Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim"). Supporters who
-   chose a public name are listed. The expanded card's view is counted once
-   per browser session.
+   vajadzības"), which expands in place, wider (30rem on a wide screen, never
+   past the map's visible part beside a dock) and taller, or as a sheet on a
+   phone, into the description, public contacts, the needs with notes and
+   urgent badges and live pledge counts, delivery options, the sponsor wall,
+   the newsletter, "Kopēt saiti" and, for an imported charity nobody has
+   claimed, "Pieprasīt profilu". A compact sticky header stays at the top of
+   the expanded card as it scrolls: a pill with the category icon and the
+   name, the collapse button and a small close X (Harry, 2026-11-26).
+   "Es ziedošu" is steps inside the same card, never a second dialog: (1) tick
+   needs and press "Es ziedošu"; (2) a page of the card with a back arrow:
+   "Ziņojums" (optional) first, then "Anonīmi" or "Ar vārdu" (the name, and
+   an optional "Uzņēmums" shown publicly beside it as "Vārds (Uzņēmums)"),
+   an optional email for a thank-you in either mode, and two tick boxes,
+   "Vēlos saņemt jaunumus par šo iestādi" and "Saņemt arī vispārējos
+   jaunumus", which need the email and the consent; (3) the thank-you, which
+   does not offer the newsletter again. The ticks survive a trip back from
+   step 2. Supporters who chose a public name are listed. The expanded card's
+   view is counted once per browser session.
 7. **Sponsor leaderboard**: companies on charities' sponsor walls, grouped by
    normalised name (case, quotes and "SIA"/"AS" ignored), ranked by how many
    charities they sponsor. Shown in the map's leaderboard panel.
@@ -117,6 +126,37 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
    on the admin host. The first admin is created by
    `make admin-invite EMAIL=...` (invokes the Lambda directly with
    `{"task":"invite-admin","email":"..."}`; only an IAM principal can do that).
+9. **Claim an imported profile**: a charity imported from a public register
+   (`source` `import:<dataset>`, no account) is `claimable` in the snapshot,
+   and its card (small and expanded) offers "Vai šī ir jūsu iestāde?
+   Pieprasīt profilu". That opens the registration dock at
+   `/registreties?pieprasit=<slug>`, filled in from the public profile (name,
+   legal name, registration number, legal form, address, pin, category,
+   public contacts) under the banner "Jūs pieprasāt esošu profilu: <name>".
+   Submitting sends `claimCharityId`; the API checks the target exists, is
+   approved, imported and unclaimed, and stores a pending application with
+   `claimCharityId`. A claim reserves no slug of its own: it carries the
+   target's, so rejecting or deleting one never holds or frees a name.
+   Several claims may wait for one charity, and the button
+   stays until one is approved. The admin's application list marks it
+   ("Pieprasījums esošam profilam: <name>"), and its page links to the
+   charity and shows the field-by-field diff of the imported profile against
+   the submitted one. Nothing in the claim proves the claimant runs the
+   institution, so **the admin must check before approving**: the page
+   compares the claimant's email with the imported profile's public email and
+   website (a webmail address counts only when it is the exact public one) and
+   always asks for a call to the public phone or a message to the public email.
+   Approving a claim merges it into the imported charity:
+   its id, slug, views and pledges stay, the profile becomes the submitted
+   one, `accountEmail` is set, `source` and `demoNeeds` are removed and
+   `claimedAt` set (so a re-import never overwrites it), the claim record
+   goes, every other pending claim for it is rejected with a reason
+   email, the usual set-password email goes out and the snapshot is rebuilt;
+   the button then disappears. The merge is written first, as a conditional
+   write that holds only while the charity is still imported and unclaimed
+   (two approvals racing for one charity: the second gets 409), and the
+   account after it; a retry after a failed later step finds its own merge
+   and finishes the rest.
 
 Emails (SES, `info@hagroup.lv`, plain text + simple HTML, Latvian): approval
 with set-password link; password reset; update approved; application or update
@@ -140,7 +180,7 @@ login 10/15 min, forgot 5/hour.
 | `POST /api/charities/:id/view` | public | -> `{}` |
 | `POST /api/charities/:id/pledges` | public | `PledgeRequest` -> `{ id }` |
 | `POST /api/subscribe` | public | `SubscribeRequest` -> `{}` (idempotent) |
-| `POST /api/applications` | public | `ApplicationRequest` -> `ApplicationResponse` |
+| `POST /api/applications` | public | `ApplicationRequest` -> `ApplicationResponse`; with `claimCharityId`, a claim (400 `claimCharityId: invalid` unless the target is approved, imported and unclaimed) |
 | `POST /api/uploads` | public (rate limited) | `UploadRequest` -> `UploadResponse` |
 | `POST /api/auth/login` | public | `LoginRequest` -> `Me` (+cookie) |
 | `POST /api/auth/logout` | any | -> `{}` (clears cookie) |
@@ -154,7 +194,7 @@ login 10/15 min, forgot 5/hour.
 | `GET /api/admin/charities?status=` | admin | -> `AdminCharitySummary[]` |
 | `GET /api/admin/charities/:id` | admin | -> `AdminCharityDetail` |
 | `PUT /api/admin/charities/:id/profile` | admin | `CharityProfile` -> `AdminCharityDetail` |
-| `POST /api/admin/charities/:id/approve` | admin | -> `AdminCharityDetail` |
+| `POST /api/admin/charities/:id/approve` | admin | -> `AdminCharityDetail`; for a claim, the merged imported charity (its own id), 409 when it was claimed meanwhile |
 | `POST /api/admin/charities/:id/reject` | admin | `ReasonRequest` -> `AdminCharityDetail` |
 | `POST /api/admin/charities/:id/suspend` | admin | `ReasonRequest` -> `AdminCharityDetail` |
 | `POST /api/admin/charities/:id/restore` | admin | -> `AdminCharityDetail` |
@@ -182,8 +222,8 @@ canonical, and the sitemap and `llms.txt` list `/` only.
 | Path | What opens |
 | --- | --- |
 | `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" top right, and a rail on the left that opens one floating panel at a time (top supporters, newsletter, info) and the account |
-| `/organizacija/:slug` | the map flown to that charity, its card expanded (the CloudFront function serves the `/organizacija` shell for every slug) |
-| `/registreties` | the registration wizard, docked on the right |
+| `/organizacija/:slug` | the map flown to that charity, its card open; expanded with `?vajadzibas=1`, which "Kopēt saiti" adds (it copies the absolute address). The CloudFront function serves the `/organizacija` shell for every slug |
+| `/registreties` | the registration wizard, docked on the right; `?pieprasit=<slug>` claims that imported charity |
 | `/konts` | the account, docked on the right: the login form, then status, stats, pledges, the profile editor with the sponsor wall, the list request and logout |
 | `/konts/parole?token=` | set password (the approval and reset emails link here), in the account panel |
 | `/konts/aizmirsu` | forgot password, in the account panel |
@@ -196,7 +236,20 @@ sheet below that. They are not modal: a click on the map does not close them
 (only their X does) and the map stays usable. While one is open the map takes
 its width as padding (`map.setPadding`, eased in and out), so fly-tos,
 cluster zooms and the charity card centre in the visible left part; the top
-bar keeps to that part and the register button is hidden.
+bar keeps to that part and the register button is hidden. Docked beside the
+map, the top bar is compact (Harry, 2026-11-26): the brand is its mark alone,
+the search a magnifier that opens into the field, and "Ko vajag" and the
+category chips are two dropdown pills (the category one lists the
+categories with icons and counts). When the dock closes it all opens out
+again, animated unless the visitor asked for reduced motion.
+
+"+ Kļūt par saņēmēju" is hidden from anyone logged in (top right and in the
+info panel): an admin never logs in on the public host, and a charity has an
+organisation already. The session cookie is HttpOnly, so a local storage hint
+(`dodarprieku.signed-in`, set whenever a session is seen, cleared on logout or
+a failed check) decides whether to ask `GET /api/auth/me` at all: an anonymous
+visitor sends no request, and a signed-in one has the button hidden from the
+first hydrated paint while the API confirms it.
 
 The wordmark is "dod ar prieku", all lowercase, wherever the name is the
 logo (the floating brand, the header, the admin portal, the favicon and the
@@ -270,7 +323,9 @@ the kinds combine with the category (AND), and a ticked kind hides the
 organisations without needs.
 
 While any published charity has `demoNeeds: true` (dev's `make demo-needs`,
-or `make run`'s seed), a small chip bottom left says "Testa vide: daļa
+or `make run`'s seed), a tiny "Testa vide" pill sits at the bottom centre
+of the visible map, under the pins' usual places and clear of the zoom
+buttons and the attribution; pressed, it opens into "Testa vide: daļa
 vajadzību ir izdomātas demonstrācijai." Production never has one: the API
 refuses the demo tasks there.
 

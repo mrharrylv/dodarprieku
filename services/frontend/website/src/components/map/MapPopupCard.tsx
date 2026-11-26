@@ -9,23 +9,21 @@ import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { CategoryBadge } from '@/components/icons/CategoryBadge'
 import { UrgentBadge } from '@/components/charity/UrgentBadge'
-import { MapPopupDetails } from './MapPopupDetails'
+import { CardButton } from './CardHeader'
+import { ClaimLink } from './ClaimLink'
+import { ExpandedCard } from './ExpandedCard'
 
-const ROUND = cn(
-  'flex h-11 w-11 items-center justify-center rounded-full bg-(--surface-raised)/90 text-(--text-primary) shadow-(--shadow-card) backdrop-blur-sm',
-  'hover:bg-(--surface-raised) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ring-accent)',
-)
-
-/**
- * What a pin opens: the cover, name, category, city and three needs. "Skatīt
- * vajadzības" expands the same card in place (it grows upwards from the pin,
- * its height animated) into every need with its note and live pledge count,
- * "Es ziedošu", the delivery options and the contacts. On a phone the
- * expanded card is a bottom sheet (`sheet`).
- */
 /** A button of the card that should take focus once it is on screen. */
 export type CardFocus = 'collapse' | 'view'
 
+/**
+ * What a pin opens: the cover, name, category, city and three needs. "Skatīt
+ * vajadzības" expands the same card in place, wider and taller (it grows
+ * upwards from the pin), into its steps: every need with its note and live
+ * pledge count, then the pledge form, then the thank-you (`ExpandedCard`).
+ * On a phone the expanded card is a bottom sheet (`sheet`). The card itself
+ * scrolls (`data-card-scroll`), under its sticky header.
+ */
 export const MapPopupCard = ({
   charity,
   expanded,
@@ -50,8 +48,6 @@ export const MapPopupCard = ({
   const ref = useRef<HTMLElement>(null)
   const detailsId = useId()
   const { organization, category, address } = charity.profile
-  const cover = coverUrl(charity)
-  const needs = topNeeds(charity, 3)
 
   // A wheel over the card scrolls the card, not the map underneath it.
   useEffect(() => {
@@ -73,58 +69,54 @@ export const MapPopupCard = ({
     <article
       ref={ref}
       aria-label={organization.name}
+      {...(sheet ? {} : { 'data-card-scroll': '' })}
       className={cn(
         'dp-card overscroll-contain',
         sheet ? 'w-full' : 'overflow-y-auto',
-        !sheet && (expanded ? 'w-[26rem] max-w-full max-h-[calc(100dvh-10rem)]' : 'w-72'),
+        !sheet && (expanded ? 'dp-card-wide max-h-[calc(100dvh-9rem)] max-w-full' : 'w-72'),
       )}
     >
-      <div className="relative">
-        {cover !== undefined ? (
-          <img
-            src={cover}
-            alt={t('popup.photoAlt', { name: organization.name })}
-            className={cn('w-full bg-(--surface-sunken) object-cover', expanded ? (sheet ? 'h-24' : 'h-28') : 'aspect-[16/9]')}
-            referrerPolicy="no-referrer"
-            draggable={false}
-          />
-        ) : (
-          <div className={cn('flex w-full items-center justify-center bg-(--surface-sunken)', expanded ? 'h-20' : 'aspect-[16/9]')}>
-            <CategoryBadge category={category} size="lg" />
+      {expanded ? (
+        <ExpandedCard charity={charity} detailsId={detailsId} sheet={sheet} onCollapse={onCollapse} onClose={onClose} />
+      ) : (
+        <>
+          <div className="relative">
+            {coverUrl(charity) !== undefined ? (
+              <img
+                src={coverUrl(charity)}
+                alt={t('popup.photoAlt', { name: organization.name })}
+                className="aspect-[16/9] w-full bg-(--surface-sunken) object-cover"
+                referrerPolicy="no-referrer"
+                draggable={false}
+              />
+            ) : (
+              <div className="flex aspect-[16/9] w-full items-center justify-center bg-(--surface-sunken)">
+                <CategoryBadge category={category} size="lg" />
+              </div>
+            )}
+            <div className="absolute top-2 right-2">
+              <CardButton icon="close" label={t('popup.close')} onClick={onClose} />
+            </div>
           </div>
-        )}
-        <div className="absolute top-2 right-2 flex gap-2">
-          {expanded && (
-            <button type="button" data-focus="collapse" onClick={onCollapse} aria-label={t('popup.collapse')} aria-controls={detailsId} className={ROUND}>
+          <div className="space-y-3 p-4">
+            <div>
+              <h2 className="text-(length:--text-lg) leading-snug font-semibold text-(--text-primary)">{organization.name}</h2>
+              <p className="mt-1 flex items-center gap-1.5 text-(length:--text-sm) text-(--text-secondary)">
+                <CategoryBadge category={category} size="sm" className="h-5 w-5 text-(length:--text-xs)" />
+                <span>{categoryById(category).label}</span>
+                <span aria-hidden="true">·</span>
+                <span>{address.city}</span>
+              </p>
+            </div>
+            <NeedsPreview needs={topNeeds(charity, 3)} />
+            <Button size="sm" className="w-full" data-focus="view" onClick={onExpand} aria-expanded={false} aria-controls={detailsId}>
+              {t('popup.view')}
               <Icon name="chevronDown" />
-            </button>
-          )}
-          <button type="button" onClick={onClose} aria-label={t('popup.close')} className={ROUND}>
-            <Icon name="close" />
-          </button>
-        </div>
-      </div>
-      <div className="space-y-3 p-4">
-        <div>
-          <h2 className="text-(length:--text-lg) leading-snug font-semibold text-(--text-primary)">{organization.name}</h2>
-          <p className="mt-1 flex items-center gap-1.5 text-(length:--text-sm) text-(--text-secondary)">
-            <CategoryBadge category={category} size="sm" className="h-5 w-5 text-(length:--text-xs)" />
-            <span>{categoryById(category).label}</span>
-            <span aria-hidden="true">·</span>
-            <span>{address.city}</span>
-          </p>
-        </div>
-        {!expanded && <NeedsPreview needs={needs} />}
-        {!expanded && (
-          <Button size="sm" className="w-full" data-focus="view" onClick={onExpand} aria-expanded={false} aria-controls={detailsId}>
-            {t('popup.view')}
-            <Icon name="chevronDown" />
-          </Button>
-        )}
-      </div>
-      <div id={detailsId} className="dp-card-grow grid" data-open={expanded}>
-        <div className="min-h-0 overflow-hidden">{expanded && <MapPopupDetails charity={charity} />}</div>
-      </div>
+            </Button>
+            <ClaimLink charity={charity} compact />
+          </div>
+        </>
+      )}
     </article>
   )
 }

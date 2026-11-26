@@ -5,9 +5,14 @@ import { validatePledge, validateSubscribe, type FieldErrors, type Result } from
 export interface PledgeDraft {
   readonly anonymous: boolean
   readonly name: string
+  /** Shown publicly beside the name: "Vārds (Uzņēmums)". Only with a name. */
+  readonly company: string
   readonly email: string
   readonly message: string
+  /** "Vēlos saņemt jaunumus par šo iestādi". */
   readonly subscribe: boolean
+  /** "Saņemt arī vispārējos jaunumus". */
+  readonly general: boolean
   readonly consent: boolean
   /** The honeypot. A person never sees it, so it stays empty. */
   readonly website: string
@@ -16,9 +21,11 @@ export interface PledgeDraft {
 export const EMPTY_DRAFT: PledgeDraft = {
   anonymous: true,
   name: '',
+  company: '',
   email: '',
   message: '',
   subscribe: false,
+  general: false,
   consent: false,
   website: '',
 }
@@ -26,7 +33,7 @@ export const EMPTY_DRAFT: PledgeDraft = {
 /**
  * The request the API will accept, or the field errors it would answer with:
  * the same `validatePledge` the API runs, so the form never sends what will be
- * refused. An anonymous pledge drops the name it no longer needs.
+ * refused. An anonymous pledge drops the name and company it no longer needs.
  */
 export const buildPledge = (
   draft: PledgeDraft,
@@ -37,10 +44,11 @@ export const buildPledge = (
     {
       needs,
       anonymous: draft.anonymous,
-      ...(draft.anonymous ? {} : { name: draft.name }),
+      ...(draft.anonymous ? {} : { name: draft.name, company: draft.company }),
       email: draft.email,
       message: draft.message,
       subscribe: draft.subscribe,
+      general: draft.general,
       consent: draft.consent,
       website: draft.website,
     },

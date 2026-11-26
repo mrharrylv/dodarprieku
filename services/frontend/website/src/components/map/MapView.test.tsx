@@ -1,162 +1,11 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { fakeFetch, shelter, childrenHome } from '@/lib/snapshot.fixtures'
 import { renderWithProviders } from '@/test/render'
-import type { MapEngine, MaplibreModule } from './maplibre-engine'
+import { fakeLibrary } from '@/test/fake-maplibre'
 import { MapView } from './MapView'
 
-/** A stand-in for maplibre-gl, enough to drive the component: no WebGL in jsdom. */
-const fakeLibrary = () => {
-  const state = {
-    map: null as FakeMap | null,
-    features: [] as unknown[],
-    zoom: 7,
-    /** The zoom that fits the country in the container: what a resize changes. */
-    fitZoom: 7,
-    children: [] as unknown[],
-    flyTo: vi.fn(),
-    easeTo: vi.fn(),
-    setData: vi.fn(),
-    popups: [] as FakePopup[],
-    labels: null as Map<string, unknown> | null,
-    moved: [] as unknown[],
-    padding: null as unknown,
-  }
-
-  class FakeMap {
-    handlers = new Map<string, ((e?: unknown) => void)[]>()
-    container: HTMLElement
-    constructor(options: { container: HTMLElement }) {
-      this.container = options.container
-      state.map = this
-    }
-    on(event: string, cb: (e?: unknown) => void) {
-      this.handlers.set(event, [...(this.handlers.get(event) ?? []), cb])
-      return this
-    }
-    fire(event: string, e?: unknown) {
-      for (const cb of this.handlers.get(event) ?? []) cb(e)
-    }
-    sources: string[] = []
-    addControl() {}
-    addSource(id: string) {
-      this.sources.push(id)
-    }
-    addLayer() {}
-    removeLayer() {}
-    removeSource(id: string) {
-      this.sources = this.sources.filter((s) => s !== id)
-    }
-    cameraForBounds() {
-      return { zoom: state.fitZoom }
-    }
-    resize() {}
-    fitBounds() {}
-    setPadding(padding: unknown) {
-      state.padding = padding
-      return this
-    }
-    labels = new Map<string, unknown>([['place', ['get', 'name:en']]])
-    getStyle() {
-      return { layers: [{ id: 'place', type: 'symbol' }, { id: 'water', type: 'fill' }, { id: 'icons', type: 'symbol' }] }
-    }
-    getLayoutProperty(id: string) {
-      return this.labels.get(id)
-    }
-    setLayoutProperty(id: string, _name: string, value: unknown) {
-      this.labels.set(id, value)
-      state.labels = this.labels
-    }
-    isSourceLoaded() {
-      return true
-    }
-    querySourceFeatures() {
-      return state.features
-    }
-    getSource(id: string) {
-      return this.sources.includes(id) ? { setData: state.setData, getClusterExpansionZoom: () => Promise.resolve(9), getClusterChildren: () => Promise.resolve(state.children) } : undefined
-    }
-    getZoom() {
-      return state.zoom
-    }
-    getCenter() {
-      return { lng: 24.6, lat: 56.9 }
-    }
-    project([lng, lat]: [number, number]) {
-      return { x: lng * 1000, y: lat * 1000 }
-    }
-    getBounds() {
-      return { getWest: () => 20, getSouth: () => 55, getEast: () => 29, getNorth: () => 58.5 }
-    }
-    getContainer() {
-      return this.container
-    }
-    flyTo(o: unknown) {
-      state.flyTo(o)
-    }
-    easeTo(o: unknown) {
-      state.easeTo(o)
-    }
-    remove() {}
-  }
-
-  class FakeMarker {
-    element: HTMLElement
-    constructor({ element }: { element: HTMLElement }) {
-      this.element = element
-    }
-    setLngLat(at: unknown) {
-      state.moved.push(at)
-      return this
-    }
-    addTo(map: FakeMap) {
-      map.container.appendChild(this.element)
-      return this
-    }
-    getElement() {
-      return this.element
-    }
-    remove() {
-      this.element.remove()
-    }
-  }
-
-  class FakePopup {
-    node: HTMLElement | null = null
-    close: (() => void) | null = null
-    map: FakeMap | null = null
-    constructor() {
-      state.popups.push(this)
-    }
-    setLngLat() {
-      return this
-    }
-    setDOMContent(node: HTMLElement) {
-      this.node = node
-      return this
-    }
-    addTo(map: FakeMap) {
-      this.map = map
-      if (this.node) map.container.appendChild(this.node)
-      return this
-    }
-    on(_e: string, cb: () => void) {
-      this.close = cb
-      return this
-    }
-    remove() {
-      this.node?.remove()
-      this.close?.()
-    }
-  }
-
-  class FakeNav {}
-
-  const lib = { Map: FakeMap, Marker: FakeMarker, Popup: FakePopup, NavigationControl: FakeNav } as unknown as MaplibreModule
-  const engine: MapEngine = { supported: () => true, load: () => Promise.resolve(lib) }
-  return { state, engine }
-}
 
 const point = (id: string, lng: number, lat: number) => ({ geometry: { type: 'Point', coordinates: [lng, lat] }, properties: { id } })
 
@@ -468,6 +317,93 @@ describe('MapView', () => {
       expect(await screen.findByRole('button', { name: /Kopēt saiti/ })).toBeInTheDocument()
       expect(state.easeTo.mock.calls).toHaveLength(eased)
       vi.unstubAllGlobals()
+    })
+  })
+
+  describe('the card in steps', () => {
+    const STATS = { views: 1, pledges: 0, pledgesByNeed: {}, recentSupporters: [{ name: 'Jānis', company: 'SIA Koks', at: '2026-11-20' }] }
+    const open = async (charity = shelter, focus: { id: string; nonce: number; expand?: boolean } | null = null) => {
+      const { state, engine } = fakeLibrary()
+      renderWithProviders(<MapView charities={[shelter, childrenHome]} selectedId={charity.id} onSelect={vi.fn()} focus={focus} engine={engine} />)
+      await waitFor(() => expect(state.map).not.toBeNull())
+      act(() => state.map?.fire('load'))
+      return state
+    }
+
+    it('keeps a small close button in the expanded card\'s sticky header, beside collapse, and lists supporters with their company', async () => {
+      vi.stubGlobal('fetch', fakeFetch({ '/api/charities/c-ulubele/stats': { body: { ok: true, data: STATS } } }))
+      await open()
+      fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+      const header = document.querySelector<HTMLElement>('[data-card-header]')
+      expect(header).not.toBeNull()
+      expect(within(header!).getByRole('button', { name: 'Aizvērt' })).toBeInTheDocument()
+      expect(within(header!).getByRole('button', { name: 'Sakļaut' })).toBeInTheDocument()
+      expect(within(header!).getByText('Dzīvnieku patversme Ulubele')).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: 'Aizvērt' })).toHaveLength(1)
+      expect(await screen.findByText('Jānis (SIA Koks)')).toBeInTheDocument()
+    })
+
+    it('turns "Es ziedošu" into a second page of the same card, keeps the ticks on the way back, and thanks without offering the newsletter again', async () => {
+      const fetcher = fakeFetch({
+        '/api/charities/c-ulubele/stats': { body: { ok: true, data: STATS } },
+        '/api/charities/c-ulubele/pledges': { body: { ok: true, data: { id: 'p1' } } },
+      })
+      vi.stubGlobal('fetch', fetcher)
+      await open()
+      fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+      fireEvent.click(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ }))
+      fireEvent.click(screen.getByRole('button', { name: /Es ziedošu/ }))
+
+      // Step 2: no dialog, the same card, its own heading, the message first.
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(await screen.findByRole('heading', { name: 'Es ziedošu' })).toHaveFocus()
+      expect(screen.getByLabelText(/Ziņojums/)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Kopēt saiti/ })).toBeNull()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Atpakaļ uz vajadzībām' }))
+      expect(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ })).toBeChecked()
+      fireEvent.click(screen.getByRole('button', { name: /Es ziedošu/ }))
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Apstiprināt' }))
+      expect(await screen.findByText('Paldies!')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Pierakstīties' })).toBeNull()
+      expect(screen.queryByRole('checkbox', { name: /jaunumus/ })).toBeNull()
+      const sent = fetcher.mock.calls.find(([url]) => String(url).endsWith('/pledges'))
+      expect(JSON.parse(String(sent?.[1]?.body))).toMatchObject({ needs: ['smiltis'], anonymous: true })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Atpakaļ uz organizāciju' }))
+      expect(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ })).not.toBeChecked()
+    })
+
+    it('opens a shared link expanded even when the charity was chosen before the map had loaded', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      await open(shelter, { id: shelter.id, nonce: 1, expand: true })
+      expect(await screen.findByRole('button', { name: /Kopēt saiti/ })).toBeInTheDocument()
+    })
+
+    it('opens a shared link small without ?vajadzibas=1', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      const state = await open(shelter, { id: shelter.id, nonce: 1 })
+      expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toBeInTheDocument()
+      expect(state.flyTo).toHaveBeenCalledTimes(1)
+    })
+
+    it('offers "Pieprasīt profilu" on an unclaimed imported charity only, in the small card and the expanded footer', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      const imported = { ...childrenHome, claimable: true }
+      const { state, engine } = fakeLibrary()
+      const view = (id: string) => <MapView charities={[shelter, imported]} selectedId={id} onSelect={vi.fn()} focus={null} engine={engine} />
+      const { rerender } = renderWithProviders(view(imported.id))
+      await waitFor(() => expect(state.map).not.toBeNull())
+      act(() => state.map?.fire('load'))
+      const link = await screen.findByRole('link', { name: 'Pieprasīt profilu' })
+      expect(link).toHaveAttribute('href', '/registreties?pieprasit=cesu-bernu-nams')
+      expect(screen.getByText('Vai šī ir jūsu iestāde?')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /Skatīt vajadzības/ }))
+      expect(await screen.findByRole('link', { name: 'Pieprasīt profilu' })).toBeInTheDocument()
+      rerender(view(shelter.id))
+      await screen.findByRole('button', { name: /Skatīt vajadzības/ })
+      expect(screen.queryByRole('link', { name: 'Pieprasīt profilu' })).toBeNull()
     })
   })
 })

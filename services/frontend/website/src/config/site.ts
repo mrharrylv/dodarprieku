@@ -241,6 +241,8 @@ export const STORAGE_KEYS = {
   viewedCharities: 'dodarprieku.viewed',
   /** Session storage: the unfinished registration form, so a reload does not lose it. */
   registerDraft: 'dodarprieku.register-draft',
+  /** Local storage: this browser has seen an account session, so the map hides "Kļūt par saņēmēju". */
+  signedIn: 'dodarprieku.signed-in',
 } as const
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]

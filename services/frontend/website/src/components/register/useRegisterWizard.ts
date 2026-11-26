@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import type { PublicCharity } from '@shared/contracts'
 import type { FieldErrors } from '@shared/validate'
 
 import { EMPTY_FORM, type ProfileForm } from '@/components/profile-editor/form-model'
 import { validateSections, validateWholeForm } from '@/components/profile-editor/sections'
 import { submitApplication, type ApiFailureKind } from '@/lib/account-api'
+import { claimForm } from './claim-form'
 import { clearDraft, readDraft, writeDraft } from './draft-storage'
 import { REVIEW_STEP, clampStep, mapSubmitErrors, sectionsOfStep, validateReview } from './wizard-steps'
 
@@ -19,12 +21,17 @@ export type SubmitState =
  * errors shown, the submission. `restore` reads the session draft; it is only
  * true once the page has hydrated, because the prerendered page knows nothing
  * of this visitor's storage.
+ *
+ * `claim`: an imported charity this application asks to take over. Its public
+ * profile fills the form in, the request carries its id, and the session
+ * draft (another institution's, perhaps) is neither read nor overwritten.
  */
-export const useRegisterWizard = (restore: boolean) => {
-  const [initial] = useState(() => (restore ? readDraft() : null))
+export const useRegisterWizard = (restore: boolean, claim?: PublicCharity) => {
+  const keepDraft = restore && claim === undefined
+  const [initial] = useState(() => (keepDraft ? readDraft() : null))
   const [step, setStep] = useState(() => clampStep(initial?.step ?? 0))
   const [furthest, setFurthest] = useState(() => clampStep(initial?.step ?? 0))
-  const [form, setForm] = useState<ProfileForm>(initial?.form ?? EMPTY_FORM)
+  const [form, setForm] = useState<ProfileForm>(() => initial?.form ?? (claim === undefined ? EMPTY_FORM : claimForm(claim)))
   const [accountEmail, setAccountEmail] = useState(initial?.accountEmail ?? '')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [honeypot, setHoneypot] = useState('')
@@ -36,8 +43,8 @@ export const useRegisterWizard = (restore: boolean) => {
   // The prerendered pass (restore false) never writes: it would overwrite the
   // visitor's draft with an empty one just before the hydrated wizard reads it.
   useEffect(() => {
-    if (restore && submit.kind !== 'done') writeDraft({ version: 1, step, form, accountEmail })
-  }, [restore, step, form, accountEmail, submit.kind])
+    if (keepDraft && submit.kind !== 'done') writeDraft({ version: 1, step, form, accountEmail })
+  }, [keepDraft, step, form, accountEmail, submit.kind])
 
   const update = useCallback((fn: (f: ProfileForm) => ProfileForm) => setForm((f) => fn(f)), [])
 
@@ -79,10 +86,11 @@ export const useRegisterWizard = (restore: boolean) => {
       profile: whole.profile,
       accountEmail: accountEmail.trim(),
       acceptTerms: true,
+      ...(claim === undefined ? {} : { claimCharityId: claim.id }),
       ...(honeypot === '' ? {} : { website: honeypot }),
     })
     if (result.ok) {
-      clearDraft()
+      if (keepDraft) clearDraft()
       setSubmit({ kind: 'done', email: accountEmail.trim() })
       return
     }
@@ -95,8 +103,8 @@ export const useRegisterWizard = (restore: boolean) => {
   }
 
   const startOver = () => {
-    clearDraft()
-    setForm(EMPTY_FORM)
+    if (keepDraft) clearDraft()
+    setForm(claim === undefined ? EMPTY_FORM : claimForm(claim))
     setAccountEmail('')
     setAcceptTerms(false)
     setErrors({})

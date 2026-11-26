@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { COMPANY, CONTACT, HA_GROUP_PROJECTS, REGISTER_CTA, ROUTES } from '@/config/site'
+import { useHydrated } from '@/hooks/useHydrated'
 import { useLocale } from '@/hooks/useLocale'
+import { useSignedIn } from '@/hooks/useSignedIn'
 import { localePath } from '@/lib/locale-path'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { BrandMark } from '@/components/layout/BrandMark'
@@ -66,6 +68,8 @@ export const HelpTab = () => {
   const { t: ta } = useTranslation('about')
   const { t: tc } = useTranslation('common')
   const { locale } = useLocale()
+  // Someone logged in already has an organisation: no "Kļūt par saņēmēju" for them.
+  const signedIn = useSignedIn(useHydrated()) === true
   return (
     <div className="space-y-6">
       <section className="space-y-3">
@@ -102,10 +106,12 @@ export const HelpTab = () => {
           ))}
         </ol>
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link to={localePath(REGISTER_CTA.to, locale)} className={buttonClasses('primary', 'sm', 'rounded-full')}>
-            <Icon name="plus" />
-            {tc(REGISTER_CTA.labelKey)}
-          </Link>
+          {!signedIn && (
+            <Link to={localePath(REGISTER_CTA.to, locale)} className={buttonClasses('primary', 'sm', 'rounded-full')}>
+              <Icon name="plus" />
+              {tc(REGISTER_CTA.labelKey)}
+            </Link>
+          )}
           <Link to={localePath(ROUTES.account, locale)} className="inline-flex min-h-11 items-center text-(length:--text-sm) font-medium text-(--text-accent) underline underline-offset-2">
             {ta('institutions.account')}
           </Link>

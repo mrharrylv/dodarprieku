@@ -7,28 +7,32 @@ import { groupNeeds, type NeedView } from '@/lib/snapshot'
 import type { StatsState } from '@/hooks/useCharityStats'
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
-import { PledgeDialog } from '@/components/pledge/PledgeDialog'
 import { SectionCard } from './SectionCard'
 import { UrgentBadge } from './UrgentBadge'
 
 /**
- * The needs as the catalog groups them, each a tick box, then "Es ziedošu".
- * `compact`: one column and no sticky bar, inside the map's expanded popup.
+ * The needs as the catalog groups them, each a tick box, then "Es ziedošu",
+ * which hands the ticked needs to `onPledge`: the card turns to its pledge
+ * step. The ticks are the card's (`picked`), so they are still there when the
+ * visitor comes back from that step. `compact`: one column and no sticky bar,
+ * inside the map's expanded card.
  */
 export const NeedsSection = ({
   charity,
   stats,
-  onPledged,
+  picked,
+  onPick,
+  onPledge,
   compact = false,
 }: {
   charity: PublicCharity
   stats: StatsState & { reload: () => void }
-  onPledged: () => void
+  picked: readonly string[]
+  onPick: (next: readonly string[]) => void
+  onPledge: () => void
   compact?: boolean
 }) => {
   const { t } = useTranslation('charity')
-  const [picked, setPicked] = useState<readonly string[]>([])
-  const [open, setOpen] = useState(false)
   const [nudge, setNudge] = useState(false)
   const groups = groupNeeds(charity, t('needs.other'))
   const all = groups.flatMap((g) => g.needs)
@@ -36,10 +40,10 @@ export const NeedsSection = ({
 
   const toggle = (key: string) => {
     setNudge(false)
-    setPicked((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
+    onPick(picked.includes(key) ? picked.filter((k) => k !== key) : [...picked, key])
   }
 
-  const start = () => (picked.length === 0 ? setNudge(true) : setOpen(true))
+  const start = () => (picked.length === 0 ? setNudge(true) : onPledge())
 
   return (
     <SectionCard title={t('needs.title')} compact={compact}>
@@ -78,18 +82,6 @@ export const NeedsSection = ({
             </Button>
           </div>
         </>
-      )}
-      {open && (
-        <PledgeDialog
-          charity={charity}
-          needs={all.filter((n) => picked.includes(n.key))}
-          allowedKeys={all.map((n) => n.key)}
-          onClose={() => setOpen(false)}
-          onPledged={() => {
-            setPicked([])
-            onPledged()
-          }}
-        />
       )}
     </SectionCard>
   )

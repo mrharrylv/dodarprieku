@@ -35,6 +35,8 @@ export const LIMITS = {
   maxParcelLockers: 6,
   pledgeMessage: 500,
   personName: 80,
+  /** A pledger's optional company, shown publicly beside the name. */
+  companyName: 120,
   rejectReason: 500,
   passwordMin: 10,
   passwordMax: 200,
@@ -169,6 +171,11 @@ export interface PublicCharity {
    * says so. Never set on production.
    */
   readonly demoNeeds?: boolean
+  /**
+   * True only for a charity imported from a public register that nobody has
+   * claimed yet (no account): the site offers "Pieprasīt profilu" for it.
+   */
+  readonly claimable?: boolean
 }
 
 export interface SponsorLeaderboardEntry {
@@ -196,7 +203,7 @@ export interface CharityStats {
   /** Pledges per need itemId (custom needs keyed "custom:<index>"). */
   readonly pledgesByNeed: Readonly<Record<string, number>>
   /** Public names of people who pledged and chose not to stay anonymous, newest first, max 20. */
-  readonly recentSupporters: readonly { readonly name: string; readonly at: string }[]
+  readonly recentSupporters: readonly { readonly name: string; readonly company?: string; readonly at: string }[]
 }
 
 export interface PledgeRequest {
@@ -204,10 +211,14 @@ export interface PledgeRequest {
   readonly needs: readonly string[]
   readonly anonymous: boolean
   readonly name?: string
+  /** Only with a name (not anonymous): shown publicly as "Vārds (Uzņēmums)". */
+  readonly company?: string
   readonly email?: string
   readonly message?: string
-  /** Subscribe to the newsletter / urgent-need appeals. Needs email + consent. */
+  /** Subscribe to this organisation's news / urgent-need appeals. Needs email + consent. */
   readonly subscribe: boolean
+  /** Also the general newsletter ("Saņemt arī vispārējos jaunumus"). Needs email + consent. */
+  readonly general?: boolean
   readonly consent: boolean
   /** Honeypot. Must be empty. */
   readonly website?: string
@@ -235,6 +246,11 @@ export interface ApplicationRequest {
   /** The login email; approval mail goes here. Usually contactPerson.email. */
   readonly accountEmail: string
   readonly acceptTerms: true
+  /**
+   * A claim: the id of an imported, unclaimed charity this application asks to
+   * take over. Approving it merges the submitted profile into that charity.
+   */
+  readonly claimCharityId?: string
   readonly website?: string
 }
 
@@ -299,6 +315,7 @@ export interface PledgeRecord {
   readonly needs: readonly string[]
   readonly anonymous: boolean
   readonly name?: string
+  readonly company?: string
   /** Only the admin sees emails. Absent in the charity's view. */
   readonly email?: string
   readonly message?: string
@@ -343,10 +360,14 @@ export interface AdminCharitySummary {
   readonly updatedAt: string
   readonly views: number
   readonly pledges: number
+  /** A claim application: the imported charity it asks to take over. */
+  readonly claim?: { readonly charityId: string; readonly name: string; readonly slug: string }
 }
 
 export interface AdminCharityDetail extends AdminCharitySummary {
   readonly profile: CharityProfile
+  /** A claim application: the imported profile it would replace, for the diff. */
+  readonly claimProfile?: CharityProfile
   readonly pendingUpdate?: PendingUpdate
   readonly rejectReason?: string
   readonly suspendReason?: string

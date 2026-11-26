@@ -58,7 +58,7 @@ export const CharitySheet = ({ title, onDismiss, children }: { title: string; on
       className="dp-panel dp-sheet fixed inset-x-0 top-auto bottom-0 z-50 m-0 flex max-h-[88dvh] w-full max-w-none flex-col overflow-hidden rounded-t-(--radius-2xl) border border-(--border-subtle) bg-(--surface-raised) p-0 text-(--text-primary) shadow-(--shadow-lifted) backdrop:bg-(--color-ink-950)/30 focus:outline-none"
     >
       <div aria-hidden="true" className="mx-auto mt-2 mb-1 h-1.5 w-10 shrink-0 rounded-full bg-(--border-strong)" />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      <div data-card-scroll="" className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
     </dialog>
   )
 }

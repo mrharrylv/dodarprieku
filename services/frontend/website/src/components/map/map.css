@@ -87,21 +87,27 @@
   }
 }
 
-/* The popup card grows into its expanded form in place: its width eases, and
-   the details below the header open from no height to their own (a grid row
-   going from 0fr to 1fr, which a browser animates without measuring). The
-   base layer's reduced-motion rule zeroes both durations. */
+/* The popup card grows into its expanded form in place: wider and taller,
+   its width easing and its content rising in. Never wider than the map's
+   visible part left of a docked panel. The base layer's reduced-motion rule
+   zeroes both durations. */
 .dp-card {
   transition: width 260ms var(--ease-out-soft);
 }
 
-.dp-card-grow {
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 320ms var(--ease-out-soft);
+.dp-card-wide {
+  width: min(30rem, calc(100vw - var(--dock-inset, 0px) - 2rem));
 }
 
-.dp-card-grow[data-open='true'] {
-  grid-template-rows: 1fr;
+@keyframes dp-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.dp-card-in {
+  animation: dp-card-in 240ms var(--ease-out-soft) both;
 }
 
 /* The zoom buttons and the attribution move left of a docked panel, with it. */

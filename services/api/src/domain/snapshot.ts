@@ -11,6 +11,10 @@ import type {
 } from '../../../shared/src/contracts'
 import type { CharityRecord } from '../repo/types'
 
+/** Imported from a register and nobody has an account for it yet. */
+export const isClaimable = (c: CharityRecord): boolean =>
+  c.source !== undefined && c.source.startsWith('import:') && c.accountEmail === ''
+
 export const toPublicProfile = (profile: CharityProfile): PublicProfile => {
   const { contactPerson: _private, ...rest } = profile
   return rest
@@ -69,6 +73,7 @@ export const buildSnapshot = (charities: readonly CharityRecord[], now: Date): P
       profile: toPublicProfile(c.profile),
       publishedAt: c.publishedAt ?? c.updatedAt,
       ...(c.demoNeeds === true ? { demoNeeds: true } : {}),
+      ...(isClaimable(c) ? { claimable: true } : {}),
     }))
     .sort((a, b) => a.profile.organization.name.localeCompare(b.profile.organization.name, 'lv'))
   return { generatedAt: now.toISOString(), charities: published, sponsorLeaderboard: buildLeaderboard(published) }

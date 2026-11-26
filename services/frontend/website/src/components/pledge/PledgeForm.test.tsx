@@ -30,11 +30,38 @@ describe('PledgeForm', () => {
   it('asks for consent only once an email or the newsletter is involved', () => {
     setup()
     expect(screen.queryByRole('checkbox', { name: /Piekrītu/ })).toBeNull()
-    fireEvent.click(screen.getByRole('checkbox', { name: /Pierakstīties jaunumiem/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Vēlos saņemt jaunumus par šo iestādi/ }))
     expect(screen.getByRole('checkbox', { name: /Piekrītu/ })).toBeInTheDocument()
     submit()
-    expect(screen.getByText('Lai pierakstītos jaunumiem, ierakstiet e-pasta adresi.')).toBeInTheDocument()
+    expect(screen.getByText('Lai saņemtu jaunumus, ierakstiet e-pasta adresi.')).toBeInTheDocument()
     expect(screen.getByText('Lai mēs varētu jums rakstīt, apstipriniet piekrišanu.')).toBeInTheDocument()
+  })
+
+  it('asks the message first, then who, and by name the name and an optional company', async () => {
+    respond(200, { ok: true, data: { id: 'p1' } })
+    const onDone = setup()
+    const labels = screen.getAllByRole('textbox').map((el) => el.getAttribute('id'))
+    expect(labels[0]).toBe(screen.getByLabelText(/Ziņojums/).getAttribute('id'))
+    expect(screen.queryByLabelText(/Uzņēmums/)).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: 'Ar vārdu' }))
+    fireEvent.change(screen.getByLabelText(/^Vārds/), { target: { value: 'Jānis' } })
+    fireEvent.change(screen.getByLabelText(/Uzņēmums/), { target: { value: 'SIA Koks' } })
+    submit()
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalledWith({ email: '', subscribed: false }))
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as Record<string, unknown>
+    expect(body).toMatchObject({ anonymous: false, name: 'Jānis', company: 'SIA Koks' })
+  })
+
+  it('offers both newsletters with the email in either mode, and sends the general one', async () => {
+    respond(200, { ok: true, data: { id: 'p1' } })
+    const onDone = setup()
+    fireEvent.change(screen.getByLabelText(/E-pasts/), { target: { value: 'a@b.lv' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /Saņemt arī vispārējos jaunumus/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /Piekrītu/ }))
+    submit()
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalledWith({ email: 'a@b.lv', subscribed: true }))
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body)) as Record<string, unknown>
+    expect(body).toMatchObject({ anonymous: true, general: true, subscribe: false, consent: true, email: 'a@b.lv' })
   })
 
   it.each([

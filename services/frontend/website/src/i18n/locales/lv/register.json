@@ -74,6 +74,10 @@
     "generic": {
       "title": "Pieteikumu neizdevās iesniegt",
       "body": "Lūdzu, mēģiniet vēlreiz. Ja kļūda atkārtojas, rakstiet mums uz {{email}}."
+    },
+    "claim": {
+      "title": "Šo profilu vairs nevar pieprasīt",
+      "body": "Iespējams, kāda cita persona to jau ir pieprasījusi, un administrators pieprasījumu apstiprināja. Ja tā ir jūsu iestāde, rakstiet mums: {{email}}"
     }
   },
   "success": {
@@ -430,5 +434,14 @@
         "required": "Lai iesniegtu pieteikumu, jāpiekrīt lietošanas noteikumiem."
       }
     }
+  },
+  "claim": {
+    "banner": "Jūs pieprasāt esošu profilu: {{name}}",
+    "body": "Šī iestāde jau ir kartē no publiskā reģistra. Mēs aizpildījām to, kas par to zināms: pārbaudiet, papildiniet un iesniedziet. Kad administrators pieprasījumu apstiprinās, profils būs jūsu pārziņā, un iestāde paliks savā vietā kartē.",
+    "cancel": "Reģistrēt citu iestādi",
+    "loading": "Ielādē iestādes datus…",
+    "missingTitle": "Šo profilu nevar pieprasīt",
+    "missingBody": "Iestāde nav atrasta, vai tās profilu jau pārvalda cits konts. Varat reģistrēt iestādi no jauna.",
+    "successBody": "Kad administrators pieprasījumu apstiprinās, profils būs jūsu pārziņā, un saņemsiet e-pastu ar saiti paroles izveidei."
   }
 }

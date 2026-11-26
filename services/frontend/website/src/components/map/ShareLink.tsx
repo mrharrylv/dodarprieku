@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { charityPath } from '@/config/site'
-import { originUrl } from '@/config/env'
 import { useLocale } from '@/hooks/useLocale'
-import { localePath } from '@/lib/locale-path'
+import { shareUrl } from '@/lib/charity-links'
 import { buttonClasses } from '@/components/ui/button-styles'
 import { Icon } from '@/components/ui/Icon'
 import { COPIED_MS } from '@/components/charity/CopyButton'
@@ -12,8 +10,9 @@ import { COPIED_MS } from '@/components/charity/CopyButton'
 type State = 'idle' | 'copied' | 'failed'
 
 /**
- * "Kopēt saiti": a charity's shareable address, `/organizacija/<slug>`, which
- * opens the map flown to it with this card expanded. Says when it worked, and
+ * "Kopēt saiti": a charity's shareable address, absolute,
+ * `https://<site>/organizacija/<slug>?vajadzibas=1`, which opens the map flown
+ * to it with this card expanded. Says when it worked, and
  * what to do when the browser would not copy.
  */
 export const ShareLink = ({ slug }: { slug: string }) => {
@@ -30,7 +29,7 @@ export const ShareLink = ({ slug }: { slug: string }) => {
   const copy = async () => {
     try {
       if (typeof navigator === 'undefined' || navigator.clipboard === undefined) throw new Error('no clipboard')
-      await navigator.clipboard.writeText(`${originUrl()}${localePath(charityPath(slug), locale)}`)
+      await navigator.clipboard.writeText(shareUrl(slug, locale))
       setState('copied')
     } catch (error) {
       console.warn('[map] the link could not be copied', error)

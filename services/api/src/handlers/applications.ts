@@ -3,6 +3,7 @@ import { LIMITS, MEDIA_PREFIX } from '../../../shared/src/contracts'
 import { validateApplication } from '../../../shared/src/validate'
 import { enforceRateLimit, notifyAdmin } from '../domain/effects'
 import { claimUniqueSlug } from '../domain/slug'
+import { isClaimable } from '../domain/snapshot'
 import { decodeUpload, isUploadContentType, uploadKey } from '../domain/upload'
 import { linksOf } from '../deps'
 import { objectBody, ok, type Handler } from '../http/context'
@@ -23,29 +24,38 @@ export const postApplication: Handler = async (ctx) => {
   }
   const result = validateApplication(body)
   if (!result.ok) throw validationError(result.fields)
-  const { profile, accountEmail } = result.value
+  const { profile, accountEmail, claimCharityId } = result.value
   const { repo } = ctx.deps
   if (await repo.getAccount(accountEmail)) throw conflict()
+  const target = claimCharityId === undefined ? undefined : await repo.getCharity(claimCharityId)
+  if (claimCharityId !== undefined) {
+    // Several claims may wait for one charity; once one is approved it is no longer claimable.
+    if (!target || target.status !== 'approved' || !isClaimable(target)) throw validationError({ claimCharityId: 'invalid' })
+  }
 
   const id = ctx.deps.uuid()
   const now = ctx.deps.now().toISOString()
-  const slug = await claimUniqueSlug(repo, profile.organization.name, id, () => id.slice(0, 8))
+  // A claim carries its target's slug and reserves none: the merge keeps the target's.
+  const slug = target ? target.slug : await claimUniqueSlug(repo, profile.organization.name, id, () => id.slice(0, 8))
   await repo.createCharity({
     id,
     status: 'pending',
     slug,
     profile,
     accountEmail,
+    ...(claimCharityId === undefined ? {} : { claimCharityId }),
     views: 0,
     pledges: 0,
     createdAt: now,
     updatedAt: now,
   })
-  ctx.log.info('application received', { charityId: id, accountEmail: maskEmail(accountEmail) })
+  ctx.log.info('application received', { charityId: id, accountEmail: maskEmail(accountEmail), claim: claimCharityId ?? null })
   await notifyAdmin(
     ctx.deps,
     ctx.log,
-    adminNewApplicationEmail(linksOf(ctx.deps.config), id, profile.organization.name, profile.address.city),
+    adminNewApplicationEmail(
+      linksOf(ctx.deps.config), id, profile.organization.name, profile.address.city, target?.profile.organization.name,
+    ),
   )
   return ok({ id })
 }

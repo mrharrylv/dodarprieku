@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { NEED_KINDS, type NeedKindId } from '@shared/catalog'
@@ -7,6 +7,7 @@ import { toggleKind } from '@/lib/need-kinds'
 import type { NeedKindCount } from '@/lib/snapshot'
 import { Icon } from '@/components/ui/Icon'
 import { GLASS, PILL } from './chrome/pill'
+import { useDismiss } from './chrome/useDismiss'
 
 const ORDER: readonly NeedKindId[] = NEED_KINDS.map((k) => k.id)
 const OFF = cn(GLASS, 'border-(--border-subtle) text-(--text-primary) hover:border-(--border-strong) hover:bg-(--surface-raised)/90')
@@ -34,23 +35,8 @@ export const NeedKindFilter = ({
   const button = useRef<HTMLButtonElement>(null)
   const panelId = useId()
 
-  useEffect(() => {
-    if (!open) return undefined
-    const onPointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && root.current?.contains(event.target) !== true) setOpen(false)
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      button.current?.focus()
-    }
-    document.addEventListener('pointerdown', onPointer)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onPointer)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, root, button, close)
 
   const countOf = (id: NeedKindId) => counts.find((c) => c.id === id)?.count ?? 0
   const chosen = value.length

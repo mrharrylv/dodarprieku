@@ -7,11 +7,13 @@ import { conflict, validationError } from '../http/errors'
 import { applicationRejectedEmail, updateApprovedEmail, updateRejectedEmail } from '../mail/templates'
 import type { AccountRecord, CharityRecord } from '../repo/types'
 import { withSavedProfile } from '../domain/demo-needs'
+import { approveClaim } from './admin-claims'
 import { accountOf, adminCharity, readReason, sendCharityInvite, withoutReasons } from './admin-common'
 
 export const approveCharity: Handler = async (ctx) => {
   const c = await adminCharity(ctx)
   if (c.status !== 'pending' && c.status !== 'rejected') throw conflict()
+  if (c.claimCharityId !== undefined) return approveClaim(ctx, c, c.claimCharityId)
   const { repo } = ctx.deps
   const now = ctx.deps.now().toISOString()
   const existing = await accountOf(ctx.deps, c)

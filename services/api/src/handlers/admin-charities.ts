@@ -2,7 +2,7 @@
 import type { CharityStatus } from '../../../shared/src/contracts'
 import { validateProfile } from '../../../shared/src/validate'
 import { publishSnapshot, removeMedia } from '../domain/effects'
-import { loadDetail, toSummary } from '../domain/views'
+import { claimTargetOf, loadDetail, toSummary } from '../domain/views'
 import { requireSession } from '../http/auth'
 import { ok, type Handler } from '../http/context'
 import { validationError } from '../http/errors'
@@ -20,8 +20,11 @@ export const listAdminCharities: Handler = async (ctx) => {
   const { repo } = ctx.deps
   const [charities, updateIds] = await Promise.all([repo.listCharities(status), repo.listUpdateIds()])
   const withUpdate = new Set(updateIds)
-  const accounts = await Promise.all(charities.map((c) => accountOf(ctx.deps, c)))
-  return ok(charities.map((c, i) => toSummary(c, accounts[i], withUpdate.has(c.id))))
+  const [accounts, targets] = await Promise.all([
+    Promise.all(charities.map((c) => accountOf(ctx.deps, c))),
+    Promise.all(charities.map((c) => claimTargetOf(repo, c))),
+  ])
+  return ok(charities.map((c, i) => toSummary(c, accounts[i], withUpdate.has(c.id), targets[i])))
 }
 
 export const getAdminCharity: Handler = async (ctx) => {
@@ -54,7 +57,8 @@ export const deleteAdminCharity: Handler = async (ctx) => {
   const { repo } = ctx.deps
   const pending = await repo.getUpdate(c.id)
   await repo.deleteCharity(c.id)
-  await repo.releaseSlug(c.slug)
+  // A claim application carries its target's slug, which is not its to release.
+  if (c.claimCharityId === undefined) await repo.releaseSlug(c.slug)
   const account = await accountOf(ctx.deps, c)
   if (account && account.role === 'charity' && account.charityId === c.id) await repo.deleteAccount(account.email)
   ctx.log.info('charity deleted', { charityId: c.id })

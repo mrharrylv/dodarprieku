@@ -39,3 +39,16 @@
 .dp-fade-x {
   mask-image: linear-gradient(to right, black calc(100% - 4.5rem), transparent);
 }
+
+/* The top bar's parts that swap when a dock opens or closes (the search and
+   its magnifier, the chips and their dropdown) rise in rather than cut. */
+@keyframes dp-chrome-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+
+.dp-chrome-in {
+  animation: dp-chrome-in 220ms var(--ease-out-soft) both;
+}

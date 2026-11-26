@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn'
  * brand glyph and is filled rather than stroked.
  */
 export type IconName =
+  | 'arrowLeft'
   | 'arrowRight'
   | 'arrowUp'
   | 'building'
@@ -33,6 +34,7 @@ export type IconName =
   | 'phone'
   | 'pin'
   | 'plus'
+  | 'search'
   | 'sparkle'
   | 'sun'
   | 'ticket'
@@ -41,6 +43,7 @@ export type IconName =
   | 'whatsapp'
 
 const STROKES: Record<Exclude<IconName, 'whatsapp'>, string> = {
+  arrowLeft: 'M19 12H6M12 6l-6 6 6 6',
   arrowRight: 'M5 12h13M12 6l6 6-6 6',
   arrowUp: 'M12 19V5M6 11l6-6 6 6',
   building: 'M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 10h3a1 1 0 0 1 1 1v10M3 21h18M9 8h2M9 12h2M9 16h2',
@@ -58,6 +61,7 @@ const STROKES: Record<Exclude<IconName, 'whatsapp'>, string> = {
     'M5 4h3l2 5-2.5 1.5a11 11 0 0 0 5 5L14 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z',
   pin: 'M12 21s6-5.5 6-11a6 6 0 1 0-12 0c0 5.5 6 11 6 11Zm0-9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
   plus: 'M12 5v14M5 12h14',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4',
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z',
   ticket: 'M4 7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3a2 2 0 0 0 0 4v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a2 2 0 0 0 0-4V7Zm10-1v12',
   trophy: 'M8 4h8v5a4 4 0 0 1-8 0V4Zm0 2H5a3 3 0 0 0 3 4m8-4h3a3 3 0 0 1-3 4m-4 3v4m-4 3h8m-6 0 .5-3h3l.5 3',

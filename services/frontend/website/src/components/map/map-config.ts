@@ -106,6 +106,8 @@ export const FLY_DURATION_MS = 1600
 export const POPUP_OFFSET = 26
 /** How far below the map's centre a selected pin settles, in pixels: the small card opens above it. */
 export const POPUP_PAN_OFFSET_PX = 170
+/** How far above the map's bottom edge the pin of a small card settles, when the map is tall enough. */
+export const SMALL_PIN_FROM_BOTTOM_PX = 150
 /** On a phone the small card settles this far right of centre, clear of the rail. */
 export const POPUP_PHONE_SHIFT_PX = 16
 /** How far above the map's bottom edge the pin of an expanded card settles, in pixels. */
@@ -118,7 +120,15 @@ export const EXPANDED_PIN_FROM_BOTTOM_PX = 36
 export const PANEL_SHEET_QUERY = '(max-width: 47.99rem)'
 
 /** Where a selected pin settles from the map's centre, in pixels: below it, and right of it on a phone. */
-export const popupPanOffset = (): [number, number] => {
+export const popupPanOffset = (height: number = typeof window === 'undefined' ? 0 : window.innerHeight): [number, number] => {
   const phone = typeof window.matchMedia === 'function' && window.matchMedia(PANEL_SHEET_QUERY).matches
-  return [phone ? POPUP_PHONE_SHIFT_PX : 0, POPUP_PAN_OFFSET_PX]
+  return [phone ? POPUP_PHONE_SHIFT_PX : 0, smallPinBelowCentre(height)]
 }
+
+/**
+ * How far below the centre the pin of a small card settles on a map `height`
+ * pixels tall: low enough that a tall card (a long name, "Pieprasīt profilu")
+ * clears the top bar, never closer to the centre than POPUP_PAN_OFFSET_PX.
+ */
+export const smallPinBelowCentre = (height: number): number =>
+  Math.max(POPUP_PAN_OFFSET_PX, Math.round(height / 2 - SMALL_PIN_FROM_BOTTOM_PX))

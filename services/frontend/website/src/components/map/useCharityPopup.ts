@@ -3,7 +3,7 @@ import type { Map as MlMap, Popup } from 'maplibre-gl'
 
 import type { PublicCharity } from '@shared/contracts'
 import { drawnAt, type DrawnAt } from '@/lib/snapshot'
-import { EXPANDED_PIN_FROM_BOTTOM_PX, FLY_DURATION_MS, POPUP_OFFSET, POPUP_PAN_OFFSET_PX, popupPanOffset } from './map-config'
+import { EXPANDED_PIN_FROM_BOTTOM_PX, FLY_DURATION_MS, POPUP_OFFSET, POPUP_PAN_OFFSET_PX, popupPanOffset, smallPinBelowCentre } from './map-config'
 import { prefersReducedMotion, type MaplibreModule } from './maplibre-engine'
 
 interface Options {
@@ -28,8 +28,9 @@ export const mapPadding = (inset: number) => ({ top: 0, bottom: 0, left: 0, righ
 
 /** Where a selected pin settles from the (padded) centre: lower middle for the small card, near the bottom for the expanded one. */
 export const pinOffset = (map: MlMap, expanded: boolean): [number, number] => {
-  const below = expanded ? map.getContainer().clientHeight / 2 - EXPANDED_PIN_FROM_BOTTOM_PX : POPUP_PAN_OFFSET_PX
-  return [popupPanOffset()[0], Math.max(POPUP_PAN_OFFSET_PX, below)]
+  const height = map.getContainer().clientHeight
+  const below = expanded ? height / 2 - EXPANDED_PIN_FROM_BOTTOM_PX : smallPinBelowCentre(height)
+  return [popupPanOffset(height)[0], Math.max(POPUP_PAN_OFFSET_PX, below)]
 }
 
 /**

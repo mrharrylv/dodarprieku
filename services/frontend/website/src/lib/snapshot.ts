@@ -67,6 +67,7 @@ export const isPublicCharity = (v: unknown): v is PublicCharity =>
   v.slug !== '' &&
   isStr(v.publishedAt) &&
   (v.demoNeeds === undefined || typeof v.demoNeeds === 'boolean') &&
+  (v.claimable === undefined || typeof v.claimable === 'boolean') &&
   isProfile(v.profile)
 
 const isLeaderboardEntry = (v: unknown): v is SponsorLeaderboardEntry =>

@@ -37,6 +37,8 @@ const MEDIA_KEY_RE = /^uploads\/[0-9]{4}\/[0-9]{2}\/[a-z0-9-]{8,64}\.(jpg|png|we
 const LEGAL_FORMS: readonly LegalForm[] = [
   'biedriba', 'nodibinajums', 'pasvaldibas-iestade', 'valsts-iestade', 'religiska-organizacija', 'komersants', 'cits',
 ]
+/** Charity ids are uuids or 'imp-' + a register id; nothing longer is ever one. */
+const CHARITY_ID_MAX = 60
 const PROVIDERS = PARCEL_PROVIDERS.map((p) => p.id) as readonly ParcelProvider[]
 
 export const isEmail = (v: string): boolean => v.length <= LIMITS.email && EMAIL_RE.test(v)
@@ -243,6 +245,7 @@ export const validateApplication = (input: unknown): Result<ApplicationRequest> 
   if (typeof r.website === 'string' && r.website !== '') c.fail('website', 'invalid')
   const accountEmail = c.test('accountEmail', c.text('accountEmail', r.accountEmail, LIMITS.email), isEmail)
   if (r.acceptTerms !== true) c.fail('acceptTerms', 'required')
+  const claimCharityId = c.text('claimCharityId', r.claimCharityId, CHARITY_ID_MAX, false)
   const profile = validateProfile(r.profile)
   if (!profile.ok || c.failed) {
     const own = c.result(() => null)
@@ -254,7 +257,13 @@ export const validateApplication = (input: unknown): Result<ApplicationRequest> 
       },
     }
   }
-  return { ok: true, value: { profile: profile.value, accountEmail: normaliseEmail(accountEmail!), acceptTerms: true } }
+  return {
+    ok: true,
+    value: {
+      profile: profile.value, accountEmail: normaliseEmail(accountEmail!), acceptTerms: true,
+      ...opt('claimCharityId', claimCharityId),
+    },
+  }
 }
 
 /** `allowedNeedKeys`: the needKey()s of the charity's published needs. */
@@ -268,14 +277,17 @@ export const validatePledge = (input: unknown, allowedNeedKeys: readonly string[
   if (!unique.every((n) => allowedNeedKeys.includes(n))) c.fail('needs', 'invalid')
   const anonymous = r.anonymous !== false
   const name = c.text('name', r.name, LIMITS.personName, !anonymous)
+  const company = anonymous ? undefined : c.text('company', r.company, LIMITS.companyName, false)
   const subscribe = r.subscribe === true
-  const email = c.test('email', c.text('email', r.email, LIMITS.email, subscribe), isEmail)
+  if (r.general !== undefined && typeof r.general !== 'boolean') c.fail('general', 'invalid')
+  const general = r.general === true
+  const email = c.test('email', c.text('email', r.email, LIMITS.email, subscribe || general), isEmail)
   const message = c.text('message', r.message, LIMITS.pledgeMessage, false)
   const consent = r.consent === true
-  if ((subscribe || email !== undefined) && !consent) c.fail('consent', 'required')
+  if ((subscribe || general || email !== undefined) && !consent) c.fail('consent', 'required')
   return c.result<PledgeRequest>(() => ({
-    needs: unique, anonymous, subscribe, consent,
-    ...opt('name', name), ...opt('email', email === undefined ? undefined : normaliseEmail(email)), ...opt('message', message),
+    needs: unique, anonymous, subscribe, consent, ...(general ? { general: true } : {}),
+    ...opt('name', name), ...opt('company', company), ...opt('email', email === undefined ? undefined : normaliseEmail(email)), ...opt('message', message),
   }))
 }
 

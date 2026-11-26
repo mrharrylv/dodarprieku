@@ -12,9 +12,21 @@ describe('buildPledge', () => {
     })
   })
 
-  it('drops the name of an anonymous pledge', () => {
-    const r = buildPledge({ ...EMPTY_DRAFT, name: 'Slepens' }, ['smiltis'], KEYS)
+  it('drops the name and company of an anonymous pledge', () => {
+    const r = buildPledge({ ...EMPTY_DRAFT, name: 'Slepens', company: 'SIA Slepens' }, ['smiltis'], KEYS)
     expect(r.ok ? r.value.name : 'failed').toBeUndefined()
+    expect(r.ok ? r.value.company : 'failed').toBeUndefined()
+  })
+
+  it('keeps the company of a named pledge, and asks the general newsletter for an email and consent', () => {
+    const named = buildPledge({ ...EMPTY_DRAFT, anonymous: false, name: 'Jānis', company: ' SIA Koks ' }, ['smiltis'], KEYS)
+    expect(named.ok && named.value).toMatchObject({ name: 'Jānis', company: 'SIA Koks' })
+    expect(buildPledge({ ...EMPTY_DRAFT, general: true }, ['smiltis'], KEYS)).toEqual({
+      ok: false,
+      fields: { email: 'required', consent: 'required' },
+    })
+    const general = buildPledge({ ...EMPTY_DRAFT, general: true, email: 'a@b.lv', consent: true }, ['smiltis'], KEYS)
+    expect(general.ok && general.value).toMatchObject({ general: true, subscribe: false })
   })
 
   it.each([
@@ -26,6 +38,7 @@ describe('buildPledge', () => {
     [{ ...EMPTY_DRAFT, email: 'a@b.lv' }, ['smiltis'], { consent: 'required' }],
     [{ ...EMPTY_DRAFT, subscribe: true, consent: true }, ['smiltis'], { email: 'required' }],
     [{ ...EMPTY_DRAFT, message: 'x'.repeat(501) }, ['smiltis'], { message: 'too_long' }],
+    [{ ...EMPTY_DRAFT, anonymous: false, name: 'A', company: 'x'.repeat(121) }, ['smiltis'], { company: 'too_long' }],
   ])('refuses %j for %j', (draft, needs, fields) => {
     expect(buildPledge(draft, needs, KEYS)).toEqual({ ok: false, fields: expect.objectContaining(fields) })
   })

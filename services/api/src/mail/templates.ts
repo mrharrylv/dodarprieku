@@ -110,10 +110,11 @@ export const pledgeThankYouEmail = (
   ],
 })
 
-export const adminNewApplicationEmail = (l: Links, id: string, orgName: string, city: string): Message => ({
-  subject: `Jauns pieteikums: ${orgName}`,
+export const adminNewApplicationEmail = (l: Links, id: string, orgName: string, city: string, claimOf?: string): Message => ({
+  subject: claimOf === undefined ? `Jauns pieteikums: ${orgName}` : `Profila pieprasījums: ${claimOf}`,
   blocks: [
     p(`Saņemts jauns pieteikums no organizācijas “${orgName}” (${city}).`),
+    ...(claimOf === undefined ? [] : [p(`Tas pieprasa esošu, no reģistra importētu profilu “${claimOf}”.`)]),
     p('Pārskatīt to var administrācijas portālā:'),
     link(adminReviewUrl(l, id)),
   ],

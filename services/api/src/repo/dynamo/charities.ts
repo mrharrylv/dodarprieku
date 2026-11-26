@@ -5,7 +5,7 @@ import { batchDelete, batchPut, isConditionalFailure, queryAll, type Db, type It
 import { GSI1, charityPk, gsi, keys, stripKeys } from './keys'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
-const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source', 'demoNeeds'] as const
+const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source', 'demoNeeds', 'claimCharityId', 'claimedAt'] as const
 
 const toCharity = (item: Item): CharityRecord => {
   const r = stripKeys(item)
@@ -23,6 +23,7 @@ type CharityRepo = Pick<
   | 'createCharity'
   | 'getCharity'
   | 'saveCharity'
+  | 'saveClaimMerge'
   | 'listCharities'
   | 'putCharities'
   | 'deleteCharity'
@@ -91,6 +92,26 @@ export const charityRepo = (db: Db): CharityRepo => ({
         ConditionExpression: 'attribute_exists(PK)',
       }),
     )
+  },
+
+  saveClaimMerge: async (c) => {
+    const save = saveExpression(c)
+    try {
+      await db.client.send(
+        new UpdateCommand({
+          TableName: db.table,
+          Key: keys.charity(c.id),
+          UpdateExpression: save.UpdateExpression,
+          ExpressionAttributeValues: { ...save.ExpressionAttributeValues, ':import': 'import:', ':unclaimed': '' },
+          ExpressionAttributeNames: { '#status': 'status', '#src': 'source', '#email': 'accountEmail' },
+          ConditionExpression: 'attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed',
+        }),
+      )
+      return true
+    } catch (err) {
+      if (isConditionalFailure(err)) return false
+      throw err
+    }
   },
 
   listCharities: async (status) => {

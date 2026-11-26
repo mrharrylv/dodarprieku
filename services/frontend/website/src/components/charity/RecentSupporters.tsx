@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { StatsState } from '@/hooks/useCharityStats'
 import { SectionCard } from './SectionCard'
 
-/** People who pledged under their own name, newest first. Nothing private is ever shown. */
+/** People who pledged under their own name, newest first, as "Vārds (Uzņēmums)" when they gave a company. Nothing private is ever shown. */
 export const RecentSupporters = ({ stats, compact = false }: { stats: StatsState; compact?: boolean }) => {
   const { t } = useTranslation('charity')
   if (stats.status !== 'ready') return null
@@ -20,7 +20,7 @@ export const RecentSupporters = ({ stats, compact = false }: { stats: StatsState
               <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-(--fill-accent) text-(length:--text-xs) font-semibold text-(--text-on-accent)">
                 {person.name.trim().charAt(0).toUpperCase()}
               </span>
-              {person.name}
+              {person.company === undefined ? person.name : t('supporters.withCompany', { name: person.name, company: person.company })}
             </li>
           ))}
         </ul>

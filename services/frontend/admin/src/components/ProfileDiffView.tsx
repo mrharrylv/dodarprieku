@@ -17,14 +17,19 @@ const showValue = (path: ScalarPath, value: FieldDiff['before']): ReactNode => {
   return <span className="whitespace-pre-line break-words">{String(value)}</span>
 }
 
-const FieldsTable = ({ fields }: { readonly fields: readonly FieldDiff[] }) => (
+interface Labels {
+  readonly before: string
+  readonly after: string
+}
+
+const FieldsTable = ({ fields, labels }: { readonly fields: readonly FieldDiff[]; readonly labels: Labels }) => (
   <div className="overflow-x-auto">
     <table className="w-full min-w-[36rem] border-collapse text-sm">
       <thead>
         <tr className="text-left text-[var(--text-muted)]">
           <th scope="col" className="w-48 py-2 pr-3 font-medium">{lv.updates.field}</th>
-          <th scope="col" className="py-2 pr-3 font-medium">{lv.updates.live}</th>
-          <th scope="col" className="py-2 font-medium">{lv.updates.proposed}</th>
+          <th scope="col" className="py-2 pr-3 font-medium">{labels.before}</th>
+          <th scope="col" className="py-2 font-medium">{labels.after}</th>
         </tr>
       </thead>
       <tbody>
@@ -45,7 +50,16 @@ const FieldsTable = ({ fields }: { readonly fields: readonly FieldDiff[] }) => (
   </div>
 )
 
-export const ProfileDiffView = ({ live, proposed }: { readonly live: CharityProfile; readonly proposed: CharityProfile }) => {
+export const ProfileDiffView = ({
+  live,
+  proposed,
+  labels = { before: lv.updates.live, after: lv.updates.proposed },
+}: {
+  readonly live: CharityProfile
+  readonly proposed: CharityProfile
+  /** Column headings; an update compares live with proposed, a claim imported with submitted. */
+  readonly labels?: Labels
+}) => {
   const diff = useMemo(() => diffProfile(live, proposed), [live, proposed])
   const [onlyChanged, setOnlyChanged] = useState(true)
   const keep = <T extends { status: Status }>(rows: readonly T[]): readonly T[] =>
@@ -65,7 +79,7 @@ export const ProfileDiffView = ({ live, proposed }: { readonly live: CharityProf
       </div>
       {fields.length > 0 && (
         <Card>
-          <FieldsTable fields={fields} />
+          <FieldsTable fields={fields} labels={labels} />
         </Card>
       )}
       <ItemList title={lv.fields.needs} items={keep(diff.needs)} render={(n) => <NeedItem category={proposed.category} need={n} />} />

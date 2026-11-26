@@ -11,7 +11,7 @@ type ActivityRepo = Pick<
 
 const byNewest = <T extends { createdAt: string }>(a: T, b: T): number => b.createdAt.localeCompare(a.createdAt)
 
-const PLEDGE_FIELDS = ['id', 'charityId', 'needs', 'anonymous', 'name', 'email', 'message', 'createdAt'] as const
+const PLEDGE_FIELDS = ['id', 'charityId', 'needs', 'anonymous', 'name', 'company', 'email', 'message', 'createdAt'] as const
 const toPledge = (item: Record<string, unknown>): PledgeRecord =>
   Object.fromEntries(PLEDGE_FIELDS.filter((f) => item[f] !== undefined).map((f) => [f, item[f]])) as unknown as PledgeRecord
 

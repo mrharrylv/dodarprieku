@@ -42,10 +42,10 @@ export const PledgesPage = () => {
             <>
               <p className="mb-2 text-sm text-[var(--text-secondary)]">{fmt(lv.pledges.count, { n: shown.length })}</p>
               <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-raised)]">
-                <table className="w-full min-w-[52rem] text-sm">
+                <table className="w-full min-w-[60rem] text-sm">
                   <thead className="bg-[var(--surface-sunken)] text-left text-[var(--text-secondary)]">
                     <tr>
-                      {[H.createdAt, H.charity, H.needs, H.name, H.email, H.message].map((h) => (
+                      {[H.createdAt, H.charity, H.needs, H.name, H.company, H.email, H.message].map((h) => (
                         <th key={h} scope="col" className="px-3 py-2 font-medium">{h}</th>
                       ))}
                     </tr>
@@ -57,6 +57,7 @@ export const PledgesPage = () => {
                         <td className="px-3 py-2">{names.name(p.charityId)}</td>
                         <td className="px-3 py-2">{p.needs.map((k) => names.need(p.charityId, k)).join(', ')}</td>
                         <td className="px-3 py-2">{p.anonymous ? <span className="text-[var(--text-muted)]">{lv.pledges.anonymous}</span> : p.name}</td>
+                        <td className="px-3 py-2">{p.company ?? ''}</td>
                         <td className="break-all px-3 py-2">{p.email ?? ''}</td>
                         <td className="px-3 py-2 whitespace-pre-line">{p.message ?? ''}</td>
                       </tr>

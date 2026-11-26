@@ -3,7 +3,7 @@ import { Loaded } from '../components/Loaded'
 import { EmptyState, PageHeader } from '../components/ui'
 import { useApi } from '../context/api'
 import { useResource } from '../hooks/useResource'
-import { lv } from '../i18n/lv'
+import { fmt, lv } from '../i18n/lv'
 import { newestFirst } from '../lib/dashboard'
 import { categoryLabel, formatDateTime } from '../lib/format'
 import { applicationPath } from '../paths'
@@ -23,7 +23,14 @@ export const ApplicationsPage = () => {
               {pending.map((c) => (
                 <li key={c.id}>
                   <Link to={applicationPath(c.id)} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4 hover:bg-[var(--surface-sunken)]">
-                    <span className="min-w-0 flex-1 font-semibold text-[var(--text-primary)]">{c.name}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-[var(--text-primary)]">{c.name}</span>
+                      {c.claim && (
+                        <span className="mt-1 inline-flex rounded-full bg-[var(--surface-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--text-accent)]">
+                          {fmt(lv.applications.claim, { name: c.claim.name })}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-sm text-[var(--text-secondary)]">
                       {categoryLabel(c.category)} · {c.city}
                     </span>

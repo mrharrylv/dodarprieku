@@ -2,7 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { REGISTER_CTA } from '@/config/site'
+import { useHydrated } from '@/hooks/useHydrated'
 import { useLocale } from '@/hooks/useLocale'
+import { useSignedIn } from '@/hooks/useSignedIn'
 import { cn } from '@/lib/cn'
 import { localePath } from '@/lib/locale-path'
 import { Icon } from '@/components/ui/Icon'
@@ -13,13 +15,15 @@ import { PILL } from './pill'
  * oval pill as the category chips, in the accent fill; on a phone, where the
  * top bar takes the width, centred at the bottom, clear of the zoom buttons.
  * It opens the registration panel (`/registreties`); while a panel is docked
- * on the right it is not shown (the account's login has its own way to register).
+ * on the right it is not shown (the account's login has its own way to register),
+ * and nor is it to anyone logged in: they have an organisation already.
  */
 export const MapActions = ({ hidden = false }: { hidden?: boolean }) => {
   const { t } = useTranslation('map')
   const { t: tc } = useTranslation('common')
   const { locale } = useLocale()
-  if (hidden) return null
+  const signedIn = useSignedIn(useHydrated()) === true
+  if (hidden || signedIn) return null
 
   return (
     <div

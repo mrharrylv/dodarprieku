@@ -59,11 +59,27 @@ describe('charities', () => {
     expect(input.ExpressionAttributeValues?.[':gpk']).toBe('STATUS#approved')
     await repo.saveCharity({ ...charity, rejectReason: 'a', suspendReason: 'b' })
     // demoNeeds is stored like the other optional fields: set while true, removed once cleared.
-    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source, demoNeeds$/)
+    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source, demoNeeds, claimCharityId, claimedAt$/)
     await repo.saveCharity({ ...charity, source: 'import:x', demoNeeds: true })
     const demo = ddb.commandCalls(UpdateCommand)[2]!.args[0].input
     expect(demo.UpdateExpression).toContain('demoNeeds = :demoNeeds')
     expect(demo.ExpressionAttributeValues?.[':demoNeeds']).toBe(true)
+    // A claim application keeps its target; a claimed charity its date.
+    await repo.saveCharity({ ...charity, claimCharityId: 'imp-1', claimedAt: '2026-11-25T00:00:00.000Z' })
+    const claim = ddb.commandCalls(UpdateCommand)[3]!.args[0].input
+    expect(claim.UpdateExpression).toContain('claimCharityId = :claimCharityId')
+    expect(claim.ExpressionAttributeValues?.[':claimedAt']).toBe('2026-11-25T00:00:00.000Z')
+  })
+
+  it('saves a claim merge only while the charity is still imported and unclaimed', async () => {
+    ddb.on(UpdateCommand).resolvesOnce({}).rejectsOnce(conditional)
+    expect(await repo.saveClaimMerge({ ...charity, claimedAt: '2026-11-25T00:00:00.000Z' })).toBe(true)
+    const input = ddb.commandCalls(UpdateCommand)[0]!.args[0].input
+    expect(input.ConditionExpression).toBe('attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed')
+    expect(input.ExpressionAttributeNames).toMatchObject({ '#src': 'source', '#email': 'accountEmail' })
+    expect(input.ExpressionAttributeValues).toMatchObject({ ':import': 'import:', ':unclaimed': '', ':accountEmail': 'a@b.lv' })
+    expect(input.UpdateExpression).toContain('REMOVE')
+    expect(await repo.saveClaimMerge(charity)).toBe(false)
   })
 
   it('lists by status index, all four statuses when unfiltered, paging', async () => {

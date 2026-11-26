@@ -20,6 +20,7 @@ const ROWS = [
   { key: STORAGE_KEYS.consent, purpose: 'consentPurpose', duration: 'oneYear' },
   { key: STORAGE_KEYS.viewedCharities, purpose: 'viewedPurpose', duration: 'untilTabClosed' },
   { key: STORAGE_KEYS.registerDraft, purpose: 'registerDraftPurpose', duration: 'untilTabClosed' },
+  { key: STORAGE_KEYS.signedIn, purpose: 'signedInPurpose', duration: 'untilCleared' },
 ] as const
 
 export const CookiesPage = () => {
