@@ -26,7 +26,7 @@ export const Footer = () => {
           <div className="sm:col-span-2 lg:col-span-1">
             <p className="inline-flex items-center gap-2 font-(family-name:--font-display) text-(length:--text-xl) font-semibold text-(--text-primary)">
               <BrandMark />
-              <span>{SITE.name}</span>
+              <span>{SITE.wordmark}</span>
             </p>
             <p className="mt-3 max-w-xs text-(length:--text-sm) text-(--text-secondary)">
               {t('footer.tagline')}

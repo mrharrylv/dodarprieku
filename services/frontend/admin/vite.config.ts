@@ -10,7 +10,8 @@ const here = (path: string): string => fileURLToPath(new URL(path, import.meta.u
 const SHARED_DIR = here('../../shared/src')
 
 /** The API's local dev server (seeds admin@example.com). */
-const API_DEV_ORIGIN = 'http://localhost:8787'
+/** The local API the dev server proxies to; `API_DEV_ORIGIN` points a second copy at another one. */
+const API_DEV_ORIGIN = process.env.API_DEV_ORIGIN ?? 'http://localhost:8787'
 
 /**
  * Served from the website bucket under admin/, on admin.<host>, so built

@@ -49,7 +49,7 @@ export const Layout = () => {
       <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-raised)] px-4 py-2 md:hidden">
         <span className="inline-flex items-center gap-2 font-[family-name:var(--font-display)] font-semibold">
           <BrandMark className="size-7" />
-          {lv.app.name}
+          {lv.app.wordmark}
         </span>
         <button
           type="button"
@@ -69,7 +69,7 @@ export const Layout = () => {
         <div className="hidden items-center gap-3 px-5 pb-2 pt-6 md:flex">
           <BrandMark className="size-10" />
           <div>
-            <p className="font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">{lv.app.name}</p>
+            <p className="font-[family-name:var(--font-display)] text-lg font-semibold leading-tight">{lv.app.wordmark}</p>
             <p className="text-xs text-[var(--text-muted)]">{lv.app.area}</p>
           </div>
         </div>

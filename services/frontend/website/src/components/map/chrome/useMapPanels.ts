@@ -11,6 +11,8 @@ export interface MapPanels {
   readonly open: PanelId | null
   /** Opens a panel, or closes it when it is the open one. */
   readonly toggle: (id: PanelId) => void
+  /** Opens a panel (a deep link: `/par-projektu` opens the info panel). */
+  readonly show: (id: PanelId) => void
   /** Closes the open panel; `restoreFocus` sends focus back to its rail button. */
   readonly close: (options?: { readonly restoreFocus?: boolean }) => void
   /** Registers a rail button, so focus can return to it. */
@@ -24,8 +26,9 @@ export interface MapPanels {
  * opens, back to its button when it is closed with the close button, Escape or
  * the button itself. A click on the map closes it too; focus returns to the
  * rail only when it was inside the panel, so it never falls to the page body.
+ * `onOpen` runs whenever a panel opens (the map closes its charity card then).
  */
-export const useMapPanels = (): MapPanels => {
+export const useMapPanels = ({ onOpen }: { readonly onOpen?: () => void } = {}): MapPanels => {
   const [open, setOpen] = useState<PanelId | null>(null)
   const buttons = useRef(new Map<PanelId, HTMLButtonElement>())
   const panelRef = useRef<HTMLElement | null>(null)
@@ -39,7 +42,20 @@ export const useMapPanels = (): MapPanels => {
     [open],
   )
 
-  const toggle = useCallback((id: PanelId) => setOpen((current) => (current === id ? null : id)), [])
+  const toggle = useCallback(
+    (id: PanelId) => {
+      if (open !== id) onOpen?.()
+      setOpen(open === id ? null : id)
+    },
+    [open, onOpen],
+  )
+  const show = useCallback(
+    (id: PanelId) => {
+      onOpen?.()
+      setOpen(id)
+    },
+    [onOpen],
+  )
 
   const buttonRef = useCallback(
     (id: PanelId) => (element: HTMLButtonElement | null) => {
@@ -62,5 +78,5 @@ export const useMapPanels = (): MapPanels => {
     return () => document.removeEventListener('keydown', onKey)
   }, [open, close])
 
-  return { open, toggle, close, buttonRef, panelRef }
+  return { open, toggle, show, close, buttonRef, panelRef }
 }

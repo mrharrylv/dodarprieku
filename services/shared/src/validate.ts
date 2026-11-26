@@ -287,8 +287,11 @@ export const validateSubscribe = (input: unknown): Result<SubscribeRequest> => {
   const name = c.text('name', r.name, LIMITS.personName, false)
   if (r.consent !== true) c.fail('consent', 'required')
   const charityId = c.text('charityId', r.charityId, 40, false)
+  if (r.general !== undefined && typeof r.general !== 'boolean') c.fail('general', 'invalid')
+  // A sign-up from no organisation can only be the general newsletter.
+  const general = charityId === undefined || r.general === true
   return c.result<SubscribeRequest>(() => ({
-    email: normaliseEmail(email!), consent: true, ...opt('name', name), ...opt('charityId', charityId),
+    email: normaliseEmail(email!), consent: true, general, ...opt('name', name), ...opt('charityId', charityId),
   }))
 }
 

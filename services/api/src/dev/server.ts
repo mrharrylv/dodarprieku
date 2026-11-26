@@ -16,6 +16,7 @@ import type { ApiRequest } from '../http/types'
 import type { Email } from '../mail/types'
 import { loadImportedFile } from './imported-file'
 import { createLocalDeps } from './local'
+import { DEFAULT_DEMO_FRACTION, DEFAULT_DEMO_SEED } from '../domain/demo-needs'
 import { DEV_ADMIN_EMAIL, DEV_CHARITY_EMAIL, DEV_PASSWORD, seedDev } from './seed'
 
 const PORT = Number(process.env.PORT ?? 8787)
@@ -102,10 +103,13 @@ const server = createServer((req, res) => {
 
 // SEED_IMPORT=1 (make run's default) adds the register charities of data/imported-charities.json.
 const imported = process.env.SEED_IMPORT === '1' ? loadImportedFile() : []
-await seedDev(deps, { imported })
+// SEED_DEMO_NEEDS=1 (make run's default) gives a quarter of them made-up needs, as the demo-needs task does on dev.
+const demoNeeds = process.env.SEED_DEMO_NEEDS === '1' ? { fraction: DEFAULT_DEMO_FRACTION, seed: DEFAULT_DEMO_SEED } : undefined
+await seedDev(deps, { imported, ...(demoNeeds === undefined ? {} : { demoNeeds }) })
 server.listen(PORT, () => {
   out(`Dod ar prieku API (local) on http://localhost:${PORT}`)
   out(`  admin:   ${DEV_ADMIN_EMAIL} / ${DEV_PASSWORD}`)
   out(`  charity: ${DEV_CHARITY_EMAIL} / ${DEV_PASSWORD}`)
   out(`  imported register charities: ${imported.length}${imported.length === 0 ? ' (SEED_IMPORT=1 adds them)' : ''}`)
+  if (demoNeeds !== undefined && imported.length > 0) out('  demo needs: on for a quarter of them (SEED_DEMO_NEEDS=0 leaves them without)')
 })

@@ -6,6 +6,7 @@ import { ok, type Handler } from '../http/context'
 import { conflict, validationError } from '../http/errors'
 import { applicationRejectedEmail, updateApprovedEmail, updateRejectedEmail } from '../mail/templates'
 import type { AccountRecord, CharityRecord } from '../repo/types'
+import { withSavedProfile } from '../domain/demo-needs'
 import { accountOf, adminCharity, readReason, sendCharityInvite, withoutReasons } from './admin-common'
 
 export const approveCharity: Handler = async (ctx) => {
@@ -97,7 +98,7 @@ export const approveUpdate: Handler = async (ctx) => {
   const { repo } = ctx.deps
   const pending = await repo.getUpdate(c.id)
   if (!pending) throw conflict()
-  const updated: CharityRecord = { ...c, profile: pending.profile, updatedAt: ctx.deps.now().toISOString() }
+  const updated: CharityRecord = withSavedProfile(c, pending.profile, ctx.deps.now().toISOString())
   await repo.saveCharity(updated)
   await repo.deleteUpdate(c.id)
   ctx.log.info('update approved', { charityId: c.id })

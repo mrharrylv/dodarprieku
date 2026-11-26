@@ -82,14 +82,14 @@ these fails the build with its own name in the message.
 export interface SiteStyle {
   readonly id: string          // must equal the folder name
   readonly Shell: ComponentType
-  readonly pages: {
-    readonly Home: ComponentType
-    readonly Services: ComponentType
-    readonly About: ComponentType
-    readonly Contact: ComponentType
-  }
 }
 ```
+
+Dod ar prieku has one page, the map (`src/pages/map`), shared by every
+style; its old addresses (`/par-projektu`, `/registreties`, `/konts`...) open
+panels over it (`src/lib/map-route.ts`). A style is the shell around the
+legal pages and the 404, and its tokens. The template's marketing pages
+(`Home`, `Services`, `About`, `Contact`) are not part of this site's contract.
 
 ### What the shell must render
 

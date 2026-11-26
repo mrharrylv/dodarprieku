@@ -66,6 +66,7 @@ export const postPledge: Handler = async (ctx) => {
       email: v.email,
       ...(v.name ? { name: v.name } : {}),
       charityId: c.id,
+      general: false,
       consentAt: now,
       source: 'pledge',
     })
@@ -97,6 +98,7 @@ export const postSubscribe: Handler = async (ctx) => {
     email: v.email,
     ...(v.name ? { name: v.name } : {}),
     ...(v.charityId ? { charityId: v.charityId } : {}),
+    general: v.general === true || !v.charityId,
     consentAt: ctx.deps.now().toISOString(),
     source: 'subscribe',
   })

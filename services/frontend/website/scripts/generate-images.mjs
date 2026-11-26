@@ -83,7 +83,9 @@ const LIGHT = hex('color-ink-50')
 const DARK = hex('color-ink-950')
 
 const site = read('src/config/site.ts')
-const brandName = site.match(/export const SITE = \{[\s\S]*?name:\s*'([^']+)'/)?.[1] ?? 'Site'
+// The card shows the logo, so it carries the wordmark (`SITE.wordmark`, lowercase by design) when there is one.
+const siteBlock = site.match(/export const SITE = \{[\s\S]*?\n\}/)?.[0] ?? ''
+const brandName = siteBlock.match(/wordmark:\s*'([^']+)'/)?.[1] ?? siteBlock.match(/name:\s*'([^']+)'/)?.[1] ?? 'Site'
 const defaultLocale = site.match(/export const DEFAULT_LOCALE[^=]*=\s*'([^']+)'/)?.[1] ?? 'en'
 const map = JSON.parse(read(`src/i18n/locales/${defaultLocale}/map.json`))
 const headline = map?.share?.headline ?? ''

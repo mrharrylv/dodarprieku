@@ -5,7 +5,7 @@ import { batchDelete, batchPut, isConditionalFailure, queryAll, type Db, type It
 import { GSI1, charityPk, gsi, keys, stripKeys } from './keys'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
-const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source'] as const
+const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source', 'demoNeeds'] as const
 
 const toCharity = (item: Item): CharityRecord => {
   const r = stripKeys(item)

@@ -130,6 +130,8 @@
     "email": "E-pasts",
     "name": "Vārds",
     "consent": "Piekrītu saņemt Dod ar prieku e-pastus par steidzamām vajadzībām.",
+    "general": "Saņemt arī vispārējos jaunumus",
+    "generalHint": "Ne tikai par šo organizāciju: arī par citām iestādēm un pašu projektu.",
     "submit": "Pierakstīties",
     "submitting": "Pieraksta…",
     "success": "Paldies! Jūsu pieraksts ir saņemts.",

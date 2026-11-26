@@ -133,7 +133,7 @@ export const socialTags = (
       ? [
           ['og:image:width', String(SHARE_IMAGE.width)],
           ['og:image:height', String(SHARE_IMAGE.height)],
-          ['og:image:alt', SITE.name],
+          ['og:image:alt', SITE.wordmark],
           ['og:image:type', SHARE_IMAGE.type],
         ]
       : imageTypeOf(meta.image) === null

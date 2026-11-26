@@ -6,6 +6,7 @@ import { loadDetail, toSummary } from '../domain/views'
 import { requireSession } from '../http/auth'
 import { ok, type Handler } from '../http/context'
 import { validationError } from '../http/errors'
+import { withSavedProfile } from '../domain/demo-needs'
 import { accountOf, adminCharity } from './admin-common'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
@@ -34,7 +35,7 @@ export const putAdminProfile: Handler = async (ctx) => {
   const result = validateProfile(ctx.json())
   if (!result.ok) throw validationError(result.fields)
   const { repo } = ctx.deps
-  const updated = { ...c, profile: result.value, updatedAt: ctx.deps.now().toISOString() }
+  const updated = withSavedProfile(c, result.value, ctx.deps.now().toISOString())
   await repo.saveCharity(updated)
   ctx.log.info('admin edit', { charityId: c.id })
   const pending = await repo.getUpdate(c.id)

@@ -4,13 +4,13 @@ import type { StatsState } from '@/hooks/useCharityStats'
 import { SectionCard } from './SectionCard'
 
 /** People who pledged under their own name, newest first. Nothing private is ever shown. */
-export const RecentSupporters = ({ stats }: { stats: StatsState }) => {
+export const RecentSupporters = ({ stats, compact = false }: { stats: StatsState; compact?: boolean }) => {
   const { t } = useTranslation('charity')
   if (stats.status !== 'ready') return null
   const people = stats.stats.recentSupporters
 
   return (
-    <SectionCard title={t('supporters.title')}>
+    <SectionCard title={t('supporters.title')} compact={compact}>
       {people.length === 0 ? (
         <p className="text-(--text-secondary)">{t('supporters.empty')}</p>
       ) : (

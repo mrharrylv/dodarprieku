@@ -166,6 +166,19 @@ describe('updates', () => {
 })
 
 describe('admin edit and delete', () => {
+  it('a real profile edit or approved update drops the demo-needs flag', async () => {
+    const { w, admin } = await setup('approved')
+    const c = await w.deps.repo.getCharity('c1')
+    await w.deps.repo.saveCharity({ ...c!, demoNeeds: true })
+    await call(w.app, 'PUT', '/admin/charities/c1/profile', { cookie: admin, body: { ...validProfile(), description: 'Labots' } })
+    expect((await w.deps.repo.getCharity('c1'))?.demoNeeds).toBeUndefined()
+    expect((await snapshot(w)).charities[0]!.demoNeeds).toBeUndefined()
+    await w.deps.repo.saveCharity({ ...(await w.deps.repo.getCharity('c1'))!, demoNeeds: true })
+    await w.deps.repo.putUpdate({ charityId: 'c1', profile: validProfile(), submittedAt: 'x' })
+    await call(w.app, 'POST', '/admin/charities/c1/update/approve', { cookie: admin })
+    expect((await w.deps.repo.getCharity('c1'))?.demoNeeds).toBeUndefined()
+  })
+
   it('edits publish at once', async () => {
     const { w, admin } = await setup('approved')
     const res = data(await call(w.app, 'PUT', '/admin/charities/c1/profile', { cookie: admin, body: { ...validProfile(), description: 'Labots' } }))
@@ -190,6 +203,27 @@ describe('admin edit and delete', () => {
     expect(await w.deps.repo.claimSlug('kepa', 'new')).toBe(true)
     expect(w.deps.storage.keys()).toEqual(['data/charities.json'])
     expect((await snapshot(w)).charities).toHaveLength(0)
+  })
+})
+
+describe('admin subscribers', () => {
+  it('lists the general newsletter, everyone, and one organisation', async () => {
+    const w = world()
+    const admin = await asAdmin(w)
+    await asCharity(w)
+    await call(w.app, 'POST', '/subscribe', { body: { email: 'rail@b.lv', consent: true } })
+    await call(w.app, 'POST', '/subscribe', { body: { email: 'org@b.lv', consent: true, charityId: 'c1' } })
+    await call(w.app, 'POST', '/subscribe', { body: { email: 'both@b.lv', consent: true, charityId: 'c1', general: true } })
+    const emails = (rows: Array<{ email: string }>) => rows.map((s) => s.email).sort()
+    expect(emails(data(await call(w.app, 'GET', '/admin/subscribers', { cookie: admin, query: { scope: 'general' } })))).toEqual(['both@b.lv', 'rail@b.lv'])
+    expect(emails(data(await call(w.app, 'GET', '/admin/subscribers', { cookie: admin, query: { scope: 'all' } })))).toEqual(['both@b.lv', 'org@b.lv', 'rail@b.lv'])
+    expect(emails(data(await call(w.app, 'GET', '/admin/subscribers', { cookie: admin })))).toHaveLength(3)
+    expect(errorOf(await call(w.app, 'GET', '/admin/subscribers', { cookie: admin, query: { scope: 'nope' } }))).toEqual({
+      status: 400, error: 'validation', fields: { scope: 'invalid' },
+    })
+    expect(emails(data(await call(w.app, 'GET', '/admin/charities/c1/subscribers', { cookie: admin })))).toEqual(['both@b.lv', 'org@b.lv'])
+    expect(errorOf(await call(w.app, 'GET', '/admin/charities/c9/subscribers', { cookie: admin })).status).toBe(404)
+    expect(errorOf(await call(w.app, 'GET', '/admin/charities/c1/subscribers')).status).toBe(401)
   })
 })
 

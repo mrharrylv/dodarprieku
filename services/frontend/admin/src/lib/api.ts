@@ -18,6 +18,7 @@ import {
   type PledgeRecord,
   type SetPasswordRequest,
   type SubscriberRecord,
+  type SubscriberScope,
   type UploadRequest,
   type UploadResponse,
 } from '@shared/contracts'
@@ -168,7 +169,9 @@ export const endpoints = (c: Client) => ({
     c.request<AdminCharityDetail>('POST', `/admin/charities/${enc(id)}/update/reject`, reason ? { reason } : {}),
   remove: (id: string) => c.request<Record<string, never>>('DELETE', `/admin/charities/${enc(id)}`),
 
-  subscribers: () => c.request<SubscriberRecord[]>('GET', '/admin/subscribers'),
+  /** Everyone by default; `general` only the general newsletter's. */
+  subscribers: (scope?: SubscriberScope) => c.request<SubscriberRecord[]>('GET', `/admin/subscribers${query({ scope })}`),
+  charitySubscribers: (id: string) => c.request<SubscriberRecord[]>('GET', `/admin/charities/${enc(id)}/subscribers`),
   pledges: (charityId?: string) => c.request<PledgeRecord[]>('GET', `/admin/pledges${query({ charityId })}`),
   listRequests: () => c.request<ListRequestRecord[]>('GET', '/admin/list-requests'),
   listRequestDone: (charityId: string, id: string) =>

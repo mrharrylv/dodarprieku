@@ -5,13 +5,13 @@ import { mediaUrl, safeHref } from '@/lib/snapshot'
 import { SectionCard } from './SectionCard'
 
 /** "Atbalstītāji": the companies the charity thanks, logos linking to them. Absent when there are none. */
-export const SponsorWall = ({ sponsors }: { sponsors: readonly Sponsor[] }) => {
+export const SponsorWall = ({ sponsors, compact = false }: { sponsors: readonly Sponsor[]; compact?: boolean }) => {
   const { t } = useTranslation('charity')
   const { t: tc } = useTranslation('common')
   if (sponsors.length === 0) return null
 
   return (
-    <SectionCard title={t('sponsors.title')}>
+    <SectionCard title={t('sponsors.title')} compact={compact}>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {sponsors.map((sponsor, i) => {
           const logo = mediaUrl(sponsor.logo)

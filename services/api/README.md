@@ -104,3 +104,27 @@ The tasks behind them: `{"task":"import-charities","items":[...]}` (at most
 200 items, idempotent, never overwrites a charity that was not imported, keeps
 an admin's suspension) and `{"task":"remove-imported","source":"import:...","limit":50}`
 (rebuilds the snapshot when none remain).
+
+## Demo needs (dev and local only)
+
+The imported charities have no needs, so on their own every one of them is a
+greyed-out pin. For a demonstration, a deterministic share of one import
+source gets 2-6 made-up needs from its own category's catalog (some urgent,
+some with a short note) and `demoNeeds: true`, which the snapshot carries and
+the map announces with "Testa vide: daļa vajadzību ir izdomātas demonstrācijai."
+
+```bash
+make run                                # a quarter of the imported get demo needs (SEED_DEMO_NEEDS=0 make run leaves them without)
+make demo-needs ENV=dev                 # scripts/demo-needs.sh apply: DEMO_FRACTION=0.25, DEMO_SEED=1
+make clear-demo-needs ENV=dev           # scripts/demo-needs.sh clear: every demoNeeds charity back to no needs
+```
+
+The tasks behind them: `{"task":"demo-needs","source":"import:...","fraction":0.25,"seed":1}`
+(the same seed picks the same charities and needs every time; a run with
+another seed or share replaces the last pick; a charity with real needs is
+never touched) and `{"task":"clear-demo-needs"}`. Both rebuild the snapshot.
+Both are refused when the function's `ENVIRONMENT` is `prod`, the make targets
+refuse `ENV=prod`, and the script refuses a `prod-*` function. A profile
+really saved (an admin edit, an approved update) drops the flag
+(`withSavedProfile`), so `clear-demo-needs` never empties real needs and the
+map's demo notice goes once no demo needs are left.

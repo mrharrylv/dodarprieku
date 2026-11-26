@@ -5,7 +5,7 @@ import { getAccount, getAccountPledges, postListRequest, putAccountProfile } fro
 import { UPLOAD_BODY_MAX, postApplication, postUpload } from './handlers/applications'
 import { getMe, postForgot, postLogin, postLogout, postSetPassword } from './handlers/auth'
 import { deleteAdminCharity, getAdminCharity, listAdminCharities, putAdminProfile } from './handlers/admin-charities'
-import { listAdminPledges, listListRequests, listSubscribers, markListRequestDone } from './handlers/admin-lists'
+import { listAdminPledges, listCharitySubscribers, listListRequests, listSubscribers, markListRequestDone } from './handlers/admin-lists'
 import {
   approveCharity,
   approveUpdate,
@@ -51,6 +51,7 @@ export const ROUTES: readonly Route<RouteDef>[] = [
   r('POST /admin/charities/:id/update/reject', rejectUpdate),
   r('DELETE /admin/charities/:id', deleteAdminCharity),
   r('GET /admin/subscribers', listSubscribers),
+  r('GET /admin/charities/:id/subscribers', listCharitySubscribers),
   r('GET /admin/pledges', listAdminPledges),
   r('GET /admin/list-requests', listListRequests),
   r('POST /admin/list-requests/:charityId/:id/done', markListRequestDone),

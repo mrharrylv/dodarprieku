@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test \"scripts/**/*.node-test.mjs\"",
+    "test": "node --test \"scripts/**/*.node-test.mjs\" \"src/**/*.node-test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

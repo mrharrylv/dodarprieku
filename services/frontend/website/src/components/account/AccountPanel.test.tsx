@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ACCOUNT, VALID_PROFILE } from '@/components/profile-editor/fixtures'
 import { fail, mockApi, ok, type Reply } from '@/components/profile-editor/fetch-mock'
 import { renderWithProviders } from '@/test/render'
-import { AccountPage } from './AccountPage'
+import { AccountPanel } from './AccountPanel'
 import { formatNumber } from './format'
 
 vi.mock('@/components/location-picker/MapCanvas', () => ({ MapCanvas: () => <div /> }))
@@ -23,7 +23,7 @@ const loggedIn = (account = ACCOUNT, extra: Record<string, Reply | ((b: unknown)
     ...extra,
   })
 
-describe('AccountPage, logged out', () => {
+describe('AccountPanel, logged out', () => {
   it('shows the login form and logs in', async () => {
     let session = false
     mockApi({
@@ -35,9 +35,9 @@ describe('AccountPage, logged out', () => {
       'GET /api/account': ok(ACCOUNT),
       'GET /api/account/pledges': ok([]),
     })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByRole('heading', { name: 'Pieteikties' })).toBeInTheDocument()
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.queryAllByRole('heading', { level: 1 })).toHaveLength(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Pieteikties' }))
     expect(screen.getByText('Ierakstiet e-pastu.')).toBeInTheDocument()
@@ -61,7 +61,7 @@ describe('AccountPage, logged out', () => {
   ])('shows its own copy for a failed login (%j)', async (reply, title) => {
     mockApi({ 'GET /api/auth/me': fail(401, 'unauthorized'), 'POST /api/auth/login': reply })
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.change(await screen.findByLabelText(/^E-pasts/), { target: { value: 'a@b.lv' } })
     fireEvent.change(screen.getByLabelText(/^Parole/), { target: { value: 'x' } })
     fireEvent.click(screen.getByRole('button', { name: 'Pieteikties' }))
@@ -71,7 +71,7 @@ describe('AccountPage, logged out', () => {
   it('offers a retry when the session check fails', async () => {
     let calls = 0
     mockApi({ 'GET /api/auth/me': () => (calls++ === 0 ? fail(503, 'server') : fail(401, 'unauthorized')) })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText('Kontu neizdevās ielādēt')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Mēģināt vēlreiz' }))
     expect(await screen.findByRole('heading', { name: 'Pieteikties' })).toBeInTheDocument()
@@ -79,19 +79,19 @@ describe('AccountPage, logged out', () => {
 
   it('tells an admin this is not their account page', async () => {
     mockApi({ 'GET /api/auth/me': ok({ email: 'admin@hagroup.lv', role: 'admin' }), 'POST /api/auth/logout': ok({}) })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText('Šis nav organizācijas konts')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Iziet' }))
     expect(await screen.findByRole('heading', { name: 'Pieteikties' })).toBeInTheDocument()
   })
 })
 
-describe('AccountPage, logged in', () => {
+describe('AccountPanel, logged in', () => {
   it('shows status, numbers, per-need counts and the pledges', async () => {
     loggedIn()
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText('Jūsu lapa ir publicēta')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Skatīt publisko lapu' })).toHaveAttribute('href', '/organizacija/patversme-ulubele')
+    expect(screen.getByRole('link', { name: 'Skatīt kartē' })).toHaveAttribute('href', '/organizacija/patversme-ulubele')
     const stats = screen.getByRole('region', { name: 'Skaitļi' })
     expect(within(stats).getByText(formatNumber(1234), { normalizer: (s) => s })).toBeInTheDocument()
     expect(within(stats).getByText('Skatījumi')).toBeInTheDocument()
@@ -111,15 +111,15 @@ describe('AccountPage, logged in', () => {
     ['rejected', 'Pieteikums nav apstiprināts'],
   ] as const)('explains the %s status, with no public link', async (status, title) => {
     loggedIn({ ...ACCOUNT, status })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText(title)).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Skatīt publisko lapu' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Skatīt kartē' })).not.toBeInTheDocument()
   })
 
   it('says a change is waiting, and opens the editor on it', async () => {
     const proposed = { ...VALID_PROFILE, organization: { ...VALID_PROFILE.organization, name: 'Ulubele (jaunais)' } }
     loggedIn({ ...ACCOUNT, pendingUpdate: { profile: proposed, submittedAt: '2026-11-24T08:00:00Z' } })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText('Izmaiņas gaida administratora apstiprinājumu')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Nosaukums, kā to redzēs/)).toHaveValue('Ulubele (jaunais)')
   })
@@ -128,7 +128,7 @@ describe('AccountPage, logged in', () => {
     const api = loggedIn(ACCOUNT, {
       'PUT /api/account/profile': (body) => ok({ ...ACCOUNT, pendingUpdate: { profile: body, submittedAt: '2026-11-25T08:00:00Z' } }),
     })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.change(await screen.findByLabelText(/^Juridiskais nosaukums/), { target: { value: 'Biedrība "Ulubele" (jauns)' } })
     fireEvent.click(screen.getByRole('tab', { name: 'Atbalstītāji' }))
     expect(screen.getByRole('tab', { name: 'Atbalstītāji' })).toHaveAttribute('aria-selected', 'true')
@@ -145,7 +145,7 @@ describe('AccountPage, logged in', () => {
 
   it('jumps to the tab with a problem and focuses it', async () => {
     const api = loggedIn()
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.click(await screen.findByRole('tab', { name: 'Atrašanās vieta' }))
     fireEvent.change(screen.getByLabelText(/^Pilsēta vai pagasts/), { target: { value: '' } })
     fireEvent.click(screen.getByRole('tab', { name: 'Organizācija' }))
@@ -158,7 +158,7 @@ describe('AccountPage, logged in', () => {
 
   it('moves between tabs with the arrow keys', async () => {
     loggedIn()
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     const first = await screen.findByRole('tab', { name: 'Organizācija' })
     fireEvent.keyDown(first, { key: 'ArrowLeft' })
     expect(screen.getByRole('tab', { name: 'Atbalstītāji' })).toHaveFocus()
@@ -175,7 +175,7 @@ describe('AccountPage, logged in', () => {
     [fail(400, 'validation', { 'organization.regNumber': 'invalid' }), 'Serveris nepieņēma dažus laukus'],
   ])('reports a failed save (%j)', async (reply, text) => {
     loggedIn(ACCOUNT, { 'PUT /api/account/profile': reply })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.click(await screen.findByRole('button', { name: 'Iesniegt izmaiņas' }))
     expect(await screen.findByText(new RegExp(text))).toBeInTheDocument()
   })
@@ -184,7 +184,7 @@ describe('AccountPage, logged in', () => {
     const api = loggedIn(ACCOUNT, {
       'POST /api/account/list-request': ok({ id: 'r1', charityId: 'c1', charityName: 'x', status: 'open', createdAt: '2026-11-25T09:30:00Z' }),
     })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     expect(await screen.findByText('Sarakstu vēl neesat pieprasījuši.')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Ziņa administratoram/), { target: { value: 'Paldies!' } })
     fireEvent.click(screen.getByRole('button', { name: 'Pieprasīt abonentu sarakstu' }))
@@ -196,7 +196,7 @@ describe('AccountPage, logged in', () => {
 
   it('reports a failed list request', async () => {
     loggedIn(ACCOUNT, { 'POST /api/account/list-request': fail(429, 'rate_limited') })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.click(await screen.findByRole('button', { name: 'Pieprasīt abonentu sarakstu' }))
     expect(await screen.findByText('Pieprasījums nav nosūtīts.')).toBeInTheDocument()
   })
@@ -204,7 +204,7 @@ describe('AccountPage, logged in', () => {
   it('retries the pledge list after a failure', async () => {
     let calls = 0
     loggedIn(ACCOUNT, { 'GET /api/account/pledges': () => (calls++ === 0 ? fail(500, 'server') : ok([])) })
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     const pledges = await screen.findByRole('region', { name: 'Ziedotāju atzīmes' })
     fireEvent.click(await within(pledges).findByRole('button', { name: 'Mēģināt vēlreiz' }))
     expect(await within(pledges).findByText(/Vēl neviens nav atzīmējis/)).toBeInTheDocument()
@@ -214,7 +214,7 @@ describe('AccountPage, logged in', () => {
     let calls = 0
     loggedIn(ACCOUNT, { 'POST /api/auth/logout': () => (calls++ === 0 ? 'network' : ok({})) })
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    renderWithProviders(<AccountPage />)
+    renderWithProviders(<AccountPanel />)
     fireEvent.click(await screen.findByRole('button', { name: 'Iziet' }))
     expect(await screen.findByText('Neizdevās iziet no konta')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Iziet' }))

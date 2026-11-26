@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   categoryCounts,
+  mapCharities,
+  needKindCounts,
+  NO_FILTER,
   coverUrl,
   filterCharities,
   findBySlug,
@@ -16,12 +19,16 @@ import {
   topNeeds,
   topSponsors,
 } from './snapshot'
+import { NEED_KINDS } from '@shared/catalog'
+
 import { childrenHome, PHOTO_KEY, shelter, snapshotFixture } from './snapshot.fixtures'
 
 describe('snapshot guard', () => {
   it('accepts a valid snapshot and every valid charity', () => {
     expect(isPublicSnapshot(snapshotFixture)).toBe(true)
     expect(isPublicCharity(shelter)).toBe(true)
+    expect(isPublicCharity({ ...shelter, demoNeeds: true })).toBe(true)
+    expect(isPublicCharity({ ...shelter, demoNeeds: 'yes' })).toBe(false)
     expect(parseSnapshot(JSON.parse(JSON.stringify(snapshotFixture)))).toEqual(snapshotFixture)
   })
 
@@ -81,29 +88,54 @@ describe('search and filters', () => {
 
   it('ignores case and diacritics', () => {
     expect(normaliseSearch('  Rīga   Ēdole ')).toBe('riga edole')
-    expect(filterCharities(all, { query: 'riga', category: null })).toEqual([shelter])
-    expect(filterCharities(all, { query: 'CĒSIS', category: null })).toEqual([childrenHome])
-    expect(filterCharities(all, { query: 'ulubele', category: null })).toEqual([shelter])
+    expect(filterCharities(all, { query: 'riga', category: null, kinds: [] })).toEqual([shelter])
+    expect(filterCharities(all, { query: 'CĒSIS', category: null, kinds: [] })).toEqual([childrenHome])
+    expect(filterCharities(all, { query: 'ulubele', category: null, kinds: [] })).toEqual([shelter])
   })
 
   it('filters by category and sorts by name in Latvian order', () => {
-    expect(filterCharities(all, { query: '', category: 'bernu-nams' })).toEqual([childrenHome])
-    expect(filterCharities(all, { query: '', category: null }).map((c) => c.id)).toEqual(['c-cesis', 'c-ulubele'])
-    expect(filterCharities(all, { query: 'zzz', category: null })).toEqual([])
+    expect(filterCharities(all, { query: '', category: 'bernu-nams', kinds: [] })).toEqual([childrenHome])
+    expect(filterCharities(all, { query: '', category: null, kinds: [] }).map((c) => c.id)).toEqual(['c-cesis', 'c-ulubele'])
+    expect(filterCharities(all, { query: 'zzz', category: null, kinds: [] })).toEqual([])
   })
 
   it('does not reorder its input', () => {
     const input = [shelter, childrenHome]
-    filterCharities(input, { query: '', category: null })
+    filterCharities(input, { query: '', category: null, kinds: [] })
     expect(input).toEqual([shelter, childrenHome])
   })
 
-  it('counts each category among the matches, empty ones left out', () => {
-    expect(categoryCounts(all, '')).toEqual([
+  it('counts the organisations with needs in each category; one with none only keeps its chip at 0 while no kind is chosen', () => {
+    expect(categoryCounts(all, { query: '', kinds: [] })).toEqual([
       { id: 'dzivnieku-patversme', count: 1 },
-      { id: 'bernu-nams', count: 1 },
+      { id: 'bernu-nams', count: 0 },
     ])
-    expect(categoryCounts(all, 'cēs')).toEqual([{ id: 'bernu-nams', count: 1 }])
+    expect(categoryCounts(all, { query: 'cēs', kinds: [] })).toEqual([{ id: 'bernu-nams', count: 0 }])
+    expect(categoryCounts(all, { query: '', kinds: ['dzivnieki'] })).toEqual([{ id: 'dzivnieku-patversme', count: 1 }])
+    expect(categoryCounts(all, { query: '', kinds: ['macibas'] })).toEqual([])
+  })
+
+  it('filters by need kind: any one need of a chosen kind, so an organisation without needs never matches one', () => {
+    expect(filterCharities(all, { query: '', category: null, kinds: ['dzivnieki'] })).toEqual([shelter])
+    expect(filterCharities(all, { query: '', category: null, kinds: ['macibas', 'dzivnieki'] })).toEqual([shelter])
+    expect(filterCharities(all, { query: '', category: null, kinds: ['macibas'] })).toEqual([])
+    expect(filterCharities(all, { query: '', category: 'bernu-nams', kinds: ['dzivnieki'] })).toEqual([])
+  })
+
+  it('splits what the map draws: with needs (clustered) and without (faded)', () => {
+    expect(mapCharities(all, NO_FILTER)).toEqual({ active: [shelter], faded: [childrenHome] })
+    expect(mapCharities(all, { ...NO_FILTER, category: 'bernu-nams' })).toEqual({ active: [], faded: [childrenHome] })
+    expect(mapCharities(all, { ...NO_FILTER, kinds: ['dzivnieki'] })).toEqual({ active: [shelter], faded: [] })
+    expect(mapCharities(all, { ...NO_FILTER, query: 'zzz' })).toEqual({ active: [], faded: [] })
+  })
+
+  it('counts every need kind among the matches of the search and the category', () => {
+    const counts = needKindCounts(all, { query: '', category: null })
+    expect(counts.map((c) => c.id)).toEqual(NEED_KINDS.map((k) => k.id))
+    expect(counts.find((c) => c.id === 'dzivnieki')).toEqual({ id: 'dzivnieki', count: 1 })
+    expect(counts.filter((c) => c.count > 0)).toHaveLength(1)
+    expect(needKindCounts(all, { query: '', category: 'bernu-nams' }).every((c) => c.count === 0)).toBe(true)
+    expect(needKindCounts(all, { query: 'cēs', category: null }).every((c) => c.count === 0)).toBe(true)
   })
 
   it('finds by slug', () => {

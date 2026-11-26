@@ -6,9 +6,12 @@
  *   { "task": "rebuild-snapshot" }
  *   { "task": "import-charities", "items": [ImportedCharity, ...] }   (no snapshot; rebuild at the end)
  *   { "task": "remove-imported", "source": "import:...", "limit"?: 50 }  (rebuilds once none remain)
+ *   { "task": "demo-needs", "source": "import:...", "fraction"?: 0.25, "seed"?: 1 }  (not on prod; rebuilds)
+ *   { "task": "clear-demo-needs" }                                                (not on prod; rebuilds)
  */
 import { isEmail, normaliseEmail } from '../../shared/src/validate'
 import { publishSnapshot, sendMail } from './domain/effects'
+import { DEFAULT_DEMO_FRACTION, DEFAULT_DEMO_SEED, applyDemoNeeds, clearDemoNeeds } from './domain/demo-needs'
 import { importCharities, removeImported } from './domain/import'
 import { IMPORT_SOURCE_RE, isImportedCharity } from './domain/imported'
 import { linksOf, type Deps } from './deps'
@@ -64,6 +67,26 @@ const removeTask = async (deps: Deps, source: unknown, rawLimit: unknown): Promi
   return { ok: true, data: { ...result } }
 }
 
+/** Made-up needs never reach production's map. */
+export const PROD_ENVIRONMENT = 'prod'
+const NOT_ON_PROD: TaskResult = { ok: false, error: 'demo needs are refused on prod' }
+
+const demoNeedsTask = async (deps: Deps, event: Readonly<Record<string, unknown>>): Promise<TaskResult> => {
+  if (deps.config.environment === PROD_ENVIRONMENT) return NOT_ON_PROD
+  const { source, fraction = DEFAULT_DEMO_FRACTION, seed = DEFAULT_DEMO_SEED } = event
+  if (typeof source !== 'string' || !IMPORT_SOURCE_RE.test(source)) return { ok: false, error: 'source must be import:<dataset>' }
+  if (typeof fraction !== 'number' || !(fraction > 0 && fraction <= 1)) return { ok: false, error: 'fraction must be above 0 and at most 1' }
+  if (typeof seed !== 'number' || !Number.isSafeInteger(seed)) return { ok: false, error: 'seed must be an integer' }
+  const result = await applyDemoNeeds(deps, deps.log, { source, fraction, seed })
+  return result.snapshotWritten ? { ok: true, data: { ...result } } : { ok: false, error: 'snapshot failed' }
+}
+
+const clearDemoNeedsTask = async (deps: Deps): Promise<TaskResult> => {
+  if (deps.config.environment === PROD_ENVIRONMENT) return NOT_ON_PROD
+  const result = await clearDemoNeeds(deps, deps.log)
+  return result.snapshotWritten ? { ok: true, data: { ...result } } : { ok: false, error: 'snapshot failed' }
+}
+
 export const isTaskEvent = (event: unknown): event is { readonly task: unknown } =>
   typeof event === 'object' && event !== null && 'task' in event && !('requestContext' in event)
 
@@ -80,6 +103,10 @@ export const runTask = async (deps: Deps, event: Readonly<Record<string, unknown
         return await importTask(deps, event.items)
       case 'remove-imported':
         return await removeTask(deps, event.source, event.limit)
+      case 'demo-needs':
+        return await demoNeedsTask(deps, event)
+      case 'clear-demo-needs':
+        return await clearDemoNeedsTask(deps)
       default:
         return { ok: false, error: 'unknown task' }
     }

@@ -37,7 +37,7 @@ export const MapPanels = ({
       )
     case 'info':
       return (
-        <MapPanelCard key={open} {...shell} title={t('info.title')}>
+        <MapPanelCard key={open} {...shell} title={t('info.title')} wide>
           <InfoContent />
         </MapPanelCard>
       )

@@ -16,11 +16,13 @@ out="\${@: -1}"
 payload=""
 while [ $# -gt 0 ]; do case "$1" in --payload) payload="\${2#fileb://}"; shift;; esac; shift; done
 n=$(( $(wc -l < "$AWS_LOG" 2>/dev/null || echo 0) + 1 ))
-jq -c '{task, n: ((.items // []) | length), source, limit}' "$payload" >> "$AWS_LOG"
+jq -c '{task, n: ((.items // []) | length), source, limit, fraction, seed}' "$payload" >> "$AWS_LOG"
 if [ "\${FAIL_AT:-0}" = "$n" ]; then echo '{"ok":false,"error":"boom"}' > "$out"; echo '{"StatusCode":200}'; exit 0; fi
 case "$(jq -r .task "$payload")" in
   import-charities) jq -c '{ok: true, data: {imported: (.items|length), created: (.items|length), updated: 0, refused: []}}' "$payload" > "$out" ;;
   rebuild-snapshot) echo '{"ok":true,"data":{"written":true}}' > "$out" ;;
+  demo-needs) echo '{"ok":true,"data":{"picked":255,"cleared":3,"snapshotWritten":true}}' > "$out" ;;
+  clear-demo-needs) echo '{"ok":true,"data":{"cleared":255,"snapshotWritten":true}}' > "$out" ;;
   remove-imported)
     left=$(( $(cat "$STATE") - 50 )); [ "$left" -lt 0 ] && left=0; echo "$left" > "$STATE"
     echo "{\\"ok\\":true,\\"data\\":{\\"removed\\":50,\\"remaining\\":$left}}" > "$out" ;;
@@ -40,7 +42,7 @@ const sandbox = () => {
       encoding: 'utf8',
       env: { ...process.env, PATH: `${dir}:${process.env.PATH ?? ''}`, AWS_LOG: log, STATE: state, ...env },
     })
-  const calls = (): { task: string; n: number; source: string | null; limit: number | null }[] =>
+  const calls = (): { task: string; n: number; source: string | null; limit: number | null; fraction: number | null; seed: number | null }[] =>
     readFileSync(log, 'utf8').trim().split('\n').map((l) => JSON.parse(l))
   const file = join(dir, 'items.json')
   writeFileSync(file, JSON.stringify(Array.from({ length: 250 }, (_, i) => importedItem(i + 1))))
@@ -90,5 +92,39 @@ describe('remove-imported.sh', () => {
     expect(s.run('remove-imported.sh', ['fn', 'import:x'], { FAIL_AT: '1' }).status).toBe(1)
     expect(s.run('remove-imported.sh', ['fn', 'x"}']).status).toBe(2)
     expect(s.run('remove-imported.sh', ['fn']).status).toBe(2)
+  })
+})
+
+describe('demo-needs.sh', () => {
+  it('applies with the source, share and seed, or clears, one call each', () => {
+    const s = sandbox()
+    const r = s.run('demo-needs.sh', ['dev-dodarprieku-api', 'apply', 'import:charity-map-2026-11-25', '0.3', '7'])
+    expect(r.status).toBe(0)
+    expect(s.calls()).toEqual([
+      { task: 'demo-needs', n: 0, source: 'import:charity-map-2026-11-25', limit: null, fraction: 0.3, seed: 7 },
+    ])
+    expect(r.stdout).toContain('done: 255 charities have demo needs (3 from an earlier run cleared); snapshot rebuilt')
+    const c = s.run('demo-needs.sh', ['dev-dodarprieku-api', 'clear'])
+    expect(c.status).toBe(0)
+    expect(s.calls()[1]).toMatchObject({ task: 'clear-demo-needs' })
+    expect(c.stdout).toContain('done: 255 charities back to no needs')
+  })
+
+  it('defaults to a quarter and seed 1', () => {
+    const s = sandbox()
+    expect(s.run('demo-needs.sh', ['fn', 'apply', 'import:x']).status).toBe(0)
+    expect(s.calls()[0]).toMatchObject({ fraction: 0.25, seed: 1 })
+  })
+
+  it('refuses production and bad arguments before calling anything, and stops on an error', () => {
+    const s = sandbox()
+    const prod = s.run('demo-needs.sh', ['prod-dodarprieku-api', 'clear'])
+    expect(prod.status).toBe(2)
+    expect(prod.stderr).toContain('never written to production')
+    for (const args of [[], ['fn'], ['fn', 'nope'], ['fn', 'apply'], ['fn', 'apply', 'x"}'], ['fn', 'apply', 'import:x', '2'],
+      ['fn', 'apply', 'import:x', '0.2', '-1'], ['fn', 'clear', 'extra'], ['bad name', 'clear']]) {
+      expect(s.run('demo-needs.sh', args).status).toBe(2)
+    }
+    expect(s.run('demo-needs.sh', ['fn', 'clear'], { FAIL_AT: '1' }).status).toBe(1)
   })
 })

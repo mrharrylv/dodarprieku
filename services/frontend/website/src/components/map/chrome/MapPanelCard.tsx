@@ -16,10 +16,13 @@ export const MapPanelCard = ({
   title,
   onClose,
   panelRef,
+  wide = false,
   children,
 }: {
   id: PanelId
   title: string
+  /** The info panel: wider, for the project's whole story. */
+  wide?: boolean
   onClose: () => void
   panelRef: RefObject<HTMLElement | null>
   children: ReactNode
@@ -34,9 +37,12 @@ export const MapPanelCard = ({
       aria-labelledby={headingId}
       tabIndex={-1}
       className={cn(
-        'dp-panel fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] flex-col focus:outline-none',
+        'dp-panel fixed inset-x-0 bottom-0 z-40 flex flex-col focus:outline-none',
+        wide ? 'max-h-[88dvh]' : 'max-h-[72dvh]',
         'rounded-t-(--radius-2xl) border border-(--border-subtle) bg-(--surface-raised) shadow-(--shadow-lifted)',
-        'md:absolute md:inset-x-auto md:top-24 md:bottom-auto md:left-20 md:max-h-[calc(100%-7.5rem)] md:w-[28rem] max-w-full md:rounded-(--radius-xl)',
+        'md:absolute md:inset-x-auto md:top-24 md:bottom-auto md:left-20 md:max-h-[calc(100%-7.5rem)] max-w-full md:rounded-(--radius-xl)',
+        // Never under a docked panel: as wide as the map's visible part allows.
+        wide ? 'md:w-[min(40rem,calc(100%-6rem-var(--dock-inset,0px)))]' : 'md:w-[min(28rem,calc(100%-6rem-var(--dock-inset,0px)))]',
       )}
     >
       <div aria-hidden="true" className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-(--border-strong) md:hidden" />

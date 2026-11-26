@@ -8,8 +8,11 @@ export const AuthShell = ({ title, intro, children }: { readonly title: string; 
     <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-3">
         <BrandMark className="size-10" />
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-accent)]">
-          {lv.app.name} · {lv.app.area}
+        <p className="text-sm font-semibold text-[var(--text-accent)]">
+          <span className="font-[family-name:var(--font-display)]">{lv.app.wordmark}</span>
+          <span aria-hidden="true"> · </span>
+          <span className="sr-only">, </span>
+          <span className="text-xs uppercase tracking-wide">{lv.app.area}</span>
         </p>
       </div>
       <h1 className="mt-2 text-[length:var(--text-2xl)]">{title}</h1>

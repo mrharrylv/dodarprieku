@@ -51,16 +51,19 @@ export interface SubscribeDraft {
   readonly email: string
   readonly name: string
   readonly consent: boolean
+  /** "Saņemt arī vispārējos jaunumus": only asked on an organisation's own sign-up. */
+  readonly general: boolean
   readonly website: string
 }
 
+/** The sign-up as the API takes it: one without an organisation is always the general newsletter. */
 export const buildSubscribe = (draft: SubscribeDraft, charityId?: string): Result<SubscribeRequest> =>
   validateSubscribe({
     email: draft.email,
     name: draft.name,
     consent: draft.consent,
     website: draft.website,
-    ...(charityId !== undefined ? { charityId } : {}),
+    ...(charityId !== undefined ? { charityId, general: draft.general } : { general: true }),
   })
 
 /** The honeypot was filled: a bot. The form says it could not send, nothing more. */

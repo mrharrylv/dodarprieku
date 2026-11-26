@@ -45,8 +45,15 @@ export const LOCALE_CODES: readonly LocaleCode[] = LOCALES.map((l) => l.code)
  * ========================================================================== */
 
 export const SITE = {
-  /** Brand name, as shown to visitors. */
+  /** Brand name, as written in a sentence and in page titles. */
   name: 'Dod ar prieku',
+  /**
+   * The logo's wordmark: all lowercase, deliberately (Harry, 2026-11-26).
+   * Wherever the name is the logo (the floating brand, the header, the
+   * footer's brand, the favicon and the share card's alt text); never in a
+   * sentence, where the name keeps its capital.
+   */
+  wordmark: 'dod ar prieku',
   /** Used where the brand needs qualifying, e.g. the <title> suffix. */
   shortName: 'Dod ar prieku',
   /** Domain without protocol, for display, not for linking. */
@@ -149,12 +156,15 @@ export const COMPANY = {
 /**
  * "Citi HA Group projekti": the footer row, the project page and the map's
  * info panel. `logo` is the project's own logo in `public/projects/` (a
- * 96-128px PNG); its one line is `projects.<id>` in `common.json`. The names
- * are proper nouns and stay as written.
+ * 96-192px PNG); its one line is `projects.<id>` in `common.json`. The names
+ * are proper nouns and stay as written. `logoZoom` crops a logo drawn with a
+ * wide margin of its own (EventApp's wordmark sits small in a dark square), so
+ * it fills its rounded square like the others.
  */
 export const HA_GROUP_PROJECTS = [
   { id: 'unveil', name: 'Unveil', url: 'https://unveil.hagroup.lv', logo: '/projects/unveil.png' },
-  { id: 'eventapp', name: 'Event App', url: 'https://eventapp.lv', logo: '/projects/eventapp.png' },
+  // logoZoom crops the dark margin of this exact image (192x192): revisit it whenever eventapp.png changes.
+  { id: 'eventapp', name: 'EventApp', url: 'https://eventapp.lv', logo: '/projects/eventapp.png', logoZoom: 1.45 },
   { id: 'balticgp', name: 'Baltic GP', url: 'https://balticgp.hagroup.lv', logo: '/projects/balticgp.png' },
   { id: 'hagroup', name: 'HA Group', url: 'https://www.hagroup.lv', logo: '/projects/hagroup.png' },
 ] as const

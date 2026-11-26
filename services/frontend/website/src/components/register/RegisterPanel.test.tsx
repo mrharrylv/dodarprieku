@@ -7,7 +7,7 @@ import { STORAGE_KEYS } from '@/config/site'
 import { fail, mockApi, ok } from '@/components/profile-editor/fetch-mock'
 import { VALID_FORM } from '@/components/profile-editor/fixtures'
 import { renderWithProviders } from '@/test/render'
-import { RegisterPage } from './RegisterPage'
+import { RegisterPanel } from './RegisterPanel'
 
 // The real map needs WebGL; the stub drops a pin with one click.
 vi.mock('@/components/location-picker/MapCanvas', () => ({
@@ -39,18 +39,18 @@ const fillOrganization = () => {
   type(/^Tālrunis/, '+371 29123456', 1)
 }
 
-describe('RegisterPage', () => {
+describe('RegisterPanel', () => {
   afterEach(() => window.sessionStorage.clear())
 
-  it('renders one h1, the progress and the first step', () => {
-    renderWithProviders(<RegisterPage />)
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+  it('renders the intro, the progress and the first step, and no h1 of its own (the map has it)', () => {
+    renderWithProviders(<RegisterPanel />)
+    expect(screen.queryAllByRole('heading', { level: 1 })).toHaveLength(0)
     expect(screen.getByRole('navigation', { name: 'Reģistrācijas soļi' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Organizācija' })).toBeInTheDocument()
   })
 
   it('stops on an empty step, explains each field and focuses the first', async () => {
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     next()
     expect(await screen.findByText('Lūdzu, izlabojiet atzīmētos laukus')).toBeInTheDocument()
     const name = field(/^Nosaukums, kā to redzēs/)
@@ -61,7 +61,7 @@ describe('RegisterPage', () => {
 
   it('walks all six steps and submits the application', async () => {
     const api = mockApi({ 'POST /api/applications': ok({ id: 'app1' }) })
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
 
     fillOrganization()
     next()
@@ -123,7 +123,7 @@ describe('RegisterPage', () => {
   })
 
   it('goes back with the progress and keeps what was typed', async () => {
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     fillOrganization()
     next()
     await stepHeading('Par jums')
@@ -140,7 +140,7 @@ describe('RegisterPage', () => {
       STORAGE_KEYS.registerDraft,
       JSON.stringify({ version: 1, step: 4, form: VALID_FORM, accountEmail: '' }),
     )
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     expect(await stepHeading('Saņemšana')).toBeInTheDocument()
     expect(screen.getByText('Turpinām no vietas, kur palikāt')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Sākt no jauna' }))
@@ -150,7 +150,7 @@ describe('RegisterPage', () => {
 
   it('asks before a category change clears the ticked needs', async () => {
     window.sessionStorage.setItem(STORAGE_KEYS.registerDraft, JSON.stringify({ version: 1, step: 1, form: VALID_FORM, accountEmail: '' }))
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     await stepHeading('Par jums')
     fireEvent.click(screen.getByRole('radio', { name: /Bērnu nams/ }))
     const dialog = await screen.findByRole('alertdialog', { name: 'Mainīt iestādes veidu?' })
@@ -177,7 +177,7 @@ describe('RegisterPage', () => {
     mockApi({ 'POST /api/applications': reply })
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     window.sessionStorage.setItem(STORAGE_KEYS.registerDraft, JSON.stringify({ version: 1, step: 5, form: VALID_FORM, accountEmail: 'a@b.lv' }))
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     await stepHeading('Pārskats un iesniegšana')
     fireEvent.click(screen.getByRole('checkbox', { name: /Esmu iepazinies/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Iesniegt pieteikumu/ }))
@@ -188,7 +188,7 @@ describe('RegisterPage', () => {
   it('sends the person back to the step the API rejected', async () => {
     mockApi({ 'POST /api/applications': fail(400, 'validation', { 'profile.organization.regNumber': 'invalid' }) })
     window.sessionStorage.setItem(STORAGE_KEYS.registerDraft, JSON.stringify({ version: 1, step: 5, form: VALID_FORM, accountEmail: 'a@b.lv' }))
-    renderWithProviders(<RegisterPage />)
+    renderWithProviders(<RegisterPanel />)
     await stepHeading('Pārskats un iesniegšana')
     await userEvent.click(screen.getByRole('checkbox', { name: /Esmu iepazinies/ }))
     await userEvent.click(screen.getByRole('button', { name: /^Iesniegt pieteikumu/ }))

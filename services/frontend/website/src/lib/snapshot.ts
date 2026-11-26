@@ -7,7 +7,7 @@
  * One malformed charity is dropped rather than taking the whole map down.
  */
 
-import { CATEGORIES, categoryById, isCategoryId, needLabel, needKey, type CategoryId } from '@shared/catalog'
+import { CATEGORIES, NEED_KINDS, categoryById, isCategoryId, needLabel, needKey, type CategoryId, type NeedKindId } from '@shared/catalog'
 import {
   MEDIA_PREFIX,
   type Need,
@@ -16,6 +16,7 @@ import {
   type SponsorLeaderboardEntry,
 } from '@shared/contracts'
 import { isMediaKey } from '@shared/validate'
+import { hasNeeds, matchesKinds, needKindsOf } from './need-kinds'
 
 type Obj = Readonly<Record<string, unknown>>
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -60,7 +61,13 @@ const isProfile = (v: unknown): boolean => {
 }
 
 export const isPublicCharity = (v: unknown): v is PublicCharity =>
-  isObj(v) && isStr(v.id) && isStr(v.slug) && v.slug !== '' && isStr(v.publishedAt) && isProfile(v.profile)
+  isObj(v) &&
+  isStr(v.id) &&
+  isStr(v.slug) &&
+  v.slug !== '' &&
+  isStr(v.publishedAt) &&
+  (v.demoNeeds === undefined || typeof v.demoNeeds === 'boolean') &&
+  isProfile(v.profile)
 
 const isLeaderboardEntry = (v: unknown): v is SponsorLeaderboardEntry =>
   isObj(v) && isStr(v.name) && isNum(v.charities) && isOptStr(v.url) && isOptStr(v.logo)
@@ -94,7 +101,11 @@ export const normaliseSearch = (value: string): string =>
 export interface CharityFilter {
   readonly query: string
   readonly category: CategoryId | null
+  /** "Ko vajag": none chosen means every kind. */
+  readonly kinds: readonly NeedKindId[]
 }
+
+export const NO_FILTER: CharityFilter = { query: '', category: null, kinds: [] }
 
 export const matchesQuery = (charity: PublicCharity, query: string): boolean => {
   const q = normaliseSearch(query)
@@ -103,28 +114,75 @@ export const matchesQuery = (charity: PublicCharity, query: string): boolean => 
   return [organization.name, address.city].some((field) => normaliseSearch(field).includes(q))
 }
 
-/** The charities that pass the search and the category, in name order. */
+const byName = (a: PublicCharity, b: PublicCharity): number =>
+  a.profile.organization.name.localeCompare(b.profile.organization.name, 'lv')
+
+/**
+ * The charities that pass the search, the category and the need kinds, in
+ * name order. With no kind chosen, organisations without needs pass too: the
+ * search finds them, and the map draws them faded from close up.
+ */
 export const filterCharities = (
   charities: readonly PublicCharity[],
-  { query, category }: CharityFilter,
+  { query, category, kinds }: CharityFilter,
 ): readonly PublicCharity[] =>
   charities
-    .filter((c) => (category === null || c.profile.category === category) && matchesQuery(c, query))
+    .filter((c) => (category === null || c.profile.category === category) && matchesKinds(c, kinds) && matchesQuery(c, query))
     .slice()
-    .sort((a, b) => a.profile.organization.name.localeCompare(b.profile.organization.name, 'lv'))
+    .sort(byName)
+
+export interface MapCharities {
+  /** Matching, with open needs: the pins, and the only ones the clusters hold and count. */
+  readonly active: readonly PublicCharity[]
+  /** Matching, without needs: drawn greyed out from close up, never clustered. */
+  readonly faded: readonly PublicCharity[]
+}
+
+/** What the map draws for a filter: the organisations with needs, and the ones without. */
+export const mapCharities = (charities: readonly PublicCharity[], filter: CharityFilter): MapCharities => {
+  const matching = filterCharities(charities, filter)
+  return { active: matching.filter(hasNeeds), faded: matching.filter((c) => !hasNeeds(c)) }
+}
 
 export interface CategoryCount {
   readonly id: CategoryId
   readonly count: number
 }
 
-/** How many charities match the search in each category, in catalog order, empty categories left out. */
-export const categoryCounts = (charities: readonly PublicCharity[], query: string): readonly CategoryCount[] => {
+/**
+ * How many organisations with needs match the search and the kinds in each
+ * category, in catalog order. A category with none is left out, unless no
+ * kind is chosen and it has organisations without needs: the chip then says
+ * 0 and still filters the faded pins.
+ */
+export const categoryCounts = (
+  charities: readonly PublicCharity[],
+  { query, kinds }: Pick<CharityFilter, 'query' | 'kinds'>,
+): readonly CategoryCount[] => {
   const matching = charities.filter((c) => matchesQuery(c, query))
-  return CATEGORIES.map((cat) => ({
-    id: cat.id,
-    count: matching.filter((c) => c.profile.category === cat.id).length,
-  })).filter((entry) => entry.count > 0)
+  return CATEGORIES.map((cat) => {
+    const inCategory = matching.filter((c) => c.profile.category === cat.id)
+    const count = inCategory.filter((c) => hasNeeds(c) && matchesKinds(c, kinds)).length
+    return { id: cat.id, count, shown: count > 0 || (kinds.length === 0 && inCategory.length > 0) }
+  })
+    .filter((entry) => entry.shown)
+    .map(({ id, count }) => ({ id, count }))
+}
+
+export interface NeedKindCount {
+  readonly id: NeedKindId
+  readonly count: number
+}
+
+/** How many organisations matching the search and the category need each kind, in catalog order, every kind listed. */
+export const needKindCounts = (
+  charities: readonly PublicCharity[],
+  { query, category }: Pick<CharityFilter, 'query' | 'category'>,
+): readonly NeedKindCount[] => {
+  const kindsOf = charities
+    .filter((c) => (category === null || c.profile.category === category) && matchesQuery(c, query))
+    .map(needKindsOf)
+  return NEED_KINDS.map((kind) => ({ id: kind.id, count: kindsOf.filter((own) => own.has(kind.id)).length }))
 }
 
 export const findBySlug = (charities: readonly PublicCharity[], slug: string | undefined): PublicCharity | undefined =>

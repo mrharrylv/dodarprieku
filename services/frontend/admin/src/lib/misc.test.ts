@@ -28,8 +28,8 @@ describe('nameLookup', () => {
 
 describe('subscribers', () => {
   const rows = [
-    { email: 'janis@a.lv', name: 'Jānis', charityIds: ['c1'], createdAt: '1' },
-    { email: 'x@b.lv', charityIds: [], createdAt: '2' },
+    { email: 'janis@a.lv', name: 'Jānis', charityIds: ['c1'], general: false, createdAt: '1' },
+    { email: 'x@b.lv', charityIds: [], general: true, createdAt: '2' },
   ]
   it('filters by email or name without diacritics, and by charity', () => {
     expect(filterSubscribers(rows, 'JANIS')).toHaveLength(1)

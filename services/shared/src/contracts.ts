@@ -163,6 +163,12 @@ export interface PublicCharity {
   readonly slug: string
   readonly profile: PublicProfile
   readonly publishedAt: string
+  /**
+   * True when its needs were made up for a demonstration (the dev-only
+   * `demo-needs` task, or `make run`'s seed). While any charity has it, the map
+   * says so. Never set on production.
+   */
+  readonly demoNeeds?: boolean
 }
 
 export interface SponsorLeaderboardEntry {
@@ -213,6 +219,12 @@ export interface SubscribeRequest {
   readonly consent: true
   /** The charity page the visitor subscribed from, if any. */
   readonly charityId?: string
+  /**
+   * Also the general newsletter. Only asked when `charityId` is set (the
+   * organisation's own sign-up offers it as an extra tick box); a sign-up
+   * without a charity is always general.
+   */
+  readonly general?: boolean
   readonly website?: string
 }
 
@@ -297,8 +309,14 @@ export interface SubscriberRecord {
   readonly email: string
   readonly name?: string
   readonly charityIds: readonly string[]
+  /** Receives the general newsletter, not only news of the organisations in `charityIds`. */
+  readonly general: boolean
   readonly createdAt: string
 }
+
+/** Which subscribers `GET /api/admin/subscribers?scope=` lists: the general newsletter's, or everyone. */
+export const SUBSCRIBER_SCOPES = ['general', 'all'] as const
+export type SubscriberScope = (typeof SUBSCRIBER_SCOPES)[number]
 
 export interface ListRequestRecord {
   readonly id: string

@@ -60,6 +60,19 @@ export const SPLIT_CLUSTERS = { over: 150, minGapPx: 56 } as const
 export const CLUSTER_MAX_ZOOM = 16
 /** From this zoom (roughly a 100 km wide view) the fine clustering is used. */
 export const FINE_FROM_ZOOM = 9
+/**
+ * Organisations without needs appear, greyed out, from this zoom (a few
+ * streets of Riga); at the country, regional and town views only the ones that
+ * need something are on the map (Harry, 2026-11-26). Zoom 11 put hundreds of
+ * grey pins over Riga, in clumps on top of the hearts.
+ */
+export const FADED_FROM_ZOOM = 13
+/**
+ * How the faded pins are thinned: none within `minGapPx` of an active marker
+ * or of another faded one, and at most `max` in view, so they stay a quiet
+ * background and the tab order stays short.
+ */
+export const FADED = { minGapPx: 40, max: 40 } as const
 /** Fewer markers than this on screen and the clusters split further. */
 export const MIN_VISIBLE_MARKERS = 5
 /** A mixed cluster's heart, in pixels: from `min` for two, `perDecade` more for every tenfold, at most `max`. A pin is 44px. */

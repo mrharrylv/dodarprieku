@@ -5,7 +5,7 @@ import { ROUTES } from '@/config/site'
 import { useLocale } from '@/hooks/useLocale'
 import type { SnapshotState } from '@/hooks/useSnapshot'
 import { localePath } from '@/lib/locale-path'
-import { filterCharities, type CharityFilter } from '@/lib/snapshot'
+import { filterCharities, NO_FILTER, type CharityFilter } from '@/lib/snapshot'
 import { ButtonLink } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { ApiErrorNotice } from '@/components/charity/ApiErrorNotice'
@@ -13,7 +13,7 @@ import { SubscribeBox } from '@/components/pledge/SubscribeBox'
 import { CharityList } from '../CharityList'
 import { SponsorLeaderboard } from '../SponsorLeaderboard'
 
-/** The organisations that match the search and the chip, each one a fly-to: the search's results. */
+/** The organisations that match the search, the chip and the need kinds, each one a fly-to: the search's results. */
 export const OrganisationsContent = ({
   state,
   filter,
@@ -40,13 +40,13 @@ export const OrganisationsContent = ({
         {t('list.count', { count: visible.length })}
       </p>
       {visible.length > 0 ? (
-        <CharityList key={`${filter.query}|${filter.category ?? ''}`} charities={visible} selectedId={selectedId} onChoose={onChoose} />
+        <CharityList key={`${filter.query}|${filter.category ?? ''}|${filter.kinds.join(',')}`} charities={visible} selectedId={selectedId} onChoose={onChoose} />
       ) : (
         <div className="rounded-(--radius-lg) border border-dashed border-(--border-strong) p-5 text-center">
           <p className="text-(--text-secondary)">{t('list.noMatch')}</p>
           <button
             type="button"
-            onClick={() => onFilter({ query: '', category: null })}
+            onClick={() => onFilter(NO_FILTER)}
             className="mt-2 min-h-11 font-medium text-(--text-accent) underline underline-offset-2"
           >
             {t('list.reset')}

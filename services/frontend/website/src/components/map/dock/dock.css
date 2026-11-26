@@ -1,0 +1,26 @@
+/* The docked panel slides in from the right on a wide screen and rises as a
+   sheet on a phone. The base layer's reduced-motion rule zeroes the duration. */
+@keyframes dp-dock-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+
+@keyframes dp-dock-slide {
+  from {
+    opacity: 0;
+    transform: translateX(2rem);
+  }
+}
+
+.dp-dock {
+  animation: dp-dock-rise 240ms var(--ease-out-soft) both;
+}
+
+@media (min-width: 64rem) {
+  .dp-dock {
+    animation-name: dp-dock-slide;
+    animation-duration: 260ms;
+  }
+}

@@ -20,7 +20,9 @@ type Status = { readonly kind: 'idle' | 'sending' | 'done' } | { readonly kind: 
 
 /**
  * The newsletter / urgent-needs sign-up (`POST /api/subscribe`), on the map's
- * panel and after a pledge. `charityId` ties it to the page it came from.
+ * panel, in a charity's card and after a pledge. `charityId` ties it to that
+ * organisation, and then an extra tick box, "Saņemt arī vispārējos
+ * jaunumus", adds the general newsletter; the rail's sign-up is always general.
  */
 export const SubscribeBox = ({
   charityId,
@@ -36,7 +38,7 @@ export const SubscribeBox = ({
 }) => {
   const { t } = useTranslation('charity')
   const { locale } = useLocale()
-  const [draft, setDraft] = useState<SubscribeDraft>({ email: initialEmail, name: '', consent: false, website: '' })
+  const [draft, setDraft] = useState<SubscribeDraft>({ email: initialEmail, name: '', consent: false, general: false, website: '' })
   const [fields, setFields] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const set = (patch: Partial<SubscribeDraft>) => setDraft((prev) => ({ ...prev, ...patch }))
@@ -91,6 +93,14 @@ export const SubscribeBox = ({
           </>
         }
       />
+      {charityId !== undefined && (
+        <Checkbox
+          checked={draft.general}
+          onChange={(general) => set({ general })}
+          label={t('subscribe.general')}
+          hint={t('subscribe.generalHint')}
+        />
+      )}
       <Honeypot label={t('pledge.honeypot')} value={draft.website} onChange={(website) => set({ website })} />
       {status.kind === 'failed' && <ApiErrorNotice error={status.error} />}
       <Button type="submit" loading={status.kind === 'sending'} loadingLabel={t('subscribe.submitting')} className="w-full">

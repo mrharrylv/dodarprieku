@@ -19,7 +19,7 @@ Language: **Latvian only** (`lv`, single-locale site, so no `/lv` URL prefix).
 
 | Host | Serves |
 | --- | --- |
-| `dodarprieku.hagroup.lv` | the public site: map, charity pages, registration, charity account |
+| `dodarprieku.hagroup.lv` | the public site: the map, with registration, the charity account and every charity as panels over it |
 | `admin.dodarprieku.hagroup.lv` | the admin portal (a separate Vite app, uploaded under `admin/` in the website bucket) |
 
 One CloudFront distribution answers both hosts (one ACM certificate with both
@@ -60,7 +60,7 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
 | Token | `TOKEN#<sha256(token)>` | `TOKEN` | | purpose `set-password` or `reset`, email, ttl 7 days (reset: 1 hour); single use |
 | Pledge | `CHARITY#<id>` | `PLEDGE#<iso>#<rand>` | `PLEDGES` / `<iso>` | PledgeRecord |
 | Pledge per need | `CHARITY#<id>` | `NEEDCOUNT` | | map attribute `byNeed.<key>` ADD |
-| Subscriber | `SUBSCRIBER#<email>` | `SUB` | `SUBSCRIBERS` / `<createdAt>` | name, charityIds (string set), consentAt, source |
+| Subscriber | `SUBSCRIBER#<email>` | `SUB` | `SUBSCRIBERS` / `<createdAt>` | name, charityIds (string set), general (the general newsletter; once true it stays true; a record without it is general when it has no charityIds), consentAt, source |
 | Charity subscriber link | `CHARITY#<id>` | `SUB#<email>` | | counted for the charity's dashboard |
 | List request | `CHARITY#<id>` | `LISTREQ#<iso>` | `LISTREQS` / `<iso>` | ListRequestRecord |
 | Rate limit | `RATE#<scope>#<sha256(ip)>` | `<window>` | | count, ttl; the raw IP is never stored |
@@ -95,18 +95,19 @@ Single table `<prefix>-dodarprieku-data`, `PK`/`SK` strings, GSI1
    reject (with reason, emailed).
 6. **Visitor**: the map (`/`) shows pins with the category icon, clusters
    when zoomed out, filters by category, a list/search panel. A pin opens a
-   small popup (photo, name, category, city, three top needs, "Skatīt"). The
-   charity page (`/organizacija/<slug>`) shows photos, description, public
+   small popup (photo, name, category, city, three top needs, "Skatīt
+   vajadzības"), which expands in place (a sheet on a phone; its shareable
+   address is `/organizacija/<slug>`) into the description, public
    contacts, the needs with notes and urgent badges and live pledge counts,
    delivery options, the sponsor wall, and "Es ziedošu": tick needs, then a
    dialog asks anonymous or named (name shown publicly), optional email for a
    thank-you, an optional message, and offers the newsletter subscription
    ("Kad kaut kas būs ļoti vajadzīgs, mēs jums uzrakstīsim"). Supporters who
-   chose a public name are listed. Page view is counted once per browser
-   session.
+   chose a public name are listed. The expanded card's view is counted once
+   per browser session.
 7. **Sponsor leaderboard**: companies on charities' sponsor walls, grouped by
    normalised name (case, quotes and "SIA"/"AS" ignored), ranked by how many
-   charities they sponsor. Shown in the map's leaderboard panel and on charity pages.
+   charities they sponsor. Shown in the map's leaderboard panel.
 8. **Admin**: dashboard counts; applications (pending); update requests;
    all charities with search and status filter; detail view with every field
    editable (admin edits publish immediately), approve, reject, suspend
@@ -161,7 +162,8 @@ login 10/15 min, forgot 5/hour.
 | `POST /api/admin/charities/:id/update/approve` | admin | -> `AdminCharityDetail` |
 | `POST /api/admin/charities/:id/update/reject` | admin | `ReasonRequest` -> `AdminCharityDetail` |
 | `DELETE /api/admin/charities/:id` | admin | -> `{}` |
-| `GET /api/admin/subscribers` | admin | -> `SubscriberRecord[]` |
+| `GET /api/admin/subscribers?scope=general\|all` | admin | -> `SubscriberRecord[]` (`general`: the general newsletter's; `all`, the default: everyone) |
+| `GET /api/admin/charities/:id/subscribers` | admin | -> `SubscriberRecord[]` (that organisation's) |
 | `GET /api/admin/pledges?charityId=` | admin | -> `PledgeRecord[]` |
 | `GET /api/admin/list-requests` | admin | -> `ListRequestRecord[]` |
 | `POST /api/admin/list-requests/:charityId/:id/done` | admin | -> `ListRequestRecord` |
@@ -172,19 +174,36 @@ are logged with a request id; responses never leak internals.
 
 ## Public routes (website)
 
-| Path | Page |
+One page: the map. Every other address opens the map with a panel over it
+(Harry, 2026-11-26), so a link still works and can still be shared, but no
+panel is a page of its own: each of these prerendered shells names `/` as its
+canonical, and the sitemap and `llms.txt` list `/` only.
+
+| Path | What opens |
 | --- | --- |
-| `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" and the theme switch top right, and a rail on the left that opens one floating panel at a time (organisations, top supporters, newsletter) and links to the project page and the account |
-| `/organizacija/:slug` | charity page (client-rendered from the snapshot; prerendered shell) |
-| `/registreties` | registration wizard |
-| `/konts` | charity dashboard (login form when logged out) |
-| `/konts/parole` | set password (from the email link) / reset |
-| `/konts/aizmirsu` | forgot password |
-| `/par-projektu` | about the project: how donors help, how institutions join, how it is run, HA Group's other projects |
-| `/legal/*` | privacy, cookies, terms, company (template) |
+| `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" top right, and a rail on the left that opens one floating panel at a time (top supporters, newsletter, info) and the account |
+| `/organizacija/:slug` | the map flown to that charity, its card expanded (the CloudFront function serves the `/organizacija` shell for every slug) |
+| `/registreties` | the registration wizard, docked on the right |
+| `/konts` | the account, docked on the right: the login form, then status, stats, pledges, the profile editor with the sponsor wall, the list request and logout |
+| `/konts/parole?token=` | set password (the approval and reset emails link here), in the account panel |
+| `/konts/aizmirsu` | forgot password, in the account panel |
+| `/par-projektu` | the info panel (its three tabs hold everything the old about page said); the address then settles on `/` |
+| `/legal/*` | privacy, cookies, terms, company: pages of their own, in the site's header and footer |
+
+The registration and account panels dock on the right half of a wide screen
+(half the width, never under 30rem, from 64rem up) and are a full-screen
+sheet below that. They are not modal: a click on the map does not close them
+(only their X does) and the map stays usable. While one is open the map takes
+its width as padding (`map.setPadding`, eased in and out), so fly-tos,
+cluster zooms and the charity card centre in the visible left part; the top
+bar keeps to that part and the register button is hidden.
+
+The wordmark is "dod ar prieku", all lowercase, wherever the name is the
+logo (the floating brand, the header, the admin portal, the favicon and the
+share card); in a sentence the name is written "Dod ar prieku".
 
 The footer, on every page: HA Group's other products with small icons (Unveil
-`https://unveil.hagroup.lv`, Event App `https://eventapp.lv`, Baltic GP
+`https://unveil.hagroup.lv`, EventApp `https://eventapp.lv`, Baltic GP
 `https://balticgp.hagroup.lv`, HA Group `https://www.hagroup.lv`), the company
 details (SIA HA Group, reg. 40203724866, PVN LV40203724866, Koku iela 10-59,
 Rīga, LV-1004, info@hagroup.lv) and the legal links.
@@ -230,12 +249,40 @@ visitor zooms in. It splits from zoom 9. Only the markers in
 or just around the view are drawn, worked out at most every 120ms while the
 map moves.
 
+Only organisations with open needs are on the map at the country and
+regional views, and only they form and count in the clusters (hearts, badges
+and the chips' numbers). Organisations without needs appear from zoom 13 as
+the same category pin, smaller, desaturated and paler, under the others,
+still a button that opens the card ("..., nav norādītu vajadzību"); they
+never join a cluster (Harry, 2026-11-26). They are thinned on screen: none
+within 40px of an active marker or of another faded pin, and at most 40 in
+view, so they stay a quiet background and the tab order stays short. "Cita organizācija" is a warm
+brown, so it never reads as one of those.
+
+Beside the category chips, "Ko vajag" opens a list of need kinds with check
+boxes (Apģērbs un apavi, Pārtika, Higiēna un tīrīšana, Tekstils un gultas
+veļa, Rotaļlietas un brīvais laiks, Mācību lietas, Dzīvnieku barība un aprūpe,
+Medicīna un aprūpe, Mājai un tehnika, Brīvprātīgie un transports); "Visas
+vajadzības" clears them. Every catalog group maps to one kind, with a few
+items mapped on their own (`NEED_GROUP_KIND`, `NEED_ITEM_KIND` in the shared
+catalog). An organisation matches when any of its needs is of a ticked kind;
+the kinds combine with the category (AND), and a ticked kind hides the
+organisations without needs.
+
+While any published charity has `demoNeeds: true` (dev's `make demo-needs`,
+or `make run`'s seed), a small chip bottom left says "Testa vide: daļa
+vajadzību ir izdomātas demonstrācijai." Production never has one: the API
+refuses the demo tasks there.
+
 The left rail holds the leaderboard, the newsletter, the project info and the
 account; there is no organisations panel (Harry, 2026-11-26). Typing in the
 search opens the matching organisations under the field, each one a fly-to.
 The newsletter sign-up in the expanded charity card sends that charity's id,
-like the charity page and the box after a pledge; the rail's sign-up is
-general.
+like the box after a pledge, and offers "Saņemt arī vispārējos jaunumus"
+(`general`); the rail's sign-up is always general. The admin portal lists
+the general newsletter and everyone (a column per organisation) on
+"Abonenti", and each organisation's own subscribers on its detail page, each
+with a CSV.
 
 ## Packages and ownership
 

@@ -58,7 +58,12 @@ describe('charities', () => {
     expect(input.UpdateExpression).not.toContain('views')
     expect(input.ExpressionAttributeValues?.[':gpk']).toBe('STATUS#approved')
     await repo.saveCharity({ ...charity, rejectReason: 'a', suspendReason: 'b' })
-    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source$/)
+    // demoNeeds is stored like the other optional fields: set while true, removed once cleared.
+    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source, demoNeeds$/)
+    await repo.saveCharity({ ...charity, source: 'import:x', demoNeeds: true })
+    const demo = ddb.commandCalls(UpdateCommand)[2]!.args[0].input
+    expect(demo.UpdateExpression).toContain('demoNeeds = :demoNeeds')
+    expect(demo.ExpressionAttributeValues?.[':demoNeeds']).toBe(true)
   })
 
   it('lists by status index, all four statuses when unfiltered, paging', async () => {
@@ -159,16 +164,47 @@ describe('accounts, tokens, subscribers', () => {
   it('upserts subscribers with a string set and a charity link', async () => {
     ddb.on(UpdateCommand).resolves({})
     ddb.on(PutCommand).resolves({})
-    await repo.upsertSubscriber({ email: 's@b.lv', name: 'Līga', charityId: 'c1', consentAt: 't', source: 'pledge' })
+    await repo.upsertSubscriber({ email: 's@b.lv', name: 'Līga', charityId: 'c1', general: false, consentAt: 't', source: 'pledge' })
     const input = ddb.commandCalls(UpdateCommand)[0]!.args[0].input
+    // false never overwrites a general subscription already there.
+    expect(input.UpdateExpression).toContain('#general = if_not_exists(#general, :general)')
+    expect(input.ExpressionAttributeValues?.[':general']).toBe(false)
     expect(input.Key).toEqual({ PK: 'SUBSCRIBER#s@b.lv', SK: 'SUB' })
     expect(input.UpdateExpression).toContain('ADD charityIds :ids')
     expect(input.UpdateExpression).toContain('#name = :name')
     expect(input.ExpressionAttributeValues?.[':ids']).toEqual(new Set(['c1']))
     expect(ddb.commandCalls(PutCommand)[0]!.args[0].input.Item).toMatchObject({ PK: 'CHARITY#c1', SK: 'SUB#s@b.lv' })
-    await repo.upsertSubscriber({ email: 's@b.lv', consentAt: 't', source: 'subscribe' })
-    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).not.toContain('ADD')
+    await repo.upsertSubscriber({ email: 's@b.lv', general: true, consentAt: 't', source: 'subscribe' })
+    const general = ddb.commandCalls(UpdateCommand)[1]!.args[0].input
+    expect(general.UpdateExpression).not.toContain('ADD')
+    expect(general.UpdateExpression).toContain('#general = :general')
+    expect(general.UpdateExpression).not.toContain('if_not_exists(#general')
     expect(ddb.commandCalls(PutCommand)).toHaveLength(1)
+  })
+
+  it('keeps a pre-flag general subscriber general on an organisation-only sign-up', async () => {
+    // First write is guarded and fails on a legacy row with no flag and no organisation.
+    ddb.on(UpdateCommand).rejectsOnce(conditional).resolves({})
+    ddb.on(PutCommand).resolves({})
+    await repo.upsertSubscriber({ email: 'old@b.lv', charityId: 'c1', general: false, consentAt: 't', source: 'pledge' })
+    const [first, retry] = ddb.commandCalls(UpdateCommand).map((c) => c.args[0].input)
+    expect(first!.ConditionExpression).toBe(
+      'attribute_not_exists(PK) OR attribute_exists(#general) OR attribute_exists(charityIds)',
+    )
+    expect(first!.ExpressionAttributeValues?.[':general']).toBe(false)
+    expect(retry!.ConditionExpression).toBeUndefined()
+    expect(retry!.UpdateExpression).toContain('#general = :general')
+    expect(retry!.ExpressionAttributeValues?.[':general']).toBe(true)
+    expect(retry!.UpdateExpression).toContain('ADD charityIds :ids')
+    expect(ddb.commandCalls(PutCommand)[0]!.args[0].input.Item).toMatchObject({ PK: 'CHARITY#c1', SK: 'SUB#old@b.lv' })
+  })
+
+  it('does not swallow other subscriber write errors', async () => {
+    ddb.on(UpdateCommand).rejects(new Error('throttled'))
+    await expect(
+      repo.upsertSubscriber({ email: 'x@b.lv', charityId: 'c1', general: false, consentAt: 't', source: 'pledge' }),
+    ).rejects.toThrow('throttled')
+    expect(ddb.commandCalls(UpdateCommand)).toHaveLength(1)
   })
 
   it('lists and counts subscribers', async () => {
@@ -176,11 +212,14 @@ describe('accounts, tokens, subscribers', () => {
       Items: [
         { email: 's@b.lv', name: 'Līga', charityIds: new Set(['c2', 'c1']), createdAt: 't' },
         { email: 'x@b.lv', createdAt: 't' },
+        { email: 'g@b.lv', charityIds: new Set(['c1']), general: true, createdAt: 't' },
       ],
     }).resolvesOnce({ Items: [{ SK: 'SUB#a' }, { SK: 'SUB#b' }] })
+    // Before the flag: no organisation means the general newsletter, an organisation only that one.
     expect(await repo.listSubscribers()).toEqual([
-      { email: 's@b.lv', name: 'Līga', charityIds: ['c1', 'c2'], createdAt: 't' },
-      { email: 'x@b.lv', charityIds: [], createdAt: 't' },
+      { email: 's@b.lv', name: 'Līga', charityIds: ['c1', 'c2'], general: false, createdAt: 't' },
+      { email: 'x@b.lv', charityIds: [], general: true, createdAt: 't' },
+      { email: 'g@b.lv', charityIds: ['c1'], general: true, createdAt: 't' },
     ])
     expect(await repo.countCharitySubscribers('c1')).toBe(2)
   })

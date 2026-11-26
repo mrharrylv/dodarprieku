@@ -27,7 +27,27 @@ describe('SubscribeBox', () => {
     renderWithProviders(<SubscribeBox charityId="c1" />)
     fill()
     expect(await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')).toBeInTheDocument()
-    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, charityId: 'c1' })
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, charityId: 'c1', general: false })
+  })
+
+  it('offers the general newsletter on an organisation\'s sign-up, and sends it when ticked', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, data: {} })))
+    vi.stubGlobal('fetch', fetcher)
+    renderWithProviders(<SubscribeBox charityId="c1" />)
+    fireEvent.click(screen.getByRole('checkbox', { name: /Saņemt arī vispārējos jaunumus/ }))
+    fill()
+    await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toMatchObject({ charityId: 'c1', general: true })
+  })
+
+  it('has no general tick box on the general sign-up, which is always general', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true, data: {} })))
+    vi.stubGlobal('fetch', fetcher)
+    renderWithProviders(<SubscribeBox bare />)
+    expect(screen.queryByRole('checkbox', { name: /vispārējos jaunumus/ })).toBeNull()
+    fill()
+    await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')
+    expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, general: true })
   })
 
   it('shows a rate limit and the server’s field errors', async () => {

@@ -21,6 +21,7 @@ const fakeLibrary = () => {
     popups: [] as FakePopup[],
     labels: null as Map<string, unknown> | null,
     moved: [] as unknown[],
+    padding: null as unknown,
   }
 
   class FakeMap {
@@ -52,6 +53,10 @@ const fakeLibrary = () => {
     }
     resize() {}
     fitBounds() {}
+    setPadding(padding: unknown) {
+      state.padding = padding
+      return this
+    }
     labels = new Map<string, unknown>([['place', ['get', 'name:en']]])
     getStyle() {
       return { layers: [{ id: 'place', type: 'symbol' }, { id: 'water', type: 'fill' }, { id: 'icons', type: 'symbol' }] }
@@ -77,6 +82,9 @@ const fakeLibrary = () => {
     }
     getCenter() {
       return { lng: 24.6, lat: 56.9 }
+    }
+    project([lng, lat]: [number, number]) {
+      return { x: lng * 1000, y: lat * 1000 }
     }
     getBounds() {
       return { getWest: () => 20, getSouth: () => 55, getEast: () => 29, getNorth: () => 58.5 }
@@ -200,17 +208,17 @@ describe('MapView', () => {
     // The small card first; "Skatīt vajadzības" expands it in place, it does not navigate.
     const expand = await screen.findByRole('button', { name: /Skatīt vajadzības/ })
     expect(expand).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Kopēt saiti/ })).toBeNull()
     expect(screen.getByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(expand)
-    expect(await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })).toHaveAttribute('href', '/organizacija/ulubele')
+    expect(await screen.findByRole('button', { name: /Kopēt saiti/ })).toBeInTheDocument()
     // Focus follows the card: into the expanded card, back to "Skatīt vajadzības" when it collapses.
     expect(screen.getByRole('button', { name: 'Sakļaut' })).toHaveFocus()
     expect(screen.getByRole('button', { name: /Es ziedošu/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Kā nogādāt' })).toBeInTheDocument()
     // Escape collapses it back to the small card first.
-    fireEvent.keyDown(screen.getByRole('link', { name: /Atvērt pilnu lapu/ }), { key: 'Escape' })
-    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+    fireEvent.keyDown(screen.getByRole('button', { name: /Kopēt saiti/ }), { key: 'Escape' })
+    expect(screen.queryByRole('button', { name: /Kopēt saiti/ })).toBeNull()
     expect(screen.getByRole('button', { name: /Skatīt vajadzības/ })).toHaveFocus()
 
     fireEvent.click(screen.getByRole('button', { name: 'Aizvērt' }))
@@ -224,6 +232,27 @@ describe('MapView', () => {
     rerender(<MapView charities={[childrenHome]} selectedId={null} onSelect={onSelect} focus={null} engine={engine} />)
     expect(state.setData).toHaveBeenCalled()
   })
+  it('draws organisations without needs greyed out from zoom 13 only, outside every cluster, and still selectable', async () => {
+    const { state, engine } = fakeLibrary()
+    const onSelect = vi.fn()
+    renderWithProviders(<MapView charities={[shelter]} faded={[childrenHome]} selectedId={null} onSelect={onSelect} focus={null} engine={engine} />)
+    await waitFor(() => expect(state.map).not.toBeNull())
+    state.features = [point('c-ulubele', 24.1, 56.95)]
+    state.zoom = 12.9
+    act(() => state.map?.fire('load'))
+    await screen.findByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })
+    expect(screen.queryByRole('button', { name: /Cēsu bērnu nams/ })).toBeNull()
+
+    state.zoom = 13
+    act(() => state.map?.fire('moveend'))
+    const faded = await screen.findByRole('button', { name: 'Cēsu bērnu nams, Bērnu nams, nav norādītu vajadzību' })
+    expect(faded).toHaveClass('dp-pin-faded')
+    expect(faded.closest('.dp-marker')).toHaveClass('dp-marker-faded')
+    expect(screen.getByRole('button', { name: /Ulubele, / }).closest('.dp-marker')).not.toHaveClass('dp-marker-faded')
+    fireEvent.click(faded)
+    expect(onSelect).toHaveBeenCalledWith('c-cesis')
+  })
+
   it('draws a one-category cluster as its badge with the count, a mixed one as a heart, and leaves off-screen ones out', async () => {
     const { state, engine } = fakeLibrary()
     renderWithProviders(<MapView charities={[shelter, childrenHome]} selectedId={null} onSelect={vi.fn()} focus={null} engine={engine} />)
@@ -307,7 +336,7 @@ describe('MapView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pierakstīties' }))
     expect(await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')).toBeInTheDocument()
     const call = fetcher.mock.calls.find(([url]) => String(url).endsWith('/subscribe'))
-    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, charityId: shelter.id })
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, charityId: shelter.id, general: false })
   })
 
   it('draws charities at one address on a small ring, and opens the popup on the drawn pin', async () => {
@@ -339,20 +368,20 @@ describe('MapView', () => {
     await waitFor(() => expect(state.map).not.toBeNull())
     act(() => state.map?.fire('load'))
     fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
-    expect(await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Kopēt saiti/ })).toBeInTheDocument()
 
     // Closed (the close button, a map click), then the same pin again: the small card.
     rerender(view(null))
     rerender(view(shelter.id))
     expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Kopēt saiti/ })).toBeNull()
 
     // Expanded, then another pin: that one opens small too.
     fireEvent.click(screen.getByRole('button', { name: /Skatīt vajadzības/ }))
-    await screen.findByRole('link', { name: /Atvērt pilnu lapu/ })
+    await screen.findByRole('button', { name: /Kopēt saiti/ })
     rerender(view(childrenHome.id))
     expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /Atvērt pilnu lapu/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Kopēt saiti/ })).toBeNull()
   })
 
   it('expands into a modal bottom sheet on a phone, which Escape and the backdrop collapse', async () => {
@@ -374,5 +403,71 @@ describe('MapView', () => {
     fireEvent.click(await screen.findByRole('dialog', { name: shelter.profile.organization.name }))
     expect(screen.queryByRole('dialog', { name: shelter.profile.organization.name })).toBeNull()
     vi.unstubAllGlobals()
+  })
+  describe('beside a docked panel', () => {
+    const right = (px: number) => ({ top: 0, bottom: 0, left: 0, right: px })
+
+    it('takes the panel as padding, animated, and gives it back when the panel closes', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      const { state, engine } = fakeLibrary()
+      const view = (insetRight: number) => <MapView charities={[shelter]} selectedId={null} onSelect={vi.fn()} focus={null} insetRight={insetRight} engine={engine} />
+      const { rerender } = renderWithProviders(view(0))
+      await waitFor(() => expect(state.map).not.toBeNull())
+      act(() => state.map?.fire('load'))
+      expect(state.padding).toEqual(right(0))
+
+      rerender(view(720))
+      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(720), duration: 300 })
+      const calls = state.easeTo.mock.calls.length
+      rerender(view(720))
+      expect(state.easeTo.mock.calls).toHaveLength(calls)
+
+      rerender(view(0))
+      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(0), duration: 300 })
+      vi.unstubAllGlobals()
+    })
+
+    it('centres fly-tos, cluster zooms and the selected charity\'s card in the part left of the panel', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      const { state, engine } = fakeLibrary()
+      const view = (selectedId: string | null, focus: { id: string; nonce: number } | null) => (
+        <MapView charities={[shelter, childrenHome]} selectedId={selectedId} onSelect={vi.fn()} focus={focus} insetRight={640} engine={engine} />
+      )
+      const { rerender } = renderWithProviders(view(null, null))
+      await waitFor(() => expect(state.map).not.toBeNull())
+      state.features = [{ geometry: { type: 'Point', coordinates: [25, 57] }, properties: { cluster: true, cluster_id: 3, point_count: 4 } }]
+      act(() => state.map?.fire('load'))
+      // Loaded with the panel already open (a /registreties link): padded from the first frame.
+      expect(state.padding).toEqual(right(640))
+
+      fireEvent.click(await screen.findByRole('button', { name: '4 organizācijas šajā apgabalā. Pietuvināt' }))
+      await waitFor(() => expect(state.easeTo).toHaveBeenCalledWith(expect.objectContaining({ zoom: 9.5, padding: right(640) })))
+
+      // A click on a pin: the card's pin settles at the padded centre, so the card opens in the visible left part.
+      rerender(view(childrenHome.id, null))
+      expect(state.easeTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [childrenHome.profile.location.lng, childrenHome.profile.location.lat], padding: right(640) }))
+      expect(state.popups.at(-1)?.map).toBe(state.map)
+
+      rerender(view(shelter.id, { id: shelter.id, nonce: 1 }))
+      expect(state.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 14, padding: right(640) }))
+      vi.unstubAllGlobals()
+    })
+
+    it('opens a shared charity expanded, and lets the fly-to land without the card\'s own pan cutting it short', async () => {
+      vi.stubGlobal('fetch', fakeFetch({}))
+      const { state, engine } = fakeLibrary()
+      const view = (selectedId: string | null, focus: { id: string; nonce: number; expand?: boolean } | null) => (
+        <MapView charities={[shelter]} selectedId={selectedId} onSelect={vi.fn()} focus={focus} engine={engine} />
+      )
+      const { rerender } = renderWithProviders(view(null, null))
+      await waitFor(() => expect(state.map).not.toBeNull())
+      act(() => state.map?.fire('load'))
+      const eased = state.easeTo.mock.calls.length
+      rerender(view(shelter.id, { id: shelter.id, nonce: 1, expand: true }))
+      expect(state.flyTo).toHaveBeenCalledTimes(1)
+      expect(await screen.findByRole('button', { name: /Kopēt saiti/ })).toBeInTheDocument()
+      expect(state.easeTo.mock.calls).toHaveLength(eased)
+      vi.unstubAllGlobals()
+    })
   })
 })

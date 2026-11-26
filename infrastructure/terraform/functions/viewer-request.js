@@ -46,9 +46,10 @@
        admin.<host>: /admin/<file.ext>  unchanged, the admin app's assets
        admin.<host>: anything else      ->  /admin/index.html (the admin SPA)
        public host:  /admin, /admin/*   ->  404, the admin app is not served here
-       /organizacija/<slug>             ->  /organizacija/index.html, the one
-                                            prerendered charity shell, which
-                                            fills itself from the URL
+       /organizacija/<slug>             ->  /organizacija/index.html, the
+                                            prerendered map shell, which reads
+                                            the slug from the URL and flies to
+                                            that charity, its card expanded
 
   LOCALES is src/config/site.ts's, the default first, as in public/
   theme-init.js. scripts/viewer-request.test.mjs fails until the two agree,

@@ -12,6 +12,11 @@ PROJECT      := dodarprieku
 SEED_IMPORT  ?= 1
 IMPORT_FILE  := $(API_DIR)/data/imported-charities.json
 IMPORT_SOURCE := import:charity-map-2026-11-25
+# `make run` gives a quarter of the imported charities made-up needs; SEED_DEMO_NEEDS=0 leaves them without.
+SEED_DEMO_NEEDS ?= 1
+# make demo-needs: the share of IMPORT_SOURCE that gets made-up needs, and the seed that picks them.
+DEMO_FRACTION ?= 0.25
+DEMO_SEED     ?= 1
 
 # The API function for ENV: the Terraform output when the state is reachable
 # and is for ENV, else the naming convention <env>-dodarprieku-api.
@@ -25,7 +30,7 @@ STYLE_TESTS  := src/App.test.tsx src/entry-server.test.tsx src/hydration.test.ts
 
 .PHONY: install dev run build lint typecheck test coverage test-pipeline verify verify-styles \
         verify-shared verify-api verify-admin dev-api dev-admin admin-invite \
-        import-charities remove-imported \
+        import-charities remove-imported demo-needs clear-demo-needs \
         preview a11y sitemap images tf-fmt tf-validate clean help
 
 ## Show this help
@@ -55,7 +60,7 @@ dev:
 ##
 ## Everything locally with sample data: API (seeded, in memory), map on :5180, admin on :5181
 run:
-	@SEED_IMPORT=$(SEED_IMPORT) bash bin/run-local.sh
+	@SEED_IMPORT=$(SEED_IMPORT) SEED_DEMO_NEEDS=$(SEED_DEMO_NEEDS) bash bin/run-local.sh
 
 ## The API locally (services/api, its own dev server)
 dev-api:
@@ -110,6 +115,34 @@ remove-imported:
 	@$(api_function); \
 	  echo "Removing $(IMPORT_SOURCE) through $$FN"; \
 	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/remove-imported.sh "$$FN" "$(IMPORT_SOURCE)"
+
+# Made-up needs are for a demonstration: dev only, never prod.
+demo_env_guard = case "$(ENV)" in \
+	  dev) ;; \
+	  prod) echo "Demo needs are never written to production."; exit 1 ;; \
+	  *) echo "ENV must be dev, not $(ENV)"; exit 1 ;; \
+	esac
+
+## Gives DEMO_FRACTION (0.25) of IMPORT_SOURCE's charities 2-6 made-up needs
+## from their own category's catalog, picked by DEMO_SEED (the same every run),
+## marks them demoNeeds and rebuilds the snapshot; the map then says it is a
+## test environment. Refused on prod, here and by the API. Needs AWS credentials.
+##
+## Demo needs on dev: make demo-needs ENV=dev
+demo-needs:
+	@$(demo_env_guard)
+	@$(api_function); \
+	  echo "Demo needs for $(DEMO_FRACTION) of $(IMPORT_SOURCE) through $$FN"; \
+	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/demo-needs.sh "$$FN" apply "$(IMPORT_SOURCE)" "$(DEMO_FRACTION)" "$(DEMO_SEED)"
+
+## Undoes demo-needs: every charity marked demoNeeds back to no needs, then the snapshot.
+##
+## Remove the demo needs: make clear-demo-needs ENV=dev
+clear-demo-needs:
+	@$(demo_env_guard)
+	@$(api_function); \
+	  echo "Clearing demo needs through $$FN"; \
+	  AWS_REGION="$${AWS_REGION:-eu-north-1}" bash $(API_DIR)/scripts/demo-needs.sh "$$FN" clear
 
 ## Production build
 build:

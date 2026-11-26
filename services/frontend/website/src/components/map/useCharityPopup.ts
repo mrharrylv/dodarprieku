@@ -12,6 +12,8 @@ interface Options {
   readonly libRef: RefObject<MaplibreModule | null>
   /** Set by a fly-to from the list or ?org=: it already lands the pin where the small card wants it. */
   readonly flyingToRef: RefObject<string | null>
+  /** The docked panel's width: the card is centred in the part of the map left of it. */
+  readonly insetRef: RefObject<number>
   readonly selected: PublicCharity | undefined
   /** Where charities sharing an address are drawn, so the popup sits on the pin. */
   readonly at: DrawnAt
@@ -21,13 +23,22 @@ interface Options {
   readonly onClosed: () => void
 }
 
+/** The map's padding for a docked panel `inset` pixels wide on the right: every camera move centres left of it. */
+export const mapPadding = (inset: number) => ({ top: 0, bottom: 0, left: 0, right: inset })
+
+/** Where a selected pin settles from the (padded) centre: lower middle for the small card, near the bottom for the expanded one. */
+export const pinOffset = (map: MlMap, expanded: boolean): [number, number] => {
+  const below = expanded ? map.getContainer().clientHeight / 2 - EXPANDED_PIN_FROM_BOTTOM_PX : POPUP_PAN_OFFSET_PX
+  return [popupPanOffset()[0], Math.max(POPUP_PAN_OFFSET_PX, below)]
+}
+
 /**
  * The popup of the selected charity: a MapLibre popup anchored above its pin,
  * the card portalled into it. The map eases so the small card opens above
  * the pin with room to spare, and, when the card expands, so the pin sits
  * near the bottom edge and the card can grow upwards in place.
  */
-export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, at, expanded, sheet, onClosed }: Options): HTMLElement | null => {
+export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, insetRef, selected, at, expanded, sheet, onClosed }: Options): HTMLElement | null => {
   const [node, setNode] = useState<HTMLElement | null>(null)
   // Read when the popup opens or the map eases, never a reason to do either again.
   const atRef = useRef(at)
@@ -72,18 +83,19 @@ export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, selected, 
   useEffect(() => {
     const map = mapRef.current
     if (!ready || map === null || selected === undefined || sheet) return
-    if (flyingToRef.current === selected.id && !expanded) {
+    // A fly-to already lands the pin where its card wants it (expanded, for a shared link).
+    if (flyingToRef.current === selected.id) {
       flyingToRef.current = null
       return
     }
     flyingToRef.current = null
-    const below = expanded ? map.getContainer().clientHeight / 2 - EXPANDED_PIN_FROM_BOTTOM_PX : POPUP_PAN_OFFSET_PX
     map.easeTo({
       center: drawnAt(selected, atRef.current),
-      offset: [popupPanOffset()[0], Math.max(POPUP_PAN_OFFSET_PX, below)],
+      offset: pinOffset(map, expanded),
+      padding: mapPadding(insetRef.current),
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS / 2,
     })
-  }, [ready, mapRef, flyingToRef, selected, expanded, sheet])
+  }, [ready, mapRef, flyingToRef, insetRef, selected, expanded, sheet])
 
   return node
 }

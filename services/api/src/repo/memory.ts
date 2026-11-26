@@ -126,6 +126,7 @@ export const createMemoryRepository = (): MemoryRepository => {
           email: input.email,
           ...(name === undefined ? {} : { name }),
           charityIds,
+          general: input.general || old?.general === true,
           createdAt: old?.createdAt ?? input.consentAt,
         },
       })

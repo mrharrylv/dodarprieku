@@ -7,21 +7,24 @@ import { useLocale } from '@/hooks/useLocale'
 import type { SnapshotState } from '@/hooks/useSnapshot'
 import { cn } from '@/lib/cn'
 import { localePath } from '@/lib/locale-path'
-import { categoryCounts, type CharityFilter as MapFilter } from '@/lib/snapshot'
+import { categoryCounts, needKindCounts, type CharityFilter as MapFilter } from '@/lib/snapshot'
 import { BrandMark } from '@/components/layout/BrandMark'
 import { CategoryFilter } from '../CategoryFilter'
+import { NeedKindFilter } from '../NeedKindFilter'
 import { SearchBox } from '../SearchBox'
 import { GLASS } from './pill'
 import { OrganisationsContent } from './PanelContent'
 import { SearchResults } from './SearchResults'
 
 /**
- * What floats over the top of the map: the brand (home), the search and the
- * category chips, each on its own see-through surface rather than one bar.
+ * What floats over the top of the map: the brand (home), the search, "Ko vajag"
+ * and the category chips, each on its own see-through surface rather than one bar.
  * One row on a wide screen, the chips scrolling inside it; on a phone the
  * brand and the search sit on top and the chips scroll beneath. The search
  * works from the first frame; the chips appear with the snapshot. Typing
  * opens the matching organisations under the field; choosing one flies there.
+ * With a panel docked on the right it keeps to the map's visible left part
+ * (`--dock-inset`).
  */
 export const MapTopBar = ({
   state,
@@ -50,7 +53,7 @@ export const MapTopBar = ({
       aria-label={t('chrome.label')}
       className={cn(
         'pointer-events-none absolute inset-x-3 top-3 z-40 flex flex-col gap-2',
-        'md:inset-x-auto md:top-4 md:left-4 md:max-w-[calc(100%-19rem)] md:flex-row md:items-center md:gap-2.5',
+        'md:inset-x-auto md:top-4 md:left-4 md:max-w-[calc(100%-var(--actions-room,19rem)-var(--dock-inset,0px))] md:flex-row md:items-center md:gap-2.5',
       )}
     >
       <div ref={row} className="pointer-events-auto relative flex min-w-0 items-center gap-2 md:shrink-0">
@@ -64,7 +67,7 @@ export const MapTopBar = ({
           )}
         >
           <BrandMark className="h-8 w-8" />
-          <span className="text-(length:--text-base) whitespace-nowrap">{SITE.name}</span>
+          <span className="text-(length:--text-base) whitespace-nowrap">{SITE.wordmark}</span>
         </Link>
         <SearchBox
           value={filter.query}
@@ -113,16 +116,21 @@ const Chips = ({ state, filter, onFilter }: { state: SnapshotState; filter: MapF
       </div>
     )
   }
-  if (state.snapshot.charities.length === 0) return null
-  const counts = categoryCounts(state.snapshot.charities, filter.query)
+  const { charities } = state.snapshot
+  if (charities.length === 0) return null
+  // The chips count what the map's hearts count: organisations with needs, of the chosen kinds.
+  const counts = categoryCounts(charities, filter)
   const total = counts.reduce((sum, c) => sum + c.count, 0)
   return (
-    <CategoryFilter
-      counts={counts}
-      total={total}
-      value={filter.category}
-      onChange={(category) => onFilter({ ...filter, category })}
-      className="dp-fade-x pointer-events-auto -mx-1 -my-2 min-w-0 flex-1 px-1 py-2 pr-16"
-    />
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <NeedKindFilter counts={needKindCounts(charities, filter)} value={filter.kinds} onChange={(kinds) => onFilter({ ...filter, kinds })} />
+      <CategoryFilter
+        counts={counts}
+        total={total}
+        value={filter.category}
+        onChange={(category) => onFilter({ ...filter, category })}
+        className="dp-fade-x pointer-events-auto -mx-1 -my-2 min-w-0 flex-1 px-1 py-2 pr-16"
+      />
+    </div>
   )
 }

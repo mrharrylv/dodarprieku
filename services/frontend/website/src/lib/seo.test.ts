@@ -158,7 +158,7 @@ describe('socialTags', () => {
     const tags = new Map(socialTags(meta))
     expect(tags.get('og:image:width')).toBe(String(SHARE_IMAGE.width))
     expect(tags.get('og:image:height')).toBe(String(SHARE_IMAGE.height))
-    expect(tags.get('og:image:alt')).toBe(SITE.name)
+    expect(tags.get('og:image:alt')).toBe(SITE.wordmark)
   })
 
   it('declares the card as a PNG, and a custom image by its extension only', () => {

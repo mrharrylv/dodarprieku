@@ -24,6 +24,8 @@ export interface CharityRecord {
   readonly accountEmail: string
   /** Set on imported charities only: 'import:<dataset>'. */
   readonly source?: string
+  /** Its needs were made up by the dev-only demo-needs task: clear-demo-needs empties them again. */
+  readonly demoNeeds?: boolean
   readonly views: number
   readonly pledges: number
   readonly rejectReason?: string
@@ -62,6 +64,8 @@ export interface SubscribeInput {
   readonly email: string
   readonly name?: string
   readonly charityId?: string
+  /** Also the general newsletter. Once true it stays true: a later organisation-only sign-up never takes it away. */
+  readonly general: boolean
   readonly consentAt: string
   readonly source: 'pledge' | 'subscribe'
 }

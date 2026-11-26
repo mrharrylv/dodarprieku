@@ -16,13 +16,63 @@ type PeopleRepo = Pick<
   | 'countCharitySubscribers'
 >
 
+/**
+ * A subscriber from before the general flag existed signed up either on the
+ * map (no organisation: the general newsletter) or for an organisation only.
+ */
 const toSubscriber = (item: Item): SubscriberRecord => {
   const ids = item.charityIds instanceof Set ? [...(item.charityIds as Set<string>)] : []
   return {
     email: String(item.email),
     ...(typeof item.name === 'string' ? { name: item.name } : {}),
     charityIds: ids.sort(),
+    general: typeof item.general === 'boolean' ? item.general : ids.length === 0,
     createdAt: String(item.createdAt),
+  }
+}
+
+type SubscriberInput = Parameters<Repository['upsertSubscriber']>[0]
+
+/**
+ * The subscriber row update. True wins: an organisation-only sign-up never takes
+ * the general newsletter away. With guardLegacy, the write fails on a row from
+ * before the flag that has no organisation (read as general by toSubscriber), so
+ * the caller can write general=true there instead of a silent false.
+ */
+const subscriberUpdate = (table: string, input: SubscriberInput, general: boolean, guardLegacy: boolean) => {
+  const names: Record<string, string> = { '#source': 'source', '#general': 'general' }
+  const values: Record<string, unknown> = {
+    ':email': input.email,
+    ':gpk': gsi.subscribers,
+    ':now': input.consentAt,
+    ':source': input.source,
+    ':general': general,
+  }
+  const sets = [
+    'email = :email',
+    'GSI1PK = :gpk',
+    'GSI1SK = if_not_exists(GSI1SK, :now)',
+    'createdAt = if_not_exists(createdAt, :now)',
+    'consentAt = :now',
+    '#source = if_not_exists(#source, :source)',
+    general ? '#general = :general' : '#general = if_not_exists(#general, :general)',
+  ]
+  if (input.name !== undefined) {
+    sets.push('#name = :name')
+    names['#name'] = 'name'
+    values[':name'] = input.name
+  }
+  if (input.charityId !== undefined) values[':ids'] = new Set([input.charityId])
+  const add = input.charityId !== undefined ? ' ADD charityIds :ids' : ''
+  return {
+    TableName: table,
+    Key: keys.subscriber(input.email),
+    UpdateExpression: `SET ${sets.join(', ')}${add}`,
+    ExpressionAttributeNames: names,
+    ExpressionAttributeValues: values,
+    ...(guardLegacy
+      ? { ConditionExpression: 'attribute_not_exists(PK) OR attribute_exists(#general) OR attribute_exists(charityIds)' }
+      : {}),
   }
 }
 
@@ -59,37 +109,19 @@ export const peopleRepo = (db: Db): PeopleRepo => ({
   },
 
   upsertSubscriber: async (input) => {
-    const names: Record<string, string> = { '#source': 'source' }
-    const values: Record<string, unknown> = {
-      ':email': input.email,
-      ':gpk': gsi.subscribers,
-      ':now': input.consentAt,
-      ':source': input.source,
+    const update = (general: boolean, guardLegacy: boolean) =>
+      db.client.send(new UpdateCommand(subscriberUpdate(db.table, input, general, guardLegacy)))
+    if (input.general) {
+      await update(true, false)
+    } else {
+      try {
+        await update(false, true)
+      } catch (err) {
+        if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err
+        // A row from before the flag with no organisation was a general subscriber: keep that.
+        await update(true, false)
+      }
     }
-    const sets = [
-      'email = :email',
-      'GSI1PK = :gpk',
-      'GSI1SK = if_not_exists(GSI1SK, :now)',
-      'createdAt = if_not_exists(createdAt, :now)',
-      'consentAt = :now',
-      '#source = if_not_exists(#source, :source)',
-    ]
-    if (input.name !== undefined) {
-      sets.push('#name = :name')
-      names['#name'] = 'name'
-      values[':name'] = input.name
-    }
-    if (input.charityId !== undefined) values[':ids'] = new Set([input.charityId])
-    const add = input.charityId !== undefined ? ' ADD charityIds :ids' : ''
-    await db.client.send(
-      new UpdateCommand({
-        TableName: db.table,
-        Key: keys.subscriber(input.email),
-        UpdateExpression: `SET ${sets.join(', ')}${add}`,
-        ExpressionAttributeNames: names,
-        ExpressionAttributeValues: values,
-      }),
-    )
     if (input.charityId !== undefined) {
       await db.client.send(
         new PutCommand({

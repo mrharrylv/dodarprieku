@@ -40,7 +40,7 @@ export const InfoContent = () => {
 
   return (
     <div>
-      <div role="tablist" aria-label={t('info.tabsLabel')} onKeyDown={onKeyDown} className="sticky -top-1 z-10 -mx-1 mb-4 flex gap-1 rounded-full bg-(--surface-sunken) p-1">
+      <div role="tablist" aria-label={t('info.tabsLabel')} onKeyDown={onKeyDown} className="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 rounded-full bg-(--surface-sunken) p-1 shadow-[0_-0.5rem_0_0.25rem_var(--surface-raised)]">
         {TABS.map((id) => {
           const selected = id === tab
           return (

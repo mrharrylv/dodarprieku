@@ -6,17 +6,17 @@ import { LIMITS } from '@shared/contracts'
 
 import { fail, mockApi, ok } from '@/components/profile-editor/fetch-mock'
 import { renderWithProviders } from '@/test/render'
-import { ForgotPasswordPage } from './ForgotPasswordPage'
+import { ForgotPasswordForm } from './ForgotPasswordForm'
 import { COMMON_FAILURES, failureKey, formatDate, formatNumber } from './format'
 import { passwordStrength, strengthLevel } from './password-strength'
-import { SetPasswordPage } from './SetPasswordPage'
+import { SetPasswordForm } from './SetPasswordForm'
 
 const GOOD = 'Ziema-2026-sniegs'
 
 const renderSetPassword = (query: string) =>
   renderWithProviders(
     <Routes>
-      <Route path="/konts/parole" element={<SetPasswordPage />} />
+      <Route path="/konts/parole" element={<SetPasswordForm />} />
       <Route path="/konts" element={<p>konta lapa</p>} />
     </Routes>,
     { route: `/konts/parole${query}` },
@@ -46,11 +46,11 @@ describe('format helpers', () => {
   })
 })
 
-describe('SetPasswordPage', () => {
+describe('SetPasswordForm', () => {
   it('sends the token with the new password, then opens the account', async () => {
     const api = mockApi({ 'POST /api/auth/set-password': ok({ email: 'a@b.lv', role: 'charity' }) })
     renderSetPassword('?token=abc123')
-    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.queryAllByRole('heading', { level: 1 })).toHaveLength(0)
     fireEvent.change(screen.getByLabelText(/^Jaunā parole/), { target: { value: 'īsa' } })
     expect(screen.getByText(/Vēl par īsu/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Saglabāt paroli' }))
@@ -90,10 +90,10 @@ describe('SetPasswordPage', () => {
   })
 })
 
-describe('ForgotPasswordPage', () => {
+describe('ForgotPasswordForm', () => {
   it('validates the email, then always gives the same neutral answer', async () => {
     const api = mockApi({ 'POST /api/auth/forgot': ok({}) })
-    renderWithProviders(<ForgotPasswordPage />)
+    renderWithProviders(<ForgotPasswordForm />)
     fireEvent.click(screen.getByRole('button', { name: 'Nosūtīt saiti' }))
     expect(screen.getByText('Ierakstiet e-pastu.')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^E-pasts/), { target: { value: 'nav' } })
@@ -107,7 +107,7 @@ describe('ForgotPasswordPage', () => {
 
   it('answers the same for an address the API did not like', async () => {
     mockApi({ 'POST /api/auth/forgot': fail(404, 'not_found') })
-    renderWithProviders(<ForgotPasswordPage />)
+    renderWithProviders(<ForgotPasswordForm />)
     fireEvent.change(screen.getByLabelText(/^E-pasts/), { target: { value: 'kads@cits.lv' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nosūtīt saiti' }))
     expect(await screen.findByText('Pārbaudiet e-pastu')).toBeInTheDocument()
@@ -115,7 +115,7 @@ describe('ForgotPasswordPage', () => {
 
   it('says so when the request never got through', async () => {
     mockApi({ 'POST /api/auth/forgot': fail(429, 'rate_limited') })
-    renderWithProviders(<ForgotPasswordPage />)
+    renderWithProviders(<ForgotPasswordForm />)
     fireEvent.change(screen.getByLabelText(/^E-pasts/), { target: { value: 'a@b.lv' } })
     fireEvent.click(screen.getByRole('button', { name: 'Nosūtīt saiti' }))
     expect(await screen.findByText('Saite nav nosūtīta. Mēģiniet vēlreiz.')).toBeInTheDocument()

@@ -4,7 +4,13 @@
  *   --cat-<tone>   the badge fill, behind --cat-on
  *   --pin-<tone>   the map pin fill
  *
- * Fills sit at L 0.50 so a white icon clears 4.5:1. Never a hex in a component: they read these.
+ * Fills sit at L 0.50 so a white icon clears 4.5:1 (category-tones.test.ts measures it).
+ * Never a hex in a component: they read these.
+ *
+ * `brown` is a warm, clearly coloured neutral for "Cita organizācija": the grey
+ * it had read as a greyed-out pin once organisations without needs are drawn faded.
+ * Darker and duller than amber (Dzīvnieku patversme) and orange, so the three
+ * warm pins tell apart at pin size.
  */
 :root {
   --cat-on: #fff;
@@ -21,7 +27,7 @@
   --pin-lime: oklch(0.5 0.13 130);
   --pin-cyan: oklch(0.5 0.1 215);
   --pin-yellow: oklch(0.52 0.11 90);
-  --pin-stone: oklch(0.48 0.03 60);
+  --pin-brown: oklch(0.41 0.065 48);
 
   --cat-amber: var(--pin-amber);
   --cat-sky: var(--pin-sky);
@@ -35,6 +41,6 @@
   --cat-lime: var(--pin-lime);
   --cat-cyan: var(--pin-cyan);
   --cat-yellow: var(--pin-yellow);
-  --cat-stone: var(--pin-stone);
+  --cat-brown: var(--pin-brown);
 }
 

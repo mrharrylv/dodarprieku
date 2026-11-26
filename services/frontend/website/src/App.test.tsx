@@ -37,21 +37,33 @@ describe('routing', () => {
     expect(await screen.findByRole('heading', { level: 1, name: lv.map.title }, { timeout: 5000 })).toBeInTheDocument()
   })
 
-  it.each([
-    [ROUTES.charity, lv.charity.title],
-    [charityPath('patversme-ausma'), lv.charity.title],
-    [ROUTES.register, lv.register.title],
-    [ROUTES.account, lv.account.title],
-    [ROUTES.setPassword, lv.account.setPassword.title],
-    [ROUTES.forgotPassword, lv.account.forgotPassword.title],
-    [ROUTES.about, lv.about.title],
-    [ROUTES.privacy, lv.legal.privacy.title],
-  ])('renders %s', async (route, heading) => {
-    renderWithProviders(<App />, { route })
+  it('renders a legal page as a page of its own', async () => {
+    renderWithProviders(<App />, { route: ROUTES.privacy })
 
-    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: lv.legal.privacy.title })).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(document.title).toContain(SITE.name)
+  })
+
+  // Every other address is the map with something open over it.
+  it.each([
+    [ROUTES.charity, null],
+    [charityPath('patversme-ausma'), null],
+    [ROUTES.register, lv.map.dock.register],
+    [ROUTES.account, lv.map.dock.account],
+    [ROUTES.setPassword, lv.map.dock.setPassword],
+    [ROUTES.forgotPassword, lv.map.dock.forgot],
+    [ROUTES.about, lv.map.info.title],
+  ])('renders %s as the map, with its panel open', async (route, panel) => {
+    renderWithProviders(<App />, { route })
+
+    expect(await screen.findByRole('heading', { level: 1, name: lv.map.title }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.queryByRole('banner')).toBeNull()
+    if (panel !== null) expect(await screen.findByRole('heading', { level: 2, name: panel })).toBeInTheDocument()
+    expect(document.title).toContain(SITE.name)
+    // One page: whatever is open, the canonical is the home page.
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toMatch(/\/$/)
   })
 
   it('shows the not-found page for an unknown path', async () => {
@@ -69,7 +81,7 @@ describe('routing', () => {
 
 describe('localisation', () => {
   it('renders Latvian and sets <html lang> to it', async () => {
-    renderWithProviders(<App />, { route: ROUTES.about })
+    renderWithProviders(<App />, { route: ROUTES.privacy })
 
     await screen.findByRole('heading', { level: 1 })
     expect(screen.getAllByRole('navigation', { name: lv.common.a11y.mainNavigation }).length).toBeGreaterThan(0)
@@ -77,7 +89,7 @@ describe('localisation', () => {
   })
 
   it('shows no language switcher, as there is one language', async () => {
-    renderWithProviders(<App />, { route: ROUTES.about })
+    renderWithProviders(<App />, { route: ROUTES.privacy })
     await screen.findByRole('banner')
 
     expect(screen.queryByRole('radiogroup', { name: lv.common.language.label })).toBeNull()
@@ -87,7 +99,7 @@ describe('localisation', () => {
 describe('page chrome', () => {
   it('puts a skip link first in the tab order', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<App />, { route: ROUTES.about })
+    renderWithProviders(<App />, { route: ROUTES.privacy })
     await screen.findByRole('banner')
 
     await user.tab()
@@ -96,7 +108,7 @@ describe('page chrome', () => {
   })
 
   it('exposes the landmarks a screen reader navigates by', async () => {
-    renderWithProviders(<App />, { route: ROUTES.about })
+    renderWithProviders(<App />, { route: ROUTES.privacy })
 
     expect(await screen.findByRole('banner')).toBeInTheDocument()
     expect(screen.getByRole('main')).toBeInTheDocument()
@@ -114,16 +126,15 @@ describe('page chrome', () => {
     expect(register.some((link) => link.getAttribute('href') === ROUTES.register)).toBe(true)
   })
 
-  it.each([ROUTES.about, ROUTES.register, ROUTES.privacy, '/no-such-page'])('keeps the header and footer on %s', async (route) => {
+  it.each([ROUTES.privacy, ROUTES.terms, '/no-such-page'])('keeps the header and footer on %s', async (route) => {
     renderWithProviders(<App />, { route })
 
-    // The registration wizard has a header of its own inside main, so at least one.
     expect((await screen.findAllByRole('banner')).length).toBeGreaterThan(0)
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()
   })
 
   it('offers the register button in the header', async () => {
-    renderWithProviders(<App />, { route: ROUTES.about })
+    renderWithProviders(<App />, { route: ROUTES.privacy })
     const header = await screen.findByRole('banner')
 
     const register = within(header).getAllByRole('link', { name: lv.common.cta.register })
@@ -184,15 +195,15 @@ describe('the document head', () => {
     const link = document.querySelector<HTMLAnchorElement>(`a[href="${ROUTES.about}"]`)
     expect(link).not.toBeNull()
     await user.click(link as HTMLAnchorElement)
-    await waitFor(() => expect(document.title).toBe(titled(lv.about.meta.title)))
+    // "Par projektu" is the map with its info panel open, at the map's own address.
+    expect(await screen.findByRole('heading', { level: 2, name: lv.map.info.title }, { timeout: 5000 })).toBeInTheDocument()
+    await waitFor(() => expect(document.title).toBe(titled(lv.map.meta.title)))
 
     expect(count('meta[name="description"]')).toBe(1)
     expect(count('meta[property="og:title"]')).toBe(1)
     expect(count('meta[name="robots"]')).toBe(1)
     expect(count('link[rel="canonical"]')).toBe(1)
-    expect(document.head.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(
-      titled(lv.about.meta.title),
-    )
+    expect(document.head.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(document.title)
   })
 
   it('titles the map page with its phrase', async () => {

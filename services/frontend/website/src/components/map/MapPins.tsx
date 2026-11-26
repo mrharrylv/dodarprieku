@@ -11,24 +11,31 @@ const PIN = cn(
   'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-(--ring-accent)',
 )
 
-/** One charity on the map: its category badge, a real button with its name. */
+/**
+ * One charity on the map: its category badge, a real button with its name.
+ * `faded` (no open needs): the same badge, smaller, desaturated and paler,
+ * still a 44px button that opens the card, its name saying it needs nothing yet.
+ */
 export const CharityPin = ({
   charity,
+  faded = false,
   selected,
   onSelect,
 }: {
   charity: PublicCharity
+  faded?: boolean
   selected: boolean
   onSelect: (id: string) => void
 }) => {
   const { t } = useTranslation('map')
   const { category, organization } = charity.profile
+  const label = { name: organization.name, category: categoryById(category).label }
 
   return (
     <button
       type="button"
-      className={PIN}
-      aria-label={t('map.pin', { name: organization.name, category: categoryById(category).label })}
+      className={cn(PIN, faded && !selected && 'dp-pin-faded')}
+      aria-label={faded ? t('map.pinNoNeeds', label) : t('map.pin', label)}
       aria-pressed={selected}
       onClick={(event) => {
         event.stopPropagation()
@@ -38,7 +45,7 @@ export const CharityPin = ({
       <CategoryBadge
         category={category}
         surface="pin"
-        size={selected ? 'lg' : 'md'}
+        size={selected ? 'lg' : faded ? 'sm' : 'md'}
         className={cn(
           'border-[3px] border-(--surface-raised) shadow-(--shadow-card) transition-[width,height] duration-200',
           selected && 'shadow-(--shadow-lifted)',

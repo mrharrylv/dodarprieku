@@ -22,6 +22,13 @@
     "label": "Kategorijas",
     "all": "Visas"
   },
+  "needs": {
+    "button": "Ko vajag",
+    "chosen": "Ko vajag, izvēlētās vajadzības: {{count}}",
+    "label": "Ko vajag",
+    "all": "Visas vajadzības"
+  },
+  "demo": "Testa vide: daļa vajadzību ir izdomātas demonstrācijai.",
   "list": {
     "count_zero": "{{count}} organizāciju",
     "count_one": "{{count}} organizācija",
@@ -60,7 +67,8 @@
     "categoryCluster_zero": "{{count}} organizāciju šajā apgabalā, visas: {{category}}. Pietuvināt",
     "categoryCluster_one": "{{count}} organizācija šajā apgabalā: {{category}}. Pietuvināt",
     "categoryCluster_other": "{{count}} organizācijas šajā apgabalā, visas: {{category}}. Pietuvināt",
-    "pin": "{{name}}, {{category}}"
+    "pin": "{{name}}, {{category}}",
+    "pinNoNeeds": "{{name}}, {{category}}, nav norādītu vajadzību"
   },
   "popup": {
     "close": "Aizvērt",
@@ -70,12 +78,14 @@
     "urgent": "Steidzami",
     "noNeeds": "Vajadzības vēl nav norādītas.",
     "noNeedsHint": "Iestāde tās varēs pievienot pēc reģistrēšanās.",
-    "openPage": "Atvērt pilnu lapu"
+    "share": "Kopēt saiti uz šo organizāciju",
+    "shared": "Saite nokopēta",
+    "shareFailed": "Saiti neizdevās nokopēt. Nokopējiet adresi no pārlūka adreses joslas."
   },
   "loadError": "Neizdevās ielādēt organizācijas",
   "chrome": {
     "label": "Meklēšana un kategorijas",
-    "home": "Dod ar prieku: uz karti",
+    "home": "dod ar prieku: uz karti",
     "actions": "Pieteikšanās"
   },
   "rail": {
@@ -101,10 +111,14 @@
       "title": "Kā tas darbojas",
       "body": "Iestādes pašas norāda, kas tām šobrīd vajadzīgs. Jūs kartē atrodat iestādi, atzīmējat, ko atnesīsiet, un nogādājat to. Visi redz, kas jau ir apsolīts, tāpēc nekas netiek nopirkts divreiz."
     },
-    "donors": "Ja vēlaties palīdzēt",
-    "institutionSteps": "Trīs soļi līdz kartei",
+    "institutionSteps": "Četri soļi līdz palīdzībai",
     "maintainer": "Uzturētājs: {{name}}",
-    "address": "Adrese: {{value}}",
-    "projects": "Citi HA Group projekti"
+    "address": "Adrese: {{value}}"
+  },
+  "dock": {
+    "register": "Kļūt par saņēmēju",
+    "account": "Mans konts",
+    "forgot": "Aizmirsta parole",
+    "setPassword": "Paroles iestatīšana"
   }
 }

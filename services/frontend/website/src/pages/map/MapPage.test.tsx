@@ -64,7 +64,9 @@ describe('MapPage', () => {
     renderWithProviders(<MapPage />)
     expect(await screen.findByText('Karti nevar parādīt')).toBeInTheDocument()
     const chips = await screen.findByRole('group', { name: 'Kategorijas' })
-    expect(within(chips).getByRole('button', { name: /Visas/ })).toHaveTextContent('2')
+    // The chips count what the hearts count: organisations with needs. Cēsu bērnu nams has none.
+    expect(within(chips).getByRole('button', { name: /Visas/ })).toHaveTextContent('1')
+    expect(within(chips).getByRole('button', { name: /Bērnu nami/ })).toHaveTextContent('0')
 
     search('a')
     expect(within(results()).getByText('2 organizācijas')).toBeInTheDocument()
@@ -87,6 +89,73 @@ describe('MapPage', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('')
   })
 
+  it('"Ko vajag" filters by need kind, combined with the chips, and "Visas vajadzības" resets it', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
+    renderWithProviders(<MapPage />)
+    const chips = await screen.findByRole('group', { name: 'Kategorijas' })
+    const pill = screen.getByRole('button', { name: 'Ko vajag' })
+    expect(pill).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(pill)
+    const list = screen.getByRole('group', { name: 'Ko vajag' })
+    const animals = within(list).getByRole('checkbox', { name: /Dzīvnieku barība un aprūpe/ })
+    expect(within(list).getAllByRole('checkbox')).toHaveLength(10)
+    expect(animals.closest('label')).toHaveTextContent('1')
+    expect(within(list).getByRole('button', { name: 'Visas vajadzības' })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(within(list).getByRole('checkbox', { name: /Mācību lietas/ }))
+    expect(screen.getByRole('button', { name: 'Ko vajag, izvēlētās vajadzības: 1' })).toBeInTheDocument()
+    // Nobody needs school things: no chips have a match, and the organisation without needs is not offered either.
+    expect(within(chips).getByRole('button', { name: /Visas/ })).toHaveTextContent('0')
+    expect(within(chips).queryByRole('button', { name: /Bērnu nami/ })).toBeNull()
+
+    await user.click(animals)
+    expect(within(chips).getByRole('button', { name: /Dzīvnieku patversmes/ })).toHaveTextContent('1')
+    search('a')
+    expect(within(results()).getByText('1 organizācija')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ko vajag, izvēlētās vajadzības: 2' }))
+    await user.click(screen.getByRole('button', { name: 'Ko vajag, izvēlētās vajadzības: 2' }))
+    await user.click(within(screen.getByRole('group', { name: 'Ko vajag' })).getByRole('button', { name: 'Visas vajadzības' }))
+    expect(screen.getByRole('button', { name: 'Ko vajag' })).toBeInTheDocument()
+    // The press on the pill closed the results; typing opens them again, now with both.
+    search('a ')
+    expect(within(results()).getByText('2 organizācijas')).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('group', { name: 'Ko vajag' })).toBeNull()
+  })
+
+  it('closes "Ko vajag" on Escape, focus back on the pill, and on a press outside', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
+    renderWithProviders(<MapPage />)
+    await screen.findByRole('group', { name: 'Kategorijas' })
+    const pill = screen.getByRole('button', { name: 'Ko vajag' })
+    await user.click(pill)
+    within(screen.getByRole('group', { name: 'Ko vajag' })).getAllByRole('checkbox')[0]?.focus()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('group', { name: 'Ko vajag' })).toBeNull()
+    expect(pill).toHaveFocus()
+    await user.click(pill)
+    await user.click(screen.getByRole('heading', { level: 1 }))
+    expect(screen.queryByRole('group', { name: 'Ko vajag' })).toBeNull()
+  })
+
+  it('says it is a test environment only while some needs on the map are made up', async () => {
+    const demo = { ...snapshotFixture, charities: snapshotFixture.charities.map((c, i) => (i === 0 ? { ...c, demoNeeds: true } : c)) }
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: demo } }))
+    const { unmount } = renderWithProviders(<MapPage />)
+    expect(await screen.findByRole('note')).toHaveTextContent('Testa vide: daļa vajadzību ir izdomātas demonstrācijai.')
+    unmount()
+    resetSnapshotCache()
+    vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
+    renderWithProviders(<MapPage />)
+    await screen.findByRole('group', { name: 'Kategorijas' })
+    expect(screen.queryByText(/Testa vide/)).toBeNull()
+  })
+
   it('closes the search results on Escape, focus back in the field, and on a press outside', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('fetch', fakeFetch({ [SNAPSHOT_URL]: { body: snapshotFixture } }))
@@ -105,7 +174,7 @@ describe('MapPage', () => {
 
     await user.type(screen.getByRole('searchbox'), 'b')
     expect(results()).toBeInTheDocument()
-    fireEvent.pointerDown(container.querySelector('section > div.absolute.inset-0')!)
+    fireEvent.pointerDown(container.querySelector('[data-map-layer] > div.absolute.inset-0')!)
     expect(screen.queryByRole('region', { name: 'Meklēšanas rezultāti' })).toBeNull()
   })
 
@@ -147,7 +216,7 @@ describe('MapPage', () => {
     await user.click(within(news).getByRole('checkbox', { name: /Piekrītu saņemt/ }))
     await user.click(within(news).getByRole('button', { name: 'Pierakstīties' }))
     await waitFor(() => expect(posted).toHaveBeenCalled())
-    expect(JSON.parse(String(posted.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true })
+    expect(JSON.parse(String(posted.mock.calls[0]?.[1]?.body))).toEqual({ email: 'ilze@example.lv', consent: true, general: true })
     await screen.findByText('Paldies! Jūsu pieraksts ir saņemts.')
     await user.click(within(news).getByRole('button', { name: 'Aizvērt' }))
     expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
@@ -164,7 +233,7 @@ describe('MapPage', () => {
     expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
 
     fireEvent.click(railButton('Jaunumi'))
-    const mapArea = container.querySelector('section > div.absolute.inset-0')
+    const mapArea = container.querySelector('[data-map-layer] > div.absolute.inset-0')
     expect(mapArea).not.toBeNull()
     fireEvent.pointerDown(mapArea!)
     expect(screen.queryByRole('region', { name: 'Jaunumi' })).toBeNull()
@@ -177,7 +246,7 @@ describe('MapPage', () => {
 
     fireEvent.click(railButton('Jaunumi'))
     expect(screen.getByRole('region', { name: 'Jaunumi' })).toHaveFocus()
-    fireEvent.pointerDown(container.querySelector('section > div.absolute.inset-0')!)
+    fireEvent.pointerDown(container.querySelector('[data-map-layer] > div.absolute.inset-0')!)
     expect(railButton('Jaunumi')).toHaveFocus()
   })
 
@@ -228,7 +297,7 @@ describe('MapPage', () => {
     expect(us).toHaveTextContent('Reģ. Nr. 40203724866')
     expect(within(us).getByRole('link', { name: 'info@hagroup.lv' })).toHaveAttribute('href', 'mailto:info@hagroup.lv')
     expect(within(us).getByRole('img', { name: 'Unveil logotips' })).toHaveAttribute('src', '/projects/unveil.png')
-    expect(within(us).getByRole('link', { name: /Event App/ })).toHaveAttribute('href', 'https://eventapp.lv')
+    expect(within(us).getByRole('link', { name: /EventApp/ })).toHaveAttribute('href', 'https://eventapp.lv')
 
     await user.keyboard('{Home}')
     expect(tabs[0]).toHaveFocus()

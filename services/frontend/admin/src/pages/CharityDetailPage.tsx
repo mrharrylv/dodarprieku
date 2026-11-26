@@ -11,6 +11,7 @@ import { ProfileEditor } from '../editor/ProfileEditor'
 import { PATHS, applicationPath, updatePath } from '../paths'
 import { AccountCard } from './CharityAccountCard'
 import { CharityActions, type ActionKind } from './CharityActions'
+import { CharitySubscribers } from './CharitySubscribers'
 
 const EDIT = 'rediget'
 
@@ -75,6 +76,7 @@ export const CharityDetailPage = () => {
             ) : (
               <ProfileView profile={c.profile} />
             )}
+            <CharitySubscribers id={c.id} name={c.name} />
           </>
         )}
       </Loaded>

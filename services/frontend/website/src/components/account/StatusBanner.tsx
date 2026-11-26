@@ -5,6 +5,8 @@ import type { AccountView } from '@shared/contracts'
 import { Alert, type AlertTone } from '@/components/ui/Alert'
 import { ButtonLink } from '@/components/ui/Button'
 import { charityPath } from '@/config/site'
+import { useLocale } from '@/hooks/useLocale'
+import { localePath } from '@/lib/locale-path'
 import { formatDate } from './format'
 
 const TONES: Record<AccountView['status'], AlertTone> = {
@@ -22,13 +24,14 @@ const TONES: Record<AccountView['status'], AlertTone> = {
  */
 export const StatusBanner = ({ account }: { account: AccountView }) => {
   const { t } = useTranslation('account')
+  const { locale } = useLocale()
   return (
     <div className="space-y-3">
       <Alert tone={TONES[account.status]} title={t(`status.${account.status}.title`)}>
         <span className="flex flex-wrap items-center gap-3">
           <span>{t(`status.${account.status}.body`)}</span>
           {account.status === 'approved' && (
-            <ButtonLink to={charityPath(account.slug)} variant="secondary" size="sm">
+            <ButtonLink to={localePath(charityPath(account.slug), locale)} variant="secondary" size="sm">
               {t('status.publicLink')}
             </ButtonLink>
           )}

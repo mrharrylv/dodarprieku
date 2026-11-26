@@ -1,4 +1,9 @@
-/* MapLibre's popup, restyled onto the site's surfaces. */
+/* MapLibre's popup, restyled onto the site's surfaces, above every marker
+   (markers carry a z-index of their own, below). */
+.dp-popup {
+  z-index: 2;
+}
+
 .dp-popup .maplibregl-popup-content {
   padding: 0;
   /* MapLibre sets 12px Helvetica here; the card is the site's own type. */
@@ -35,6 +40,27 @@
 .dp-marker {
   /* The marker's own box is the button's; no stray hit area around it. */
   line-height: 0;
+  z-index: 1;
+}
+
+/* An organisation without open needs: under the others, its badge greyed and
+   paler, and back in full colour while hovered, focused or chosen. */
+.dp-marker-faded {
+  z-index: 0;
+}
+
+.dp-pin-faded > span {
+  filter: grayscale(0.9);
+  opacity: 0.5;
+  transition:
+    filter 180ms var(--ease-out-soft),
+    opacity 180ms var(--ease-out-soft);
+}
+
+.dp-pin-faded:hover > span,
+.dp-pin-faded:focus-visible > span {
+  filter: none;
+  opacity: 1;
 }
 
 .dp-pin {
@@ -76,4 +102,15 @@
 
 .dp-card-grow[data-open='true'] {
   grid-template-rows: 1fr;
+}
+
+/* The zoom buttons and the attribution move left of a docked panel, with it. */
+.maplibregl-ctrl-bottom-right {
+  right: var(--dock-inset, 0px);
+  transition: right 300ms var(--ease-out-soft);
+}
+
+/* The card never grows wider than the map's visible part left of a docked panel. */
+.dp-popup .maplibregl-popup-content {
+  max-width: calc(100vw - var(--dock-inset, 0px) - 2rem);
 }

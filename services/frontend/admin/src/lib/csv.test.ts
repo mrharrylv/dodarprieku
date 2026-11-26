@@ -44,8 +44,8 @@ describe('subscribersCsv', () => {
   it('writes one row per subscriber with charity names', () => {
     const csv = subscribersCsv(
       [
-        { email: 'a@b.lv', name: 'Jānis', charityIds: ['c1', 'c2'], createdAt: '2026-11-01T00:00:00.000Z' },
-        { email: 'x@y.lv', charityIds: [], createdAt: '2026-11-02T00:00:00.000Z' },
+        { email: 'a@b.lv', name: 'Jānis', charityIds: ['c1', 'c2'], general: false, createdAt: '2026-11-01T00:00:00.000Z' },
+        { email: 'x@y.lv', charityIds: [], general: true, createdAt: '2026-11-02T00:00:00.000Z' },
       ],
       (id) => (id === 'c1' ? 'Ulubele' : 'Cits, nams'),
       ['E-pasts', 'Vārds', 'Organizācijas', 'Datums'],

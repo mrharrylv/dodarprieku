@@ -3,7 +3,8 @@
  * approved charities, two pending applications, an admin and one charity
  * account, a few pledges, and the snapshot. With `imported`, the register
  * charities too (make run, SEED_IMPORT=1), through the same path as the
- * import-charities task.
+ * import-charities task; with `demoNeeds` as well, a share of those get made-up
+ * needs through the demo-needs task's path (make run, SEED_DEMO_NEEDS=1).
  */
 import { needKey } from '../../../shared/src/catalog'
 import type { CharityProfile } from '../../../shared/src/contracts'
@@ -11,6 +12,7 @@ import { validateProfile } from '../../../shared/src/validate'
 import { hashPassword } from '../auth/password'
 import type { Deps } from '../deps'
 import { publishSnapshot } from '../domain/effects'
+import { applyDemoNeeds } from '../domain/demo-needs'
 import { importCharities } from '../domain/import'
 import type { ImportedCharity } from '../domain/imported'
 import { claimUniqueSlug } from '../domain/slug'
@@ -88,6 +90,8 @@ const addPledges = async (deps: Deps, charityId: string, profile: CharityProfile
 
 export interface SeedOptions {
   readonly imported?: readonly ImportedCharity[]
+  /** Made-up needs for this share of the imported charities, picked by `seed`. */
+  readonly demoNeeds?: { readonly fraction: number; readonly seed: number }
 }
 
 export const seedDev = async (deps: Deps, opts: SeedOptions = {}): Promise<void> => {
@@ -104,12 +108,18 @@ export const seedDev = async (deps: Deps, opts: SeedOptions = {}): Promise<void>
   const first = approved[0]
   if (first) {
     await addPledges(deps, first.id, first.profile)
-    await deps.repo.upsertSubscriber({ email: 'janis@example.com', name: 'Jānis', charityId: first.id, consentAt: now, source: 'pledge' })
+    await deps.repo.upsertSubscriber({ email: 'janis@example.com', name: 'Jānis', charityId: first.id, general: true, consentAt: now, source: 'pledge' })
     await deps.repo.putAccount({
       email: DEV_CHARITY_EMAIL, role: 'charity', charityId: first.id, passwordHash, sessionVersion: 0, createdAt: now, updatedAt: now,
     })
   }
   await deps.repo.putAccount({ email: DEV_ADMIN_EMAIL, role: 'admin', passwordHash, sessionVersion: 0, createdAt: now, updatedAt: now })
-  if (opts.imported && opts.imported.length > 0) await importCharities(deps, deps.log, opts.imported)
+  if (opts.imported && opts.imported.length > 0) {
+    await importCharities(deps, deps.log, opts.imported)
+    const demo = opts.demoNeeds
+    if (demo !== undefined) {
+      for (const source of new Set(opts.imported.map((i) => i.source))) await applyDemoNeeds(deps, deps.log, { source, ...demo })
+    }
+  }
   await publishSnapshot(deps, deps.log)
 }

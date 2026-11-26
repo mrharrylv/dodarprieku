@@ -21,7 +21,8 @@ const STYLES_DIR = here('./src/styles')
 const SHARED_DIR = here('../../shared/src')
 
 /** The API's local dev server, which `npm run dev` proxies /api, /media and /data to. */
-const API_DEV_ORIGIN = 'http://localhost:8787'
+/** The local API the dev server proxies to; `API_DEV_ORIGIN` points a second copy at another one. */
+const API_DEV_ORIGIN = process.env.API_DEV_ORIGIN ?? 'http://localhost:8787'
 
 /** Every folder under src/styles/ that has a style.ts. Sorted for stable messages. */
 const availableStyles = (): readonly string[] =>

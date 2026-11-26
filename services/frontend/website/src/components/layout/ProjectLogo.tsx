@@ -3,21 +3,27 @@ import { useTranslation } from 'react-i18next'
 import type { HaGroupProject } from '@/config/site'
 import { cn } from '@/lib/cn'
 
-/** A HA Group project's own logo, rounded, from `public/projects/`. */
+/** A HA Group project's own logo, in a rounded square, from `public/projects/`. A `logoZoom` crops a logo's own margin. */
 export const ProjectLogo = ({ project, size = 44, className }: { project: HaGroupProject; size?: number; className?: string }) => {
   const { t } = useTranslation('common')
+  const zoom = 'logoZoom' in project ? project.logoZoom : 1
   return (
-    <img
-      src={project.logo}
-      alt={t('projects.logoAlt', { name: project.name })}
-      width={size}
-      height={size}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-      className={cn('shrink-0 rounded-(--radius-md) bg-(--surface-sunken) object-cover shadow-(--shadow-subtle)', className)}
+    <span
+      className={cn('inline-block shrink-0 overflow-hidden rounded-(--radius-md) bg-(--surface-sunken) shadow-(--shadow-subtle)', className)}
       style={{ width: size, height: size }}
-    />
+    >
+      <img
+        src={project.logo}
+        alt={t('projects.logoAlt', { name: project.name })}
+        width={size}
+        height={size}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className="h-full w-full object-cover"
+        style={zoom === 1 ? undefined : { transform: `scale(${zoom})` }}
+      />
+    </span>
   )
 }
 

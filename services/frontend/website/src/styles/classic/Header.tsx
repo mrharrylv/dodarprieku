@@ -29,7 +29,7 @@ export const Header = () => {
             className="inline-flex min-h-11 items-center gap-2 font-(family-name:--font-display) text-(length:--text-xl) font-semibold tracking-tight text-(--text-primary)"
           >
             <BrandMark />
-            <span>{SITE.name}</span>
+            <span>{SITE.wordmark}</span>
           </Link>
 
           <nav

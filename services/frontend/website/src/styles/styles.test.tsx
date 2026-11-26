@@ -35,18 +35,18 @@ const styles: Array<[string, SiteStyle]> = Object.entries(modules)
 const AppFor = ({ style }: { style: SiteStyle }) => useRoutes(buildRoutes(style))
 
 /**
- * The shell is checked on the About page: the map, the home page, is full
- * screen and has no header or footer (see the test that says so below).
+ * The shell is checked on a legal page: the map, the only other page, is
+ * full screen and has no header or footer (see the test that says so below).
  */
-const renderStyle = (style: SiteStyle, route: string = localePath(ROUTES.about, 'lv')) =>
+const renderStyle = (style: SiteStyle, route: string = localePath(ROUTES.privacy, 'lv')) =>
   renderWithProviders(<AppFor style={style} />, { route })
 
 const lv = (ns: string) => i18n.getFixedT('lv', ns)
 
 const PAGES: ReadonlyArray<[string, string]> = [
   ['map', localePath(ROUTES.home, 'lv')],
-  ['about', localePath(ROUTES.about, 'lv')],
-  ['register', localePath(ROUTES.register, 'lv')],
+  ['map with the registration panel', localePath(ROUTES.register, 'lv')],
+  ['privacy', localePath(ROUTES.privacy, 'lv')],
 ]
 
 describe('the style folders', () => {

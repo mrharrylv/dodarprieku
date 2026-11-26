@@ -28,9 +28,9 @@ import { spreadColocated } from './colocated'
 import { createClusterSplitter, type ClusterSplitter } from './cluster-split'
 import { addCharitySources, applyLatvianLabels, childrenOf, markersInView, refitCoarseSource, setCharityData, sourceOf } from './map-setup'
 import { MAPLIBRE_ENGINE, prefersReducedMotion, type MapEngine, type MaplibreModule } from './maplibre-engine'
-import { pinSignature, type PinItem } from './marker-sync'
+import { pinSignature, type FadedPoint, type PinItem } from './marker-sync'
 import { createSyncThrottle } from './sync-throttle'
-import { useCharityPopup } from './useCharityPopup'
+import { mapPadding, pinOffset, useCharityPopup } from './useCharityPopup'
 import './map.css'
 
 type Phase = 'loading' | 'ready' | 'unavailable'
@@ -40,10 +40,11 @@ interface Placed {
   readonly element: HTMLElement
 }
 
-/** A request to fly to a charity; `nonce` repeats a fly to the same one. */
+/** A request to fly to a charity; `nonce` repeats a fly to the same one. `expand` opens its card expanded (a shared link). */
 export interface MapFocus {
   readonly id: string
   readonly nonce: number
+  readonly expand?: boolean
 }
 
 const LATVIA_BOX: [[number, number], [number, number]] = [
@@ -51,9 +52,16 @@ const LATVIA_BOX: [[number, number], [number, number]] = [
   [LATVIA_BOUNDS.maxLng, LATVIA_BOUNDS.maxLat],
 ]
 const FIT_PADDING = 24
+/** How long the map takes to make room for the docked panel, or to take it back. */
+const INSET_EASE_MS = 300
+
+/** Fitting the country: the usual margin, and the docked panel's width on the right. */
+const fitPadding = (inset: number) => ({ top: FIT_PADDING, bottom: FIT_PADDING, left: FIT_PADDING, right: FIT_PADDING + inset })
 
 /** The zoom that fits the whole country in the map as it is sized now. */
 const countryZoom = (map: MlMap): number => map.cameraForBounds(LATVIA_BOX, { padding: FIT_PADDING })?.zoom ?? map.getZoom()
+
+const NONE: readonly PublicCharity[] = []
 
 const OUR_SOURCES: ReadonlySet<string> = new Set(Object.values(SOURCES).map((s) => s.id))
 
@@ -70,6 +78,10 @@ interface SyncRequest {
 }
 const IDLE_SYNC: SyncRequest = { request: () => undefined }
 
+/** Faded markers sit under the active ones, so a pin that needs something is never hidden by one that does not. */
+const FADED_CLASS = 'dp-marker-faded'
+const isFaded = (item: PinItem): boolean => item.kind === 'point' && item.faded === true
+
 /** A click on a marker or inside the card is not a click on the map. */
 const onChrome = (event: MapMouseEvent | undefined): boolean => {
   const target = event?.originalEvent?.target
@@ -82,18 +94,31 @@ const onChrome = (event: MapMouseEvent | undefined): boolean => {
  * focusable button; only the clusters and charities in or just around the
  * view become markers, so a thousand charities cost a few dozen elements.
  * The search's results list remains the main accessible path.
+ *
+ * `charities` are the organisations with open needs: they cluster, and the
+ * clusters count only them. `faded` (no needs) are drawn greyed out from
+ * FADED_FROM_ZOOM, beside the clusters, never in them.
  */
 export const MapView = ({
   charities,
+  faded = NONE,
   selectedId,
   onSelect,
   focus,
+  insetRight = 0,
   engine = MAPLIBRE_ENGINE,
 }: {
   charities: readonly PublicCharity[]
+  faded?: readonly PublicCharity[]
   selectedId: string | null
   onSelect: (id: string | null) => void
   focus: MapFocus | null
+  /**
+   * Pixels of the map's right edge a docked panel covers. The map takes them
+   * as padding, so its centre, fly-tos, cluster zooms and the charity card
+   * all sit in the visible part on the left.
+   */
+  insetRight?: number
   engine?: MapEngine
 }) => {
   const { t } = useTranslation('map')
@@ -114,21 +139,33 @@ export const MapView = ({
   const [expandedFor, setExpandedFor] = useState(selectedId)
   if (expandedFor !== selectedId) {
     setExpandedFor(selectedId)
-    setExpandedId(null)
+    // A shared link selects its charity and asks for the card expanded in the same render.
+    setExpandedId(focus?.expand === true && focus.id === selectedId ? selectedId : null)
     setFocusTarget(null)
   }
   const phone = useMediaQuery(PANEL_SHEET_QUERY)
   /** The charity a fly-to is taking the map to: the popup's own pan must not cut that flight short. */
   const flyingToRef = useRef<string | null>(null)
   const onSelectRef = useRef(onSelect)
-  const positions = useMemo(() => spreadColocated(charities), [charities])
+  /** The padding every camera move uses: the docked panel's width on the right. */
+  const insetRef = useRef(insetRight)
+  const appliedInset = useRef(0)
+  const everyone = useMemo(() => [...charities, ...faded], [charities, faded])
+  // Spread together, so a faded pin at an active one's address does not hide under it.
+  const positions = useMemo(() => spreadColocated(everyone), [everyone])
   const data = useMemo(() => toFeatureCollection(charities, positions), [charities, positions])
+  const fadedPoints = useMemo(
+    (): readonly FadedPoint[] => faded.map((c) => ({ id: c.id, lngLat: drawnAt(c, positions) })),
+    [faded, positions],
+  )
   const dataRef = useRef(data)
-  const byId = useMemo(() => new Map(charities.map((c) => [c.id, c])), [charities])
+  const fadedRef = useRef(fadedPoints)
+  const byId = useMemo(() => new Map(everyone.map((c) => [c.id, c])), [everyone])
 
   useEffect(() => {
     onSelectRef.current = onSelect
     dataRef.current = data
+    fadedRef.current = fadedPoints
   })
 
   // Create the map once.
@@ -146,7 +183,7 @@ export const MapView = ({
       if (map === null || lib === null) return
       const camera = cameraKey(map)
       if (!dirty && camera === synced) return
-      const items = markersInView(map, splitterRef.current ?? undefined)
+      const items = markersInView(map, splitterRef.current ?? undefined, fadedRef.current)
       if (items === null) return
       synced = camera
       dirty = false
@@ -164,9 +201,13 @@ export const MapView = ({
         items.map((item) => {
           const existing = markerMap.get(item.key)
           // The same key can come back for a different group after new data: move it.
-          if (existing !== undefined) return { item, element: existing.setLngLat([item.lngLat[0], item.lngLat[1]]).getElement() }
+          if (existing !== undefined) {
+            const element = existing.setLngLat([item.lngLat[0], item.lngLat[1]]).getElement()
+            element.classList.toggle(FADED_CLASS, isFaded(item))
+            return { item, element }
+          }
           const element = document.createElement('div')
-          element.className = 'dp-marker'
+          element.className = isFaded(item) ? `dp-marker ${FADED_CLASS}` : 'dp-marker'
           const marker = new lib.Marker({ element }).setLngLat([item.lngLat[0], item.lngLat[1]]).addTo(map)
           markerMap.set(item.key, marker)
           return { item, element }
@@ -201,7 +242,7 @@ export const MapView = ({
         // Fit the whole country whatever the panel leaves of the screen; a
         // fixed zoom showed only Riga on a narrow map.
         bounds: LATVIA_BOX,
-        fitBoundsOptions: { padding: FIT_PADDING },
+        fitBoundsOptions: { padding: fitPadding(insetRef.current) },
         minZoom: MAP_MIN_ZOOM,
         maxZoom: MAP_MAX_ZOOM,
         maxBounds: [MAP_BOUNDS[0], MAP_BOUNDS[1]],
@@ -216,7 +257,9 @@ export const MapView = ({
         // The panel settles its width after the map is created; fit again
         // now that the container has its final size.
         map.resize()
-        map.fitBounds(LATVIA_BOX, { padding: FIT_PADDING, animate: false })
+        appliedInset.current = insetRef.current
+        map.setPadding(mapPadding(insetRef.current))
+        map.fitBounds(LATVIA_BOX, { padding: fitPadding(insetRef.current), animate: false })
         applyLatvianLabels(map)
         addCharitySources(map, dataRef.current, countryZoom(map))
         setPhase('ready')
@@ -258,6 +301,21 @@ export const MapView = ({
     throttleRef.current.request(true)
   }, [data, phase])
 
+  // The faded pins are not in a source: work the markers out again when they change.
+  useEffect(() => {
+    fadedRef.current = fadedPoints
+    throttleRef.current.request(true)
+  }, [fadedPoints])
+
+  // A dock opened, closed or resized: make room for it, or take the room back, gently.
+  useEffect(() => {
+    insetRef.current = insetRight
+    const map = mapRef.current
+    if (phase !== 'ready' || map === null || appliedInset.current === insetRight) return
+    appliedInset.current = insetRight
+    map.easeTo({ padding: mapPadding(insetRight), duration: prefersReducedMotion() ? 0 : INSET_EASE_MS })
+  }, [insetRight, phase])
+
   // Fly to a charity chosen in the list.
   useEffect(() => {
     const map = mapRef.current
@@ -267,7 +325,8 @@ export const MapView = ({
     map.flyTo({
       center: drawnAt(target, positions),
       zoom: Math.max(map.getZoom(), FOCUS_ZOOM),
-      offset: popupPanOffset(),
+      offset: focus?.expand === true ? pinOffset(map, true) : popupPanOffset(),
+      padding: mapPadding(insetRef.current),
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS,
       essential: true,
     })
@@ -286,7 +345,7 @@ export const MapView = ({
     setExpandedId(null)
     setFocusTarget('view')
   }
-  const popupNode = useCharityPopup({ ready: phase === 'ready', mapRef, libRef, flyingToRef, selected, at: positions, expanded, sheet, onClosed: () => onSelect(null) })
+  const popupNode = useCharityPopup({ ready: phase === 'ready', mapRef, libRef, flyingToRef, insetRef, selected, at: positions, expanded, sheet, onClosed: () => onSelect(null) })
 
   const zoomCluster = (source: SourceKey, clusterId: number, lngLat: readonly [number, number]) => {
     const map = mapRef.current
@@ -297,6 +356,7 @@ export const MapView = ({
         map.easeTo({
           center: [lngLat[0], lngLat[1]],
           zoom: Math.min(zoom + CLUSTER_ZOOM_EXTRA, MAP_MAX_ZOOM),
+          padding: mapPadding(insetRef.current),
           duration: prefersReducedMotion() ? 0 : 600,
         }),
       (error: unknown) => console.warn('[map] cluster zoom failed', error),
@@ -374,5 +434,7 @@ const Pin = ({
     )
   }
   const charity = byId.get(item.id)
-  return charity === undefined ? null : <CharityPin charity={charity} selected={charity.id === selectedId} onSelect={onSelect} />
+  return charity === undefined ? null : (
+    <CharityPin charity={charity} faded={item.faded === true} selected={charity.id === selectedId} onSelect={onSelect} />
+  )
 }

@@ -3,8 +3,21 @@ import type { GeoJSONSource, Map as MlMap } from 'maplibre-gl'
 import type { toFeatureCollection } from '@/lib/snapshot'
 import type { ChildrenOf, ClusterSplitter } from './cluster-split'
 import { splitLevels } from './cluster-split'
-import { CLUSTER_MAX_ZOOM, COARSE_REBUILD_CHANGE, SOURCES, VIEW_MARGIN, type SourceKey } from './map-config'
-import { chooseSource, clusterProperties, coarseRadius, inBox, padBox, pinItems, type PinItem, type SourceFeature } from './marker-sync'
+import { CLUSTER_MAX_ZOOM, COARSE_REBUILD_CHANGE, FADED, SOURCES, VIEW_MARGIN, type SourceKey } from './map-config'
+import {
+  chooseSource,
+  clusterProperties,
+  coarseRadius,
+  fadedInView,
+  inBox,
+  padBox,
+  pinItems,
+  thinFaded,
+  type FadedPoint,
+  type PinItem,
+  type SourceFeature,
+  type ToPixels,
+} from './marker-sync'
 
 /**
  * OpenFreeMap's style labels places in English ("Latvia", "Lithuania"). Where
@@ -95,9 +108,10 @@ const itemsIn = (map: MlMap, key: SourceKey): readonly PinItem[] =>
 
 /**
  * The markers to draw now: from whichever clustering suits the view, and only
- * those in it or just around it. `null` while the sources are still loading.
+ * those in it or just around it, plus the `faded` organisations (no needs)
+ * once the map is close enough. `null` while the sources are still loading.
  */
-export const markersInView = (map: MlMap, splitter?: ClusterSplitter): readonly PinItem[] | null => {
+export const markersInView = (map: MlMap, splitter?: ClusterSplitter, faded: readonly FadedPoint[] = []): readonly PinItem[] | null => {
   if (!loaded(map, 'coarse') || !loaded(map, 'fine')) return null
   const bounds = map.getBounds()
   const view = { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() }
@@ -107,5 +121,10 @@ export const markersInView = (map: MlMap, splitter?: ClusterSplitter): readonly 
   const chosen = chooseSource(map.getZoom(), inBox(coarse, view).length, inBox(fine, view).length)
   const radius = chosen === 'fine' ? SOURCES.fine.radius : coarseRadiusOf(map)
   const items = chosen === 'fine' ? fine : coarse
-  return inBox(splitter === undefined ? items : splitter.split(inBox(items, near), splitLevels(radius)), near)
+  const active = inBox(splitter === undefined ? items : splitter.split(inBox(items, near), splitLevels(radius)), near)
+  const toPx: ToPixels = ([lng, lat]) => {
+    const p = map.project([lng, lat])
+    return [p.x, p.y]
+  }
+  return [...active, ...thinFaded(fadedInView(faded, map.getZoom(), view), active, toPx, FADED)]
 }

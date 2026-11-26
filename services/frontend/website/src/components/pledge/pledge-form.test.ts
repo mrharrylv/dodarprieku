@@ -40,13 +40,24 @@ describe('buildPledge', () => {
 
 describe('buildSubscribe', () => {
   it('needs an email and consent, and carries the charity', () => {
-    expect(buildSubscribe({ email: '', name: '', consent: false, website: '' })).toEqual({
+    expect(buildSubscribe({ email: '', name: '', consent: false, general: false, website: '' })).toEqual({
       ok: false,
       fields: { email: 'required', consent: 'required' },
     })
-    expect(buildSubscribe({ email: 'a@b.lv', name: 'Ilze', consent: true, website: '' }, 'c1')).toEqual({
+    expect(buildSubscribe({ email: 'a@b.lv', name: 'Ilze', consent: true, general: false, website: '' }, 'c1')).toEqual({
       ok: true,
-      value: { email: 'a@b.lv', name: 'Ilze', consent: true, charityId: 'c1' },
+      value: { email: 'a@b.lv', name: 'Ilze', consent: true, general: false, charityId: 'c1' },
+    })
+    expect(buildSubscribe({ email: 'a@b.lv', name: '', consent: true, general: true, website: '' }, 'c1')).toMatchObject({
+      ok: true,
+      value: { general: true, charityId: 'c1' },
+    })
+  })
+
+  it('makes a sign-up without an organisation the general newsletter, whatever the box said', () => {
+    expect(buildSubscribe({ email: 'a@b.lv', name: '', consent: true, general: false, website: '' })).toEqual({
+      ok: true,
+      value: { email: 'a@b.lv', consent: true, general: true },
     })
   })
 })

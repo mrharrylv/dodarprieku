@@ -65,7 +65,7 @@ describe('the site', () => {
   })
 
   it("links HA Group's other projects over https", () => {
-    expect(HA_GROUP_PROJECTS.map((project) => project.name)).toEqual(['Unveil', 'Event App', 'Baltic GP', 'HA Group'])
+    expect(HA_GROUP_PROJECTS.map((project) => project.name)).toEqual(['Unveil', 'EventApp', 'Baltic GP', 'HA Group'])
     for (const project of HA_GROUP_PROJECTS) expect(new URL(project.url).protocol).toBe('https:')
   })
 })

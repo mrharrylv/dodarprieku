@@ -32,4 +32,16 @@ describe('dev seed with the import', () => {
     expect(new Set(snap.charities.map((c) => c.slug)).size).toBe(snap.charities.length)
     expect(snap.charities.filter((c) => c.id.startsWith('imp-')).every((c) => c.profile.needs.length === 0)).toBe(true)
   })
+  it('with demo needs, a quarter of the imported get made-up needs and are marked; the samples are not', async () => {
+    const deps = { ...createLocalDeps({}, () => undefined), log: silentLogger }
+    const imported = loadImportedFile()
+    await seedDev(deps, { imported, demoNeeds: { fraction: 0.25, seed: 1 } })
+    const o = await deps.storage.get('data/charities.json')
+    const snap = JSON.parse(Buffer.from(o!.body).toString('utf8')) as PublicSnapshot
+    const demo = snap.charities.filter((c) => c.demoNeeds === true)
+    expect(demo.length / imported.length).toBeGreaterThan(0.2)
+    expect(demo.length / imported.length).toBeLessThan(0.3)
+    expect(demo.every((c) => c.id.startsWith('imp-') && c.profile.needs.length >= 2)).toBe(true)
+    expect(snap.charities.filter((c) => c.id.startsWith('dev-')).some((c) => c.demoNeeds)).toBe(false)
+  })
 })

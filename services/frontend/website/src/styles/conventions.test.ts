@@ -41,7 +41,6 @@ const KNOWN_KEYS: ReadonlySet<string> = new Set(
 const REQUIRED = [
   'style.ts',
   'Shell.tsx',
-  'AboutPage.tsx',
   'tokens.css',
   'README.md',
 ] as const

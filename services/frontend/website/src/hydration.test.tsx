@@ -115,9 +115,11 @@ describe('hydrating the prerendered markup', () => {
     await act(async () => about?.click())
     await settle()
 
-    expect(window.location.pathname).toBe(ROUTES.about)
+    // "Par projektu" is the map with its info panel open; the address settles on the map's own.
+    await vi.waitFor(() => expect(window.location.pathname).toBe(ROUTES.home))
+    await vi.waitFor(() => expect(container?.querySelector('h2')?.textContent).toBe(resources.lv.map.info.title), { timeout: 5000 })
     expect(document.documentElement.lang).toBe('lv')
-    await vi.waitFor(() => expect(document.title).toBe(`${resources.lv.about.meta.title} · ${SITE.name}`))
+    await vi.waitFor(() => expect(document.title).toBe(`${resources.lv.map.meta.title} · ${SITE.name}`))
     expect(consoleError).not.toHaveBeenCalled()
   })
 })

@@ -42,7 +42,7 @@ describe('pledges', () => {
     expect(stats.pledgesByNeed).toEqual({ 'sausa-bariba-kakiem': 1, 'custom:1': 1 })
     expect(stats.recentSupporters).toEqual([{ name: 'Jānis', at: '2026-11-25T10:00:00.000Z' }])
     const subs = await w.deps.repo.listSubscribers()
-    expect(subs).toEqual([{ email: 'janis@example.com', name: 'Jānis', charityIds: ['c1'], createdAt: '2026-11-25T10:00:00.000Z' }])
+    expect(subs).toEqual([{ email: 'janis@example.com', name: 'Jānis', charityIds: ['c1'], general: false, createdAt: '2026-11-25T10:00:00.000Z' }])
     const [mail] = w.deps.mailer.sent()
     expect(mail?.to).toBe('janis@example.com')
     expect(mail?.text).toContain('Sausā barība kaķiem')
@@ -113,9 +113,26 @@ describe('subscribe', () => {
     data(await call(w.app, 'POST', '/subscribe', { body: { ...body, charityId: 'c2', name: 'Līga' } }))
     data(await call(w.app, 'POST', '/subscribe', { body: { email: 'liga@example.com', consent: true } }))
     expect(await w.deps.repo.listSubscribers()).toEqual([
-      { email: 'liga@example.com', name: 'Līga', charityIds: ['c1', 'c2'], createdAt: '2026-11-25T10:00:00.000Z' },
+      { email: 'liga@example.com', name: 'Līga', charityIds: ['c1', 'c2'], general: true, createdAt: '2026-11-25T10:00:00.000Z' },
     ])
     expect(await w.deps.repo.countCharitySubscribers('c1')).toBe(1)
+  })
+
+  it('stores the general newsletter when ticked or when no organisation is named, and never takes it away', async () => {
+    const w = world()
+    await putCharity(w.deps)
+    data(await call(w.app, 'POST', '/subscribe', { body: { email: 'only@b.lv', consent: true, charityId: 'c1' } }))
+    data(await call(w.app, 'POST', '/subscribe', { body: { email: 'both@b.lv', consent: true, charityId: 'c1', general: true } }))
+    data(await call(w.app, 'POST', '/subscribe', { body: { email: 'rail@b.lv', consent: true, general: false } }))
+    data(await call(w.app, 'POST', '/subscribe', { body: { email: 'both@b.lv', consent: true, charityId: 'c1', general: false } }))
+    const general = Object.fromEntries((await w.deps.repo.listSubscribers()).map((s) => [s.email, s.general]))
+    expect(general).toEqual({ 'only@b.lv': false, 'both@b.lv': true, 'rail@b.lv': true })
+  })
+
+  it('refuses a general flag that is not a boolean', async () => {
+    const w = world()
+    const res = await call(w.app, 'POST', '/subscribe', { body: { email: 'a@b.lv', consent: true, general: 'yes' } })
+    expect(errorOf(res)).toEqual({ status: 400, error: 'validation', fields: { general: 'invalid' } })
   })
 
   it('needs consent and a valid email, and a published charity', async () => {

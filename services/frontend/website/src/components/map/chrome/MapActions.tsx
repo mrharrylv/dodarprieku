@@ -12,11 +12,14 @@ import { PILL } from './pill'
  * "+ Kļūt par saņēmēju", floating in the map's top right corner as the same
  * oval pill as the category chips, in the accent fill; on a phone, where the
  * top bar takes the width, centred at the bottom, clear of the zoom buttons.
+ * It opens the registration panel (`/registreties`); while a panel is docked
+ * on the right it is not shown (the account's login has its own way to register).
  */
-export const MapActions = () => {
+export const MapActions = ({ hidden = false }: { hidden?: boolean }) => {
   const { t } = useTranslation('map')
   const { t: tc } = useTranslation('common')
   const { locale } = useLocale()
+  if (hidden) return null
 
   return (
     <div
@@ -26,6 +29,7 @@ export const MapActions = () => {
     >
       <Link
         to={localePath(REGISTER_CTA.to, locale)}
+        data-dock-trigger="register"
         className={cn(
           PILL,
           'pointer-events-auto gap-1.5 px-4 font-semibold',

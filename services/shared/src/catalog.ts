@@ -40,6 +40,14 @@ export type CategoryIcon =
   | 'heart-flag'
   | 'heart'
 
+/**
+ * Colour token names. `brown` is the warm neutral of "Cita organizācija": a
+ * grey one read as a greyed-out pin once organisations without needs are drawn
+ * faded (Harry, 2026-11-26).
+ */
+export type CategoryTone =
+  | 'amber' | 'sky' | 'violet' | 'rose' | 'slate' | 'emerald' | 'orange' | 'teal' | 'indigo' | 'lime' | 'cyan' | 'yellow' | 'brown'
+
 export interface NeedItem {
   readonly id: string
   readonly label: string
@@ -58,7 +66,7 @@ export interface Category {
   readonly plural: string
   readonly icon: CategoryIcon
   /** A colour token name the website maps to a CSS variable (never a hex here). */
-  readonly tone: 'amber' | 'sky' | 'violet' | 'rose' | 'slate' | 'emerald' | 'orange' | 'teal' | 'indigo' | 'lime' | 'cyan' | 'yellow' | 'stone'
+  readonly tone: CategoryTone
   readonly needs: readonly NeedGroup[]
 }
 
@@ -407,7 +415,7 @@ export const CATEGORIES: readonly Category[] = [
     label: 'Cita organizācija',
     plural: 'Citas organizācijas',
     icon: 'heart',
-    tone: 'stone',
+    tone: 'brown',
     needs: [HYGIENE, TEXTILES, CLEANING, VOLUNTEERS],
   },
 ]
@@ -460,3 +468,118 @@ export const LEGAL_FORMS = [
   { id: 'komersants', label: 'Komersants' },
   { id: 'cits', label: 'Cits' },
 ] as const
+
+// ── Need kinds: what a donor has to give, across categories ─────────────────
+
+/**
+ * The map's "Ko vajag" filter. A donor with a bag of children's clothes looks
+ * for "Apģērbs un apavi", whichever kind of institution asks for it, so the
+ * catalog's groups (which are per category) fold into these few kinds. Every
+ * group has one kind (NEED_GROUP_KIND); a group that mixes things names the
+ * exceptions item by item (NEED_ITEM_KIND). Custom needs have no kind.
+ */
+export type NeedKindId =
+  | 'apgerbs'
+  | 'partika'
+  | 'higiena'
+  | 'tekstils'
+  | 'brivais-laiks'
+  | 'macibas'
+  | 'dzivnieki'
+  | 'medicina'
+  | 'majai'
+  | 'palidziba'
+
+export interface NeedKind {
+  readonly id: NeedKindId
+  readonly label: string
+}
+
+export const NEED_KINDS: readonly NeedKind[] = [
+  { id: 'apgerbs', label: 'Apģērbs un apavi' },
+  { id: 'partika', label: 'Pārtika' },
+  { id: 'higiena', label: 'Higiēna un tīrīšana' },
+  { id: 'tekstils', label: 'Tekstils un gultas veļa' },
+  { id: 'brivais-laiks', label: 'Rotaļlietas un brīvais laiks' },
+  { id: 'macibas', label: 'Mācību lietas' },
+  { id: 'dzivnieki', label: 'Dzīvnieku barība un aprūpe' },
+  { id: 'medicina', label: 'Medicīna un aprūpe' },
+  { id: 'majai', label: 'Mājai un tehnika' },
+  { id: 'palidziba', label: 'Brīvprātīgie un transports' },
+]
+
+/** The kind of every catalog group, by group id. */
+export const NEED_GROUP_KIND: Readonly<Record<string, NeedKindId>> = {
+  higiena: 'higiena',
+  tekstils: 'tekstils',
+  tirisana: 'higiena',
+  palidziba: 'palidziba',
+  bariba: 'dzivnieki',
+  aprupe: 'dzivnieki',
+  veseliba: 'dzivnieki',
+  apgerbs: 'apgerbs',
+  macibas: 'macibas',
+  zidainiem: 'higiena',
+  'aprupe-seniori': 'medicina',
+  palidzlidzekli: 'medicina',
+  'briva-laika': 'brivais-laiks',
+  'apgerbs-seniori': 'apgerbs',
+  pacientiem: 'apgerbs',
+  aprikojums: 'medicina',
+  'aprupe-hospiss': 'medicina',
+  komforts: 'tekstils',
+  pamatvajadzibas: 'apgerbs',
+  'berniem-krize': 'brivais-laiks',
+  silti: 'apgerbs',
+  'partika-bez': 'partika',
+  produkti: 'partika',
+  virtuve: 'majai',
+  'berniem-gimenes': 'apgerbs',
+  majai: 'majai',
+  'partika-gimenes': 'partika',
+  'palidzlidzekli-inv': 'medicina',
+  nodarbibas: 'brivais-laiks',
+  'macibu-lidzekli': 'macibas',
+  rotalas: 'brivais-laiks',
+  humanitara: 'partika',
+}
+
+/** Items whose kind is not their group's, by item id. */
+export const NEED_ITEM_KIND: Readonly<Record<string, NeedKindId>> = {
+  'rotallietas-berniem': 'brivais-laiks',
+  'galda-speles': 'brivais-laiks',
+  'sporta-inventars': 'brivais-laiks',
+  'bernu-partika': 'partika',
+  ratini: 'majai',
+  'radio-televizors': 'majai',
+  'higienas-komplekti': 'higiena',
+  'gramatas-pacientiem': 'brivais-laiks',
+  'rotallietas-bernu-nodalai': 'brivais-laiks',
+  'plansetes-pacientiem': 'majai',
+  'ziedi-istabam': 'majai',
+  'partika-ilgi-glabajama': 'partika',
+  'autinbiksites-krize': 'higiena',
+  'kancelejas-krize': 'macibas',
+  gulammaisi: 'tekstils',
+  'skolas-piederumi': 'macibas',
+  'autinbiksites-gimenes': 'higiena',
+  'bernu-partika-gimenes': 'partika',
+  'rotallietas-gimenes': 'brivais-laiks',
+  'datori-inv': 'majai',
+  medikamenti: 'medicina',
+  generatori: 'majai',
+  'siltie-apgerbi-ukr': 'apgerbs',
+  'gulammaisi-ukr': 'tekstils',
+}
+
+const NEED_KIND_IDS: readonly NeedKindId[] = NEED_KINDS.map((k) => k.id)
+
+export const isNeedKindId = (value: unknown): value is NeedKindId =>
+  typeof value === 'string' && (NEED_KIND_IDS as readonly string[]).includes(value)
+
+/** The kind of one of a category's catalog items, or null for a custom need or an item the catalog no longer has. */
+export const needKindOf = (category: CategoryId, itemId: string): NeedKindId | null => {
+  const group = categoryById(category).needs.find((g) => g.items.some((i) => i.id === itemId))
+  if (group === undefined) return null
+  return NEED_ITEM_KIND[itemId] ?? NEED_GROUP_KIND[group.id] ?? null
+}

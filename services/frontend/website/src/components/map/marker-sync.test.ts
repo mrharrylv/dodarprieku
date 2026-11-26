@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { COARSE_RADIUS, FINE_FROM_ZOOM, HEART_PX, MIN_VISIBLE_MARKERS } from './map-config'
+import { COARSE_RADIUS, FADED, FADED_FROM_ZOOM, FINE_FROM_ZOOM, HEART_PX, MIN_VISIBLE_MARKERS } from './map-config'
 import {
   chooseSource,
   clusterProperties,
   clusterSize,
   coarseRadius,
+  fadedInView,
   inBox,
   metresPerPixel,
   padBox,
   pinItems,
   pinSignature,
   sharedCategory,
+  thinFaded,
 } from './marker-sync'
 
 const pt = (coordinates: unknown, properties: Record<string, unknown> | null) => ({ geometry: { type: 'Point', coordinates }, properties })
@@ -56,6 +58,38 @@ describe('marker sync', () => {
     expect(pinSignature(before)).not.toBe(pinSignature(after))
     const moved = pinItems([pt([21.18, 56.535], { cluster: true, cluster_id: 33, point_count: 2, 'n:zupas-virtuve': 2 })], 'fine')
     expect(pinSignature(moved)).not.toBe(pinSignature(before))
+  })
+
+  it('draws the faded organisations only from close up, only in the box, never as clusters', () => {
+    const points = [
+      { id: 'near', lngLat: [24.1, 56.95] as const },
+      { id: 'far', lngLat: [27, 57.5] as const },
+    ]
+    const box = { west: 24, south: 56.9, east: 24.2, north: 57 }
+    expect(fadedInView(points, FADED_FROM_ZOOM - 0.01, box)).toEqual([])
+    expect(fadedInView(points, FADED_FROM_ZOOM, box)).toEqual([{ key: 'p:near', kind: 'point', id: 'near', lngLat: [24.1, 56.95], faded: true }])
+    expect(fadedInView([], 15, box)).toEqual([])
+  })
+
+  it('thins the faded pins: none on top of an active marker or of each other, never more than the cap', () => {
+    const px = (lngLat: readonly [number, number]): readonly [number, number] => [lngLat[0], lngLat[1]]
+    const faded = (id: string, x: number, y: number) => ({ key: `p:${id}`, kind: 'point', id, lngLat: [x, y], faded: true }) as const
+    const active = [{ key: 'p:a', kind: 'point', id: 'a', lngLat: [0, 0] }] as const
+    const gap = 40
+    const kept = thinFaded([faded('under', 10, 0), faded('b', 100, 0), faded('c', 120, 0), faded('d', 200, 0)], active, px, { minGapPx: gap, max: 10 })
+    expect(kept.map((i) => i.key)).toEqual(['p:b', 'p:d'])
+    const many = Array.from({ length: 500 }, (_, i) => faded(`f${String(i).padStart(3, '0')}`, (i % 25) * 100, Math.floor(i / 25) * 100))
+    const capped = thinFaded(many, [], px, { minGapPx: gap, max: 30 })
+    expect(capped).toHaveLength(30)
+    // The same view keeps the same pins, whatever order they came in.
+    expect(thinFaded([...many].reverse(), [], px, { minGapPx: gap, max: 30 })).toEqual(capped)
+    expect(FADED.max).toBeLessThanOrEqual(60)
+  })
+
+  it('signs a faded pin apart from an active one at the same place', () => {
+    const active = [{ key: 'p:a', kind: 'point', id: 'a', lngLat: [24, 57] }] as const
+    const faded = [{ ...active[0], faded: true }] as const
+    expect(pinSignature(active)).not.toBe(pinSignature(faded))
   })
 
   it('names a cluster by its category only when every member shares it', () => {

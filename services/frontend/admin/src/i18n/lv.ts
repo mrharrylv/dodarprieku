@@ -4,7 +4,8 @@
  */
 export const lv = {
   app: {
-    name: 'Dod ar prieku',
+    /** The logo's wordmark: lowercase by design. In a sentence the name is written as usual. */
+    wordmark: 'dod ar prieku',
     area: 'Administrēšana',
     skip: 'Pāriet uz saturu',
     loading: 'Ielādē…',
@@ -299,6 +300,21 @@ export const lv = {
     general: 'Vispārīgi',
     count: '{n} abonenti',
     fileStem: 'abonenti',
+    generalFileStem: 'abonenti-vispareji',
+    allFileStem: 'abonenti-visi',
+    tabsLabel: 'Kuri abonenti',
+    tabs: { general: 'Vispārējie jaunumi', all: 'Visi' },
+    tabIntro: {
+      general: 'Tie, kas saņem vispārējos jaunumus: pieteikušies kartē vai pie organizācijas atzīmējuši arī vispārējos jaunumus.',
+      all: 'Visi abonenti. Katrai organizācijai, kurai ir abonenti, ir sava kolonna.',
+    },
+    generalCol: 'Vispārējie jaunumi',
+    subscribed: 'Jā',
+  },
+  charitySubscribers: {
+    title: 'Abonenti',
+    intro: 'Cilvēki, kas pieteikušies šīs organizācijas jaunumiem.',
+    empty: 'Šai organizācijai vēl nav abonentu.',
   },
   pledges: {
     title: 'Ziedojumi',

@@ -83,7 +83,7 @@
       "title": "Lapa ir paslēpta no kartes",
       "body": "Administrators uz laiku paslēpa jūsu lapu. Iemeslu nosūtījām jums e-pastā."
     },
-    "publicLink": "Skatīt publisko lapu",
+    "publicLink": "Skatīt kartē",
     "pendingUpdate": {
       "title": "Izmaiņas gaida administratora apstiprinājumu",
       "body": "Iesniegtas {{date}}. Līdz apstiprināšanai kartē redzama iepriekšējā versija. Zemāk redzat iesniegto versiju."

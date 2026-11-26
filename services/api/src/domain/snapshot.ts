@@ -68,6 +68,7 @@ export const buildSnapshot = (charities: readonly CharityRecord[], now: Date): P
       slug: c.slug,
       profile: toPublicProfile(c.profile),
       publishedAt: c.publishedAt ?? c.updatedAt,
+      ...(c.demoNeeds === true ? { demoNeeds: true } : {}),
     }))
     .sort((a, b) => a.profile.organization.name.localeCompare(b.profile.organization.name, 'lv'))
   return { generatedAt: now.toISOString(), charities: published, sponsorLeaderboard: buildLeaderboard(published) }

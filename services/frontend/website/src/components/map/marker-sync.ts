@@ -6,10 +6,17 @@
  */
 import { CATEGORIES, type CategoryId } from '@shared/catalog'
 
-import { COARSE_RADIUS, FINE_FROM_ZOOM, HEART_PX, MIN_VISIBLE_MARKERS, type SourceKey } from './map-config'
+import { COARSE_RADIUS, FADED_FROM_ZOOM, FINE_FROM_ZOOM, HEART_PX, MIN_VISIBLE_MARKERS, type SourceKey } from './map-config'
 
 export type PinItem =
-  | { readonly key: string; readonly kind: 'point'; readonly id: string; readonly lngLat: readonly [number, number] }
+  | {
+      readonly key: string
+      readonly kind: 'point'
+      readonly id: string
+      readonly lngLat: readonly [number, number]
+      /** An organisation without needs: drawn greyed out, never part of a cluster. */
+      readonly faded?: true
+    }
   | {
       readonly key: string
       readonly kind: 'cluster'
@@ -116,6 +123,74 @@ export const padBox = (box: ViewBox, margin: number): ViewBox => {
 export const inBox = (items: readonly PinItem[], box: ViewBox): readonly PinItem[] =>
   items.filter(({ lngLat: [lng, lat] }) => lng >= box.west && lng <= box.east && lat >= box.south && lat <= box.north)
 
+/** An organisation without needs, where it is drawn. */
+export interface FadedPoint {
+  readonly id: string
+  readonly lngLat: readonly [number, number]
+}
+
+/**
+ * The faded pins to draw: none at the country or regional view (they would
+ * only crowd the organisations that need something), every one in the box
+ * from FADED_FROM_ZOOM. They never go into a clustered source, so they never
+ * form or count in a cluster.
+ */
+export const fadedInView = (points: readonly FadedPoint[], zoom: number, box: ViewBox): readonly PinItem[] =>
+  zoom < FADED_FROM_ZOOM
+    ? []
+    : inBox(
+        points.map((p): PinItem => ({ key: `p:${p.id}`, kind: 'point', id: p.id, lngLat: p.lngLat, faded: true })),
+        box,
+      )
+
+/** Where an item is drawn, in screen pixels. */
+export type ToPixels = (lngLat: readonly [number, number]) => readonly [number, number]
+
+/** Points kept so far, bucketed by `cell` pixels, to ask "anything within `gap`?" cheaply. */
+const pixelGrid = (cell: number) => {
+  const cells = new Map<string, (readonly [number, number])[]>()
+  const at = (x: number, y: number) => `${Math.floor(x / cell)}:${Math.floor(y / cell)}`
+  return {
+    add: (p: readonly [number, number]): void => {
+      const k = at(p[0], p[1])
+      cells.set(k, [...(cells.get(k) ?? []), p])
+    },
+    near: ([x, y]: readonly [number, number]): boolean => {
+      const cx = Math.floor(x / cell)
+      const cy = Math.floor(y / cell)
+      for (let dx = -1; dx <= 1; dx += 1)
+        for (let dy = -1; dy <= 1; dy += 1)
+          for (const [px, py] of cells.get(`${cx + dx}:${cy + dy}`) ?? []) if (Math.hypot(px - x, py - y) < cell) return true
+      return false
+    },
+  }
+}
+
+/**
+ * The faded pins worth drawing: none within `minGapPx` of an active marker
+ * (so a heart or a pin that needs something is never covered) or of another
+ * faded one, and at most `max`. Taken in key order, so the same view keeps
+ * the same pins however the source listed them.
+ */
+export const thinFaded = (
+  faded: readonly PinItem[],
+  active: readonly PinItem[],
+  toPx: ToPixels,
+  { minGapPx, max }: { readonly minGapPx: number; readonly max: number },
+): readonly PinItem[] => {
+  const grid = pixelGrid(minGapPx)
+  for (const a of active) grid.add(toPx(a.lngLat))
+  const kept: PinItem[] = []
+  for (const item of [...faded].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))) {
+    if (kept.length >= max) break
+    const p = toPx(item.lngLat)
+    if (grid.near(p)) continue
+    grid.add(p)
+    kept.push(item)
+  }
+  return kept
+}
+
 /**
  * Which clustering to show: the fine one from FINE_FROM_ZOOM, or sooner
  * when the coarse one leaves fewer than MIN_VISIBLE_MARKERS in view and the
@@ -146,7 +221,7 @@ export const coarseRadius = (fitZoom: number, lat: number): number =>
  */
 export const pinSignature = (items: readonly PinItem[]): string =>
   items
-    .map((i) => (i.kind === 'point' ? `${i.key}@${i.lngLat.join(',')}` : `${i.key}#${i.count}:${i.category ?? '*'}@${i.lngLat.join(',')}`))
+    .map((i) => (i.kind === 'point' ? `${i.key}${i.faded ? '~' : ''}@${i.lngLat.join(',')}` : `${i.key}#${i.count}:${i.category ?? '*'}@${i.lngLat.join(',')}`))
     .sort()
     .join('|')
 
