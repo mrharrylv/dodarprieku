@@ -29,7 +29,7 @@ import { addCharitySources, applyLatvianLabels, childrenOf, markersInView, refit
 import { MAPLIBRE_ENGINE, prefersReducedMotion, type MapEngine, type MaplibreModule } from './maplibre-engine'
 import { pinSignature, type FadedPoint, type PinItem } from './marker-sync'
 import { createSyncThrottle } from './sync-throttle'
-import { mapPadding, pinOffset, useCharityPopup } from './useCharityPopup'
+import { flightKey, mapPadding, pinOffset, useCharityPopup } from './useCharityPopup'
 import './map.css'
 
 type Phase = 'loading' | 'ready' | 'unavailable'
@@ -321,7 +321,7 @@ export const MapView = ({
     const map = mapRef.current
     const target = focus === null ? undefined : byId.get(focus.id)
     if (phase !== 'ready' || map === null || target === undefined) return
-    flyingToRef.current = target.id
+    flyingToRef.current = flightKey(target.id, focus?.expand === true)
     map.flyTo({
       center: drawnAt(target, positions),
       zoom: Math.max(map.getZoom(), FOCUS_ZOOM),

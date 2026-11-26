@@ -26,6 +26,9 @@ interface Options {
 /** The map's padding for a docked panel `inset` pixels wide on the right: every camera move centres left of it. */
 export const mapPadding = (inset: number) => ({ top: 0, bottom: 0, left: 0, right: inset })
 
+/** What a fly-to was planned for: the charity and the card size. */
+export const flightKey = (id: string, expanded: boolean): string => `${id}:${expanded ? 'expanded' : 'small'}`
+
 /** Where a selected pin settles from the (padded) centre: lower middle for the small card, near the bottom for the expanded one. */
 export const pinOffset = (map: MlMap, expanded: boolean): [number, number] => {
   const height = map.getContainer().clientHeight
@@ -84,8 +87,11 @@ export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, insetRef, 
   useEffect(() => {
     const map = mapRef.current
     if (!ready || map === null || selected === undefined || sheet) return
-    // A fly-to already lands the pin where its card wants it (expanded, for a shared link).
-    if (flyingToRef.current === selected.id) {
+    // A fly-to already lands the pin where its card wants it, but only for the
+    // card size it flew for: a shared link that opens the card expanded after
+    // the fly-to was planned for the small card must still move the pin down,
+    // or the tall card runs up under the top bar (seen live, 2026-11-26).
+    if (flyingToRef.current === flightKey(selected.id, expanded)) {
       flyingToRef.current = null
       return
     }
