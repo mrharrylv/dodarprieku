@@ -38,12 +38,14 @@ export const putAdminProfile: Handler = async (ctx) => {
   const result = validateProfile(ctx.json())
   if (!result.ok) throw validationError(result.fields)
   const { repo } = ctx.deps
-  const updated = withSavedProfile(c, result.value, ctx.deps.now().toISOString())
+  const now = ctx.deps.now().toISOString()
+  // An imported charity an admin has edited is no longer the register's to overwrite.
+  const updated = { ...withSavedProfile(c, result.value, now), ...(c.source !== undefined ? { editedAt: now } : {}) }
   await repo.saveCharity(updated)
   ctx.log.info('admin edit', { charityId: c.id })
   const pending = await repo.getUpdate(c.id)
   await removeMedia(ctx.deps, ctx.log, [c.profile], [updated.profile, pending?.profile])
-  await publishSnapshot(ctx.deps, ctx.log)
+  await publishSnapshot(ctx.deps, ctx.log, { written: [updated] })
   return ok(await loadDetail(repo, updated))
 }
 
@@ -63,6 +65,6 @@ export const deleteAdminCharity: Handler = async (ctx) => {
   if (account && account.role === 'charity' && account.charityId === c.id) await repo.deleteAccount(account.email)
   ctx.log.info('charity deleted', { charityId: c.id })
   await removeMedia(ctx.deps, ctx.log, [c.profile, pending?.profile])
-  await publishSnapshot(ctx.deps, ctx.log)
+  await publishSnapshot(ctx.deps, ctx.log, { deleted: [c.id] })
   return ok({})
 }

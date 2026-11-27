@@ -476,6 +476,28 @@ resource "aws_cloudfront_distribution" "website" {
     error_caching_min_ttl = 0
   }
 
+  # Nor a 5xx: a timed-out cold start of the 404 function, or an API error,
+  # would otherwise be handed to every caller for CloudFront's default 10 s.
+  custom_error_response {
+    error_code            = 500
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 502
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 503
+    error_caching_min_ttl = 0
+  }
+
+  custom_error_response {
+    error_code            = 504
+    error_caching_min_ttl = 0
+  }
+
   restrictions {
     geo_restriction {
       restriction_type = "none"

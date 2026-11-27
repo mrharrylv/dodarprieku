@@ -4,7 +4,7 @@ import { loadDetail } from '../domain/views'
 import { linksOf } from '../deps'
 import { ok, type Handler } from '../http/context'
 import { conflict, validationError } from '../http/errors'
-import { applicationRejectedEmail, updateApprovedEmail, updateRejectedEmail } from '../mail/templates'
+import { applicationRejectedEmail, updateApprovedEmail, updateApprovedHiddenEmail, updateRejectedEmail } from '../mail/templates'
 import type { AccountRecord, CharityRecord } from '../repo/types'
 import { withSavedProfile } from '../domain/demo-needs'
 import { approveClaim } from './admin-claims'
@@ -32,7 +32,7 @@ export const approveCharity: Handler = async (ctx) => {
   }
   await repo.saveCharity(updated)
   ctx.log.info('charity approved', { charityId: c.id })
-  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log)
+  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log, { written: [updated] })
   const mailSent = await sendCharityInvite(ctx.deps, ctx.log, updated)
   return ok({ ...(await loadDetail(repo, updated)), mailSent, snapshotWritten })
 }
@@ -66,7 +66,7 @@ export const suspendCharity: Handler = async (ctx) => {
   }
   await ctx.deps.repo.saveCharity(updated)
   ctx.log.info('charity suspended', { charityId: c.id })
-  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log)
+  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log, { written: [updated] })
   return ok({ ...(await loadDetail(ctx.deps.repo, updated)), snapshotWritten })
 }
 
@@ -80,7 +80,7 @@ export const restoreCharity: Handler = async (ctx) => {
   }
   await ctx.deps.repo.saveCharity(updated)
   ctx.log.info('charity restored', { charityId: c.id })
-  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log)
+  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log, { written: [updated] })
   return ok({ ...(await loadDetail(ctx.deps.repo, updated)), snapshotWritten })
 }
 
@@ -105,8 +105,10 @@ export const approveUpdate: Handler = async (ctx) => {
   await repo.deleteUpdate(c.id)
   ctx.log.info('update approved', { charityId: c.id })
   await removeMedia(ctx.deps, ctx.log, [c.profile], [updated.profile])
-  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log)
-  const message = updateApprovedEmail(linksOf(ctx.deps.config), updated.profile.organization.name, c.slug)
+  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log, { written: [updated] })
+  const name = updated.profile.organization.name
+  const message =
+    updated.status === 'approved' ? updateApprovedEmail(linksOf(ctx.deps.config), name, c.slug) : updateApprovedHiddenEmail(name)
   const mailSent = await sendMail(ctx.deps, ctx.log, c.accountEmail, message)
   return ok({ ...(await loadDetail(repo, updated)), mailSent, snapshotWritten })
 }

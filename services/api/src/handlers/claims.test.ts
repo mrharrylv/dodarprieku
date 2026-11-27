@@ -93,6 +93,23 @@ describe('approving a claim', () => {
     expect(errorOf(await call(w.app, 'POST', `/admin/charities/${b.id}/approve`, { cookie: admin })).status).toBe(409)
   })
 
+  it('refuses to merge into a charity suspended after the claim was filed, and mails nobody', async () => {
+    const w = world()
+    const admin = await asAdmin(w)
+    await putCharity(w.deps, IMPORTED)
+    const a = data(await call(w.app, 'POST', '/applications', { body: claim('a@kepa.lv') }))
+    data(await call(w.app, 'POST', '/admin/charities/imp-1/suspend', { cookie: admin }))
+    const sentBefore = w.deps.mailer.sent().length
+    const res = await call(w.app, 'POST', `/admin/charities/${a.id}/approve`, { cookie: admin })
+    expect(errorOf(res)).toEqual({ status: 409, error: 'conflict' })
+    expect(await w.deps.repo.getCharity('imp-1')).toMatchObject({ status: 'suspended', accountEmail: '', source: IMPORTED.source })
+    expect(await w.deps.repo.getCharity(a.id)).toMatchObject({ status: 'pending' })
+    expect(w.deps.mailer.sent()).toHaveLength(sentBefore)
+    // The repository refuses it too, whoever asks.
+    const target = (await w.deps.repo.getCharity('imp-1'))!
+    expect(await w.deps.repo.saveClaimMerge({ ...target, accountEmail: 'a@kepa.lv' })).toBe(false)
+  })
+
   it('refuses when the claimant email got an account meanwhile', async () => {
     const w = world()
     const admin = await asAdmin(w)

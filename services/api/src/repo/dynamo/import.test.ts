@@ -21,32 +21,34 @@ const record = (n: number): CharityRecord => {
 beforeEach(() => ddb.reset())
 
 describe('putCharities', () => {
-  it('writes whole items with keys and the status index, 25 per batch', async () => {
-    ddb.on(BatchWriteCommand).resolves({})
-    await repo.putCharities(Array.from({ length: 30 }, (_, i) => record(i + 1)))
-    const calls = ddb.commandCalls(BatchWriteCommand).map((c) => c.args[0].input.RequestItems?.tbl ?? [])
-    expect(calls.map((r) => r.length)).toEqual([25, 5])
-    expect(calls[0]![0]).toEqual({
-      PutRequest: {
-        Item: expect.objectContaining({
-          PK: 'CHARITY#imp-L0001', SK: 'META', GSI1PK: 'STATUS#approved', GSI1SK: '2026-11-25T10:00:00.000Z',
-          type: 'charity', source: SOURCE, accountEmail: '', views: 2,
-        }),
-      },
+  it('writes each record with a conditional update that leaves the counters alone', async () => {
+    ddb.on(UpdateCommand).resolves({})
+    expect(await repo.putCharities([record(1), record(2)])).toEqual([])
+    const inputs = ddb.commandCalls(UpdateCommand).map((c) => c.args[0].input)
+    expect(inputs).toHaveLength(2)
+    expect(inputs[0]).toMatchObject({
+      TableName: 'tbl',
+      Key: { PK: 'CHARITY#imp-L0001', SK: 'META' },
+      ConditionExpression: 'attribute_not_exists(PK) OR (begins_with(#src, :import) AND #email = :unclaimed)',
+      ExpressionAttributeValues: expect.objectContaining({ ':gpk': 'STATUS#approved', ':source': SOURCE, ':views': 2, ':type': 'charity' }),
     })
+    const expr = inputs[0]!.UpdateExpression!
+    expect(expr).toContain('#views = if_not_exists(#views, :views)')
+    expect(expr).toContain('#pledges = if_not_exists(#pledges, :pledges)')
+    expect(expr).not.toMatch(/#views = :views/)
     await repo.putCharities([])
-    expect(ddb.commandCalls(BatchWriteCommand)).toHaveLength(2)
+    expect(ddb.commandCalls(UpdateCommand)).toHaveLength(2)
+    expect(ddb.commandCalls(BatchWriteCommand)).toHaveLength(0)
   })
 
-  it('retries unprocessed puts, and gives up when they never drain', async () => {
-    const left = { UnprocessedItems: { tbl: [{ PutRequest: { Item: { PK: 'CHARITY#imp-L0001', SK: 'META' } } }] } }
-    ddb.on(BatchWriteCommand).resolvesOnce(left).resolves({})
-    await repo.putCharities([record(1), record(2)])
-    const sizes = ddb.commandCalls(BatchWriteCommand).map((c) => c.args[0].input.RequestItems?.tbl?.length)
-    expect(sizes).toEqual([2, 1])
+  it('returns the ids whose condition failed (claimed meanwhile), and throws on anything else', async () => {
+    const failed = Object.assign(new Error('cond'), { name: 'ConditionalCheckFailedException' })
+    ddb.on(UpdateCommand, { Key: { PK: 'CHARITY#imp-L0002', SK: 'META' } }).rejects(failed)
+    ddb.on(UpdateCommand, { Key: { PK: 'CHARITY#imp-L0001', SK: 'META' } }).resolves({})
+    expect(await repo.putCharities([record(1), record(2)])).toEqual(['imp-L0002'])
     ddb.reset()
-    ddb.on(BatchWriteCommand).resolves(left)
-    await expect(repo.putCharities([record(1)])).rejects.toThrow(/batch put: unprocessed/)
+    ddb.on(UpdateCommand).rejects(new Error('throttled'))
+    await expect(repo.putCharities([record(1)])).rejects.toThrow('throttled')
   })
 })
 

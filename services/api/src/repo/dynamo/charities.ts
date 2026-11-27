@@ -1,11 +1,14 @@
 import { DeleteCommand, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import type { CharityStatus } from '../../../../shared/src/contracts'
 import type { CharityRecord, Repository, UpdateRecord } from '../types'
-import { batchDelete, batchPut, isConditionalFailure, queryAll, type Db, type Item } from './client'
+import { batchDelete, isConditionalFailure, queryAll, type Db, type Item } from './client'
 import { GSI1, charityPk, gsi, keys, stripKeys } from './keys'
 
 const STATUSES: readonly CharityStatus[] = ['pending', 'approved', 'rejected', 'suspended']
-const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source', 'demoNeeds', 'claimCharityId', 'claimedAt'] as const
+const OPTIONAL = ['rejectReason', 'suspendReason', 'publishedAt', 'source', 'demoNeeds', 'claimCharityId', 'claimedAt', 'editedAt'] as const
+
+/** Parallel conditional writes in putCharities. */
+const PUT_CONCURRENCY = 10
 
 const toCharity = (item: Item): CharityRecord => {
   const r = stripKeys(item)
@@ -15,6 +18,34 @@ const toCharity = (item: Item): CharityRecord => {
 const charityItem = (c: CharityRecord): Item => ({
   ...keys.charity(c.id), GSI1PK: gsi.status(c.status), GSI1SK: c.createdAt, type: 'charity', ...c,
 })
+
+/** True when written, false when the condition refused it. */
+const putImported = async (db: Db, c: CharityRecord): Promise<boolean> => {
+  const save = saveExpression(c)
+  const [sets, removes] = save.UpdateExpression.slice('SET '.length).split(' REMOVE ')
+  const extra = '#type = :type, #views = if_not_exists(#views, :views), #pledges = if_not_exists(#pledges, :pledges)'
+  try {
+    await db.client.send(
+      new UpdateCommand({
+        TableName: db.table,
+        Key: keys.charity(c.id),
+        UpdateExpression: `SET ${sets}, ${extra}${removes ? ` REMOVE ${removes}` : ''}`,
+        ExpressionAttributeValues: {
+          ...save.ExpressionAttributeValues,
+          ':type': 'charity', ':views': c.views, ':pledges': c.pledges, ':import': 'import:', ':unclaimed': '',
+        },
+        ExpressionAttributeNames: {
+          '#status': 'status', '#type': 'type', '#views': 'views', '#pledges': 'pledges', '#src': 'source', '#email': 'accountEmail',
+        },
+        ConditionExpression: 'attribute_not_exists(PK) OR (begins_with(#src, :import) AND #email = :unclaimed)',
+      }),
+    )
+    return true
+  } catch (err) {
+    if (isConditionalFailure(err)) return false
+    throw err
+  }
+}
 
 const byNewest = (a: CharityRecord, b: CharityRecord): number => b.createdAt.localeCompare(a.createdAt)
 
@@ -102,9 +133,9 @@ export const charityRepo = (db: Db): CharityRepo => ({
           TableName: db.table,
           Key: keys.charity(c.id),
           UpdateExpression: save.UpdateExpression,
-          ExpressionAttributeValues: { ...save.ExpressionAttributeValues, ':import': 'import:', ':unclaimed': '' },
+          ExpressionAttributeValues: { ...save.ExpressionAttributeValues, ':import': 'import:', ':unclaimed': '', ':approved': 'approved' },
           ExpressionAttributeNames: { '#status': 'status', '#src': 'source', '#email': 'accountEmail' },
-          ConditionExpression: 'attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed',
+          ConditionExpression: 'attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed AND #status = :approved',
         }),
       )
       return true
@@ -130,7 +161,13 @@ export const charityRepo = (db: Db): CharityRepo => ({
   },
 
   putCharities: async (list) => {
-    await batchPut(db, list.map(charityItem))
+    const refused: string[] = []
+    for (let i = 0; i < list.length; i += PUT_CONCURRENCY) {
+      const chunk = list.slice(i, i + PUT_CONCURRENCY)
+      const written = await Promise.all(chunk.map((c) => putImported(db, c)))
+      refused.push(...chunk.filter((_, j) => !written[j]).map((c) => c.id))
+    }
+    return refused
   },
 
   deleteCharity: async (id) => {

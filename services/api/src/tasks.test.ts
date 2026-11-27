@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createLambdaHandler } from './lambda'
 import { silentLogger } from './log'
 import { isTaskEvent, runTask } from './tasks'
-import { call, createTestDeps, data, putAccount, putCharity, world } from './test/helpers'
+import { call, createTestDeps, data, ORIGIN_VERIFY_HEADER, ORIGIN_VERIFY_SECRET, putAccount, putCharity, world } from './test/helpers'
 import { createApp } from './app'
 
 describe('invite-admin task', () => {
@@ -59,7 +59,7 @@ describe('lambda handler', () => {
   const httpEvent = {
     version: '2.0',
     rawPath: '/api/auth/me',
-    headers: {},
+    headers: { [ORIGIN_VERIFY_HEADER]: ORIGIN_VERIFY_SECRET },
     requestContext: { http: { method: 'GET', path: '/api/auth/me', sourceIp: '1.2.3.4' }, requestId: 'r' },
     isBase64Encoded: false,
   }
@@ -70,6 +70,13 @@ describe('lambda handler', () => {
     const res = (await handler(httpEvent)) as { statusCode: number; body: string }
     expect(res.statusCode).toBe(401)
     expect(JSON.parse(res.body)).toEqual({ ok: false, error: 'unauthorized' })
+  })
+
+  it('refuses an HTTP event without the CloudFront origin-verify header', async () => {
+    const w = world()
+    const handler = createLambdaHandler(async () => w.deps, silentLogger)
+    const res = (await handler({ ...httpEvent, headers: { 'cloudfront-viewer-address': '10.0.0.1:1' } })) as { statusCode: number; body: string }
+    expect(res.statusCode).toBe(403)
   })
 
   it('runs tasks and refuses unknown events', async () => {

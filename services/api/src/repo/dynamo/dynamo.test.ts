@@ -59,7 +59,7 @@ describe('charities', () => {
     expect(input.ExpressionAttributeValues?.[':gpk']).toBe('STATUS#approved')
     await repo.saveCharity({ ...charity, rejectReason: 'a', suspendReason: 'b' })
     // demoNeeds is stored like the other optional fields: set while true, removed once cleared.
-    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source, demoNeeds, claimCharityId, claimedAt$/)
+    expect(ddb.commandCalls(UpdateCommand)[1]!.args[0].input.UpdateExpression).toMatch(/ REMOVE source, demoNeeds, claimCharityId, claimedAt, editedAt$/)
     await repo.saveCharity({ ...charity, source: 'import:x', demoNeeds: true })
     const demo = ddb.commandCalls(UpdateCommand)[2]!.args[0].input
     expect(demo.UpdateExpression).toContain('demoNeeds = :demoNeeds')
@@ -75,9 +75,13 @@ describe('charities', () => {
     ddb.on(UpdateCommand).resolvesOnce({}).rejectsOnce(conditional)
     expect(await repo.saveClaimMerge({ ...charity, claimedAt: '2026-11-25T00:00:00.000Z' })).toBe(true)
     const input = ddb.commandCalls(UpdateCommand)[0]!.args[0].input
-    expect(input.ConditionExpression).toBe('attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed')
-    expect(input.ExpressionAttributeNames).toMatchObject({ '#src': 'source', '#email': 'accountEmail' })
-    expect(input.ExpressionAttributeValues).toMatchObject({ ':import': 'import:', ':unclaimed': '', ':accountEmail': 'a@b.lv' })
+    expect(input.ConditionExpression).toBe(
+      'attribute_exists(PK) AND begins_with(#src, :import) AND #email = :unclaimed AND #status = :approved',
+    )
+    expect(input.ExpressionAttributeNames).toMatchObject({ '#src': 'source', '#email': 'accountEmail', '#status': 'status' })
+    expect(input.ExpressionAttributeValues).toMatchObject({
+      ':import': 'import:', ':unclaimed': '', ':accountEmail': 'a@b.lv', ':approved': 'approved',
+    })
     expect(input.UpdateExpression).toContain('REMOVE')
     expect(await repo.saveClaimMerge(charity)).toBe(false)
   })

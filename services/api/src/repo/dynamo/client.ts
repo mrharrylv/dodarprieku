@@ -52,9 +52,5 @@ const batchWrite = async (db: Db, all: readonly WriteRequest[], what: string): P
 export const batchDelete = (db: Db, itemKeys: readonly { PK: string; SK: string }[]): Promise<void> =>
   batchWrite(db, itemKeys.map((Key) => ({ DeleteRequest: { Key } })), 'delete')
 
-/** Puts whole items in batches of 25 (overwriting), retrying unprocessed ones. */
-export const batchPut = (db: Db, items: readonly Item[]): Promise<void> =>
-  batchWrite(db, items.map((Item) => ({ PutRequest: { Item } })), 'put')
-
 export const isConditionalFailure = (err: unknown): boolean =>
   err instanceof Error && err.name === 'ConditionalCheckFailedException'

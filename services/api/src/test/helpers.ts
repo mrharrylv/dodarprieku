@@ -15,6 +15,8 @@ export const PUBLIC_ORIGIN = 'https://dodarprieku.hagroup.lv'
 export const ADMIN_ORIGIN = 'https://admin.dodarprieku.hagroup.lv'
 export const SECRET = 'test-session-secret-0123456789abcdef'
 export const PASSWORD = 'correct-horse-battery'
+export const ORIGIN_VERIFY_HEADER = 'x-dodar-origin-verify'
+export const ORIGIN_VERIFY_SECRET = 'test-origin-verify-secret-0123456789'
 
 export interface TestDeps extends Deps {
   readonly repo: MemoryRepository
@@ -36,6 +38,8 @@ export const testConfig = (overrides: Record<string, string> = {}) =>
     SESSION_SECRET_PARAM: '/dev/dodarprieku/session-secret',
     ADMIN_NOTIFY_EMAIL_PARAM: '/dev/dodarprieku/admin-notify-email',
     ENVIRONMENT: 'dev',
+    ORIGIN_VERIFY_HEADER,
+    ORIGIN_VERIFY_SECRET,
     ...overrides,
   })
 
@@ -75,6 +79,8 @@ export interface Call {
   readonly query?: Record<string, string>
   readonly ip?: string
   readonly csrf?: boolean
+  /** false: leave out the header CloudFront adds to every /api request. */
+  readonly originVerify?: boolean
 }
 
 export const call = (app: App, method: string, path: string, c: Call = {}): Promise<ApiResult> => {
@@ -84,6 +90,7 @@ export const call = (app: App, method: string, path: string, c: Call = {}): Prom
     path,
     query: c.query ?? {},
     headers: {
+      ...(c.originVerify !== false ? { [ORIGIN_VERIFY_HEADER]: ORIGIN_VERIFY_SECRET } : {}),
       ...(mutating && c.csrf !== false ? { [CSRF_HEADER]: CSRF_VALUE } : {}),
       ...(c.headers ?? {}),
     },

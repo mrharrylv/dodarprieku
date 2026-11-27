@@ -15,6 +15,8 @@ const ENV = {
   SESSION_SECRET_PARAM: '/dev/dodarprieku/session-secret',
   ADMIN_NOTIFY_EMAIL_PARAM: '',
   ENVIRONMENT: 'dev',
+  ORIGIN_VERIFY_HEADER: 'x-dodar-origin-verify',
+  ORIGIN_VERIFY_SECRET: 's3cr3t',
 }
 
 describe('config', () => {
@@ -36,6 +38,19 @@ describe('config', () => {
       ])
     }
     expect(() => loadConfig({ ...ENV, PUBLIC_ORIGIN: 'not a url' })).toThrow(ConfigError)
+  })
+
+  it('requires the origin-verify header and secret except locally', () => {
+    expect(loadConfig(ENV)).toMatchObject({ originVerifyHeader: 'x-dodar-origin-verify', originVerifySecret: 's3cr3t' })
+    try {
+      loadConfig({ ...ENV, ORIGIN_VERIFY_HEADER: '', ORIGIN_VERIFY_SECRET: ' ' })
+      expect.fail('should throw')
+    } catch (err) {
+      expect((err as ConfigError).problems).toEqual(['ORIGIN_VERIFY_HEADER is required', 'ORIGIN_VERIFY_SECRET is required'])
+    }
+    const local = loadConfig({ ...ENV, ENVIRONMENT: 'local', ORIGIN_VERIFY_HEADER: '', ORIGIN_VERIFY_SECRET: '' })
+    expect(local).toMatchObject({ originVerifyHeader: '', originVerifySecret: '' })
+    expect(loadConfig({ ...ENV, ORIGIN_VERIFY_HEADER: 'X-Dodar-Origin-Verify' }).originVerifyHeader).toBe('x-dodar-origin-verify')
   })
 
   it('allows http origins only locally', () => {

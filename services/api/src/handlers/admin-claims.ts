@@ -60,7 +60,8 @@ export const approveClaim = async (ctx: Ctx, claim: CharityRecord, targetId: str
   const target = await repo.getCharity(targetId)
   if (!target) throw conflict()
   const resumed = mergedBy(target, claim)
-  if (!resumed && !isClaimable(target)) throw conflict()
+  // Not into a suspended charity: it is off the map, and the invite says it is on it.
+  if (!resumed && (!isClaimable(target) || target.status !== 'approved')) throw conflict()
   const account = await repo.getAccount(claim.accountEmail)
   if (account && (account.role !== 'charity' || account.charityId !== target.id)) throw conflict()
   const now = ctx.deps.now().toISOString()
@@ -76,7 +77,7 @@ export const approveClaim = async (ctx: Ctx, claim: CharityRecord, targetId: str
   const rejected = await rejectOtherClaims(ctx, target.id, claim.id, now)
   ctx.log.info('claim approved', { charityId: target.id, claimId: claim.id, otherClaimsRejected: rejected, resumed })
   if (!resumed) await removeMedia(ctx.deps, ctx.log, [target.profile], [merged.profile])
-  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log)
+  const snapshotWritten = await publishSnapshot(ctx.deps, ctx.log, { written: [merged], deleted: [claim.id] })
   const mailSent = await sendCharityInvite(ctx.deps, ctx.log, merged)
   return ok({ ...(await loadDetail(repo, merged)), mailSent, snapshotWritten })
 }

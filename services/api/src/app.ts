@@ -1,8 +1,9 @@
 /**
- * The request pipeline, independent of Lambda: route -> CSRF and origin
+ * The request pipeline, independent of Lambda: origin verify -> route -> CSRF and origin
  * checks -> body size -> handler -> ApiResponse envelope. Every failure is an
  * error code; nothing internal reaches the response.
  */
+import { timingSafeEqual } from 'node:crypto'
 import { CSRF_HEADER, CSRF_VALUE, type ApiResponse } from '../../shared/src/contracts'
 import { isAllowedOrigin } from './config'
 import type { Deps } from './deps'
@@ -29,12 +30,27 @@ const checkMutation = (deps: Deps, req: ApiRequest): void => {
   if (origin !== undefined && !isAllowedOrigin(deps.config, origin)) throw new ApiError('forbidden')
 }
 
+/**
+ * The request came through CloudFront, which adds the origin-verify header
+ * (main.tf). Only then is CloudFront-Viewer-Address, the rate-limit key,
+ * set by the edge rather than by the caller. No secret configured (local
+ * only, loadConfig enforces it) means no check.
+ */
+const checkOriginVerify = (deps: Deps, req: ApiRequest): void => {
+  const { originVerifyHeader, originVerifySecret } = deps.config
+  if (originVerifySecret === '') return
+  const given = Buffer.from(req.headers[originVerifyHeader] ?? '')
+  const expected = Buffer.from(originVerifySecret)
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) throw new ApiError('forbidden')
+}
+
 export type App = (req: ApiRequest) => Promise<ApiResult>
 
 export const createApp = (deps: Deps, routes: readonly Route<RouteDef>[] = ROUTES): App => async (req) => {
   const log = deps.log.child({ requestId: req.requestId, method: req.method, path: req.path })
   const started = Date.now()
   try {
+    checkOriginVerify(deps, req)
     const match = matchRoute(routes, req.method, req.path)
     if (match.kind !== 'found') throw new ApiError('not_found')
     checkMutation(deps, req)

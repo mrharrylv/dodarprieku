@@ -57,6 +57,16 @@ export const adminInviteEmail = (l: Links, token: string): Message => ({
   ],
 })
 
+/** For a charity that is not on the map (suspended): approved, without saying it is visible. */
+export const updateApprovedHiddenEmail = (orgName: string): Message => ({
+  subject: 'Jūsu profila izmaiņas ir apstiprinātas',
+  blocks: [
+    p('Labdien!'),
+    p(`Jūsu iesniegtās izmaiņas organizācijas “${orgName}” profilā ir apstiprinātas.`),
+    p(SIGN_OFF),
+  ],
+})
+
 export const updateApprovedEmail = (l: Links, orgName: string, slug: string): Message => ({
   subject: 'Jūsu profila izmaiņas ir publicētas',
   blocks: [

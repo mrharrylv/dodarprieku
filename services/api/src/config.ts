@@ -14,6 +14,13 @@ export interface AppConfig {
   /** Empty when no admin notifications are wanted. */
   readonly adminNotifyEmailParam: string
   readonly environment: string
+  /**
+   * The header CloudFront adds to every /api request (lower case) and its
+   * secret value. The execute-api URL is public; without the header a
+   * request went around the edge. Both empty only locally.
+   */
+  readonly originVerifyHeader: string
+  readonly originVerifySecret: string
   /** Plain-http local development: cookies lose `Secure`, localhost origins are allowed. */
   readonly isLocal: boolean
 }
@@ -57,6 +64,8 @@ export const loadConfig = (env: Env): AppConfig => {
     sessionSecretParam: read('SESSION_SECRET_PARAM'),
     adminNotifyEmailParam: read('ADMIN_NOTIFY_EMAIL_PARAM', false),
     environment,
+    originVerifyHeader: read('ORIGIN_VERIFY_HEADER', !isLocal).toLowerCase(),
+    originVerifySecret: read('ORIGIN_VERIFY_SECRET', !isLocal),
     isLocal,
   }
   for (const name of ['publicOrigin', 'adminOrigin'] as const) {

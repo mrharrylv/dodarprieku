@@ -114,16 +114,20 @@ export const applyDemoNeeds = async (
     }))
   const pickedIds = new Set(picked.map((c) => c.id))
   const cleared = open.filter((c) => c.demoNeeds === true && !pickedIds.has(c.id)).map((c) => withoutDemo(c, now))
-  await deps.repo.putCharities([...picked, ...cleared])
+  const lost = new Set(await deps.repo.putCharities([...picked, ...cleared]))
+  if (lost.size > 0) log.warn('demo needs skipped: claimed meanwhile', { count: lost.size })
   log.info('demo needs applied', { source: opts.source, picked: picked.length, cleared: cleared.length, seed: opts.seed })
-  return { picked: picked.length, cleared: cleared.length, snapshotWritten: await publishSnapshot(deps, log) }
+  const written = [...picked, ...cleared].filter((c) => !lost.has(c.id))
+  const snapshotWritten = await publishSnapshot(deps, log, { written })
+  return { picked: picked.length, cleared: cleared.length, snapshotWritten }
 }
 
 /** Every charity with demo needs back to none, then the snapshot. */
 export const clearDemoNeeds = async (deps: Deps, log: Logger): Promise<{ readonly cleared: number; readonly snapshotWritten: boolean }> => {
   const now = deps.now().toISOString()
   const cleared = (await deps.repo.listCharities()).filter((c) => c.demoNeeds === true).map((c) => withoutDemo(c, now))
-  await deps.repo.putCharities(cleared)
-  log.info('demo needs cleared', { cleared: cleared.length })
-  return { cleared: cleared.length, snapshotWritten: await publishSnapshot(deps, log) }
+  const lost = new Set(await deps.repo.putCharities(cleared))
+  const written = cleared.filter((c) => !lost.has(c.id))
+  log.info('demo needs cleared', { cleared: written.length, skipped: lost.size })
+  return { cleared: written.length, snapshotWritten: await publishSnapshot(deps, log, { written }) }
 }

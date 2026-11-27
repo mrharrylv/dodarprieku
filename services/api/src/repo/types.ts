@@ -28,6 +28,8 @@ export interface CharityRecord {
   readonly claimCharityId?: string
   /** When an approved claim merged an account into this imported charity. */
   readonly claimedAt?: string
+  /** An admin saved this imported charity's profile: a re-import leaves it alone. */
+  readonly editedAt?: string
   /** Its needs were made up by the dev-only demo-needs task: clear-demo-needs empties them again. */
   readonly demoNeeds?: boolean
   readonly views: number
@@ -88,7 +90,13 @@ export interface Repository {
   readonly saveClaimMerge: (charity: CharityRecord) => Promise<boolean>
   readonly listCharities: (status?: CharityStatus) => Promise<readonly CharityRecord[]>
   /** Writes each record whole (counters included), creating or overwriting: the import's batch path. */
-  readonly putCharities: (charities: readonly CharityRecord[]) => Promise<void>
+  /**
+   * Bulk write for imports and demo needs. Creates a record or overwrites one
+   * that is still imported and unclaimed; counters are never written over.
+   * Resolves to the ids refused because they were claimed (or were never
+   * imported) by the time of the write.
+   */
+  readonly putCharities: (charities: readonly CharityRecord[]) => Promise<readonly string[]>
   /** Removes the charity and every item under it (update, pledges, counts, links, list requests). */
   readonly deleteCharity: (id: string) => Promise<void>
   readonly incrementViews: (id: string) => Promise<void>

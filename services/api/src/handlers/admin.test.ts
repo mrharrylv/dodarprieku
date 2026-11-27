@@ -141,6 +141,16 @@ describe('reject, suspend, restore, resend', () => {
 describe('updates', () => {
   const proposed = () => ({ ...validProfile(), description: 'Jauns', photos: ['uploads/2026/11/00000000-0000-4000-8000-000000000009.webp'] })
 
+  it('does not tell a suspended charity its approved update is on the map', async () => {
+    const { w, admin } = await setup('suspended')
+    await w.deps.repo.putUpdate({ charityId: 'c1', profile: proposed(), submittedAt: 'x' })
+    data(await call(w.app, 'POST', '/admin/charities/c1/update/approve', { cookie: admin }))
+    const mail = w.deps.mailer.sent().at(-1)!
+    expect(mail.subject).toBe('Jūsu profila izmaiņas ir apstiprinātas')
+    expect(mail.text).not.toMatch(/kartē|redzamas|organizacija\//)
+    expect(mail.text).toContain('ir apstiprinātas')
+  })
+
   it('approves a pending update: live profile replaced, old media removed, snapshot and mail', async () => {
     const { w, admin } = await setup('approved')
     await w.deps.storage.put('media/uploads/2026/11/00000000-0000-4000-8000-000000000001.webp', { body: new Uint8Array(1), contentType: 'image/webp', cacheControl: '' })

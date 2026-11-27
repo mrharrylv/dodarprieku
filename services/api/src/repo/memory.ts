@@ -46,14 +46,20 @@ export const createMemoryRepository = (): MemoryRepository => {
     saveClaimMerge: async (c) => {
       const old = charities.get(c.id)
       if (!old) throw new Error('charity missing')
-      if (!(old.source ?? '').startsWith('import:') || old.accountEmail !== '') return false
+      if (!(old.source ?? '').startsWith('import:') || old.accountEmail !== '' || old.status !== 'approved') return false
       charities.set(c.id, clone({ ...c, views: old.views, pledges: old.pledges }))
       return true
     },
     listCharities: async (status) =>
       [...charities.values()].filter((c) => status === undefined || c.status === status).sort(byNewest).map(clone),
     putCharities: async (list) => {
-      for (const c of list) charities.set(c.id, clone(c))
+      const refused: string[] = []
+      for (const c of list) {
+        const old = charities.get(c.id)
+        if (old && (!(old.source ?? '').startsWith('import:') || old.accountEmail !== '')) refused.push(c.id)
+        else charities.set(c.id, clone(old ? { ...c, views: old.views, pledges: old.pledges } : c))
+      }
+      return refused
     },
     deleteCharity: async (id) => {
       charities.delete(id)

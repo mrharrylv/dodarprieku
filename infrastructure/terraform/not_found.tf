@@ -82,8 +82,10 @@ resource "aws_lambda_function" "not_found" {
   handler       = "index.handler"
   runtime       = "nodejs22.x"
   architectures = ["arm64"]
-  memory_size   = 128
-  timeout       = 5
+  # 128 MB and 5 s timed cold starts out (4.4-5.5 s measured on dev,
+  # 2026-11-27) into a JSON 502. Memory buys CPU; it runs only on a miss.
+  memory_size = 512
+  timeout     = 10
 
   filename         = data.archive_file.not_found.output_path
   source_code_hash = data.archive_file.not_found.output_base64sha256

@@ -240,6 +240,7 @@ under `items.<key>` (or `highlights.items.<key>`, `values.items.<key>`,
 | `components/ui/Lightbox.tsx` | `type LightboxPhoto = { src, alt }`, `Lightbox({ title, photos, start, onClose })`, `wrapIndex(i, n)`: pop-up gallery with arrows, keys, swipe and thumbnails; open the gallery here rather than on a separate page. Strings in `common:lightbox` |
 | `components/ui/Sparks.tsx` | `Sparks({ className? })`: optional decoration for a dark hero band: slow, nearly horizontal glowing streaks from off screen bottom left, no visible source; canvas, `aria-hidden`, paused off screen, one still frame under reduced motion. Colours `--color-spark-*`; physics in `components/ui/weld.ts` (pure, tested) |
 | `lib/map.ts` | `type MapConfig = { embedUrl, linkUrl }`, `googleMap(query, zoom?)`: the embed and the link for one place |
+| `lib/keyboard.ts` | `isTextEntry(target)`: whether a key event's target is a text field, text area, select or editable content, so a panel leaves Escape there to the field |
 
 ---
 

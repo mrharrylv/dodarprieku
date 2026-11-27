@@ -3,13 +3,31 @@ import { createApp, DEFAULT_MAX_BODY } from './app'
 import { route } from './http/router'
 import type { RouteDef } from './http/context'
 import { ApiError } from './http/errors'
-import { call, createTestDeps, errorOf, world } from './test/helpers'
+import { call, createTestDeps, errorOf, ORIGIN_VERIFY_HEADER, ORIGIN_VERIFY_SECRET, testConfig, world } from './test/helpers'
 
 describe('app pipeline', () => {
   it('answers 404 for unknown paths and wrong methods', async () => {
     const w = world()
     expect(errorOf(await call(w.app, 'GET', '/nope'))).toEqual({ status: 404, error: 'not_found' })
     expect(errorOf(await call(w.app, 'DELETE', '/subscribe')).status).toBe(404)
+  })
+
+  it('refuses, before routing, a request that did not come through CloudFront', async () => {
+    const w = world()
+    const direct = await call(w.app, 'POST', '/auth/login', { originVerify: false, body: { email: 'a@b.lv', password: 'x' } })
+    expect(errorOf(direct)).toEqual({ status: 403, error: 'forbidden' })
+    expect(errorOf(await call(w.app, 'GET', '/nope', { originVerify: false }))).toEqual({ status: 403, error: 'forbidden' })
+    const forged = await call(w.app, 'GET', '/auth/me', { originVerify: false, headers: { [ORIGIN_VERIFY_HEADER]: 'guess' } })
+    expect(errorOf(forged)).toEqual({ status: 403, error: 'forbidden' })
+    const same = await call(w.app, 'GET', '/nope', { originVerify: false, headers: { [ORIGIN_VERIFY_HEADER]: `${ORIGIN_VERIFY_SECRET}x` } })
+    expect(errorOf(same).status).toBe(403)
+    expect(errorOf(await call(w.app, 'GET', '/nope')).status).toBe(404)
+    expect(w.deps.mailer.sent()).toEqual([])
+  })
+
+  it('needs no origin-verify header locally, where no secret is configured', async () => {
+    const deps = { ...createTestDeps(), config: testConfig({ ENVIRONMENT: 'local', ORIGIN_VERIFY_HEADER: '', ORIGIN_VERIFY_SECRET: '' }) }
+    expect(errorOf(await call(createApp(deps), 'GET', '/nope', { originVerify: false })).status).toBe(404)
   })
 
   it('requires the CSRF header on mutations', async () => {

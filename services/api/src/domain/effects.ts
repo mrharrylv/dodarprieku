@@ -7,6 +7,7 @@ import type { CharityProfile } from '../../../shared/src/contracts'
 import type { Deps } from '../deps'
 import { ApiError } from '../http/errors'
 import type { Ctx } from '../http/context'
+import type { CharityRecord } from '../repo/types'
 import { errorFields, maskEmail, type Logger } from '../log'
 import type { Message } from '../mail/render'
 import { render } from '../mail/render'
@@ -36,9 +37,30 @@ export const notifyAdmin = async (deps: Deps, log: Logger, message: Message): Pr
   if (to) await sendMail(deps, log, to, message)
 }
 
-export const publishSnapshot = async (deps: Deps, log: Logger): Promise<boolean> => {
+/** What the caller has just written, which the status index may not show yet. */
+export interface FreshWrites {
+  readonly written?: readonly CharityRecord[]
+  readonly deleted?: readonly string[]
+}
+
+/**
+ * The approved set with the caller's own writes laid over it by id: the
+ * status index is eventually consistent, so a query straight after a write
+ * can still return the record as it was, or miss it.
+ */
+export const overlayFresh = (approved: readonly CharityRecord[], fresh: FreshWrites): CharityRecord[] => {
+  const byId = new Map(approved.map((c) => [c.id, c]))
+  for (const id of fresh.deleted ?? []) byId.delete(id)
+  for (const c of fresh.written ?? []) {
+    if (c.status === 'approved') byId.set(c.id, c)
+    else byId.delete(c.id)
+  }
+  return [...byId.values()]
+}
+
+export const publishSnapshot = async (deps: Deps, log: Logger, fresh: FreshWrites = {}): Promise<boolean> => {
   try {
-    const approved = await deps.repo.listCharities('approved')
+    const approved = overlayFresh(await deps.repo.listCharities('approved'), fresh)
     const snapshot = buildSnapshot(approved, deps.now())
     await deps.storage.put(SNAPSHOT_OBJECT_KEY, {
       body: new TextEncoder().encode(JSON.stringify(snapshot)),

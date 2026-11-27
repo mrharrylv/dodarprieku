@@ -61,15 +61,28 @@ export function createHandler({ fetchPage, now = Date.now, ttlMs = PAGE_TTL_MS, 
   }
 }
 
-async function fetchFromBucket() {
-  const bucket = process.env.WEBSITE_BUCKET
-  const key = process.env.PAGE_KEY || '404.html'
-  if (!bucket) throw new Error('WEBSITE_BUCKET is not set')
+/*
+  Reads the page from the bucket. The SDK import starts as soon as the
+  fetcher is made, at init, rather than on the first request, and one client
+  serves every read: at 128 MB the cold import alone ran into the timeout.
 
-  const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3')
-  const client = new S3Client({})
-  const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
-  return result.Body.transformToString('utf-8')
+  env:     { WEBSITE_BUCKET, PAGE_KEY }.
+  loadSdk: () => Promise<{ S3Client, GetObjectCommand }>.
+*/
+export function createBucketFetch({ env = process.env, loadSdk = () => import('@aws-sdk/client-s3') } = {}) {
+  const bucket = env.WEBSITE_BUCKET
+  const key = env.PAGE_KEY || '404.html'
+  if (!bucket) return async () => { throw new Error('WEBSITE_BUCKET is not set') }
+
+  const ready = loadSdk().then((sdk) => ({ sdk, client: new sdk.S3Client({}) }))
+  // Not a crash at init: a failed import is logged by the handler on each read.
+  ready.catch(() => {})
+
+  return async function fetchFromBucket() {
+    const { sdk, client } = await ready
+    const result = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
+    return result.Body.transformToString('utf-8')
+  }
 }
 
-export const handler = createHandler({ fetchPage: fetchFromBucket })
+export const handler = createHandler({ fetchPage: createBucketFetch() })
