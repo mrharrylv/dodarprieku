@@ -7,8 +7,8 @@ import './chrome/chrome.css'
  * rail's panels. It is a native modal `<dialog>`, so the map and the bars
  * behind it are inert and focus stays inside; the card's own collapse button
  * takes focus when it opens. Escape and a tap on the dimmed map collapse it
- * back to the small card (`onDismiss`); the pledge dialog inside handles its
- * own Escape.
+ * back to the small card (`onDismiss`); the card's pledge step handles its
+ * own Escape, and the map view ignores a dismissal while that step is open.
  */
 export const CharitySheet = ({ title, onDismiss, children }: { title: string; onDismiss: () => void; children: ReactNode }) => {
   const ref = useRef<HTMLDialogElement>(null)

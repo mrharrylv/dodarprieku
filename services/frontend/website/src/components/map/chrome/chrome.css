@@ -50,5 +50,7 @@
 }
 
 .dp-chrome-in {
-  animation: dp-chrome-in 220ms var(--ease-out-soft) both;
+  /* backwards, not both: a forwards fill keeps the transform, which would make
+     this wrapper the containing block of the category menu (MAP-07). */
+  animation: dp-chrome-in 220ms var(--ease-out-soft) backwards;
 }

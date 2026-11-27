@@ -170,25 +170,30 @@ const pixelGrid = (cell: number) => {
  * The faded pins worth drawing: none within `minGapPx` of an active marker
  * (so a heart or a pin that needs something is never covered) or of another
  * faded one, and at most `max`. Taken in key order, so the same view keeps
- * the same pins however the source listed them.
+ * the same pins however the source listed them. The selected organisation
+ * (`keep`) is always drawn, ahead of the gap check and outside the cap: thinned
+ * away, its card would point at a neighbour's pin.
  */
 export const thinFaded = (
   faded: readonly PinItem[],
   active: readonly PinItem[],
   toPx: ToPixels,
-  { minGapPx, max }: { readonly minGapPx: number; readonly max: number },
+  { minGapPx, max, keep = null }: { readonly minGapPx: number; readonly max: number; readonly keep?: string | null },
 ): readonly PinItem[] => {
   const grid = pixelGrid(minGapPx)
   for (const a of active) grid.add(toPx(a.lngLat))
+  const chosen = faded.find((item) => item.kind === 'point' && item.id === keep)
+  if (chosen !== undefined) grid.add(toPx(chosen.lngLat))
   const kept: PinItem[] = []
   for (const item of [...faded].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))) {
     if (kept.length >= max) break
+    if (item === chosen) continue
     const p = toPx(item.lngLat)
     if (grid.near(p)) continue
     grid.add(p)
     kept.push(item)
   }
-  return kept
+  return chosen === undefined ? kept : [chosen, ...kept]
 }
 
 /**

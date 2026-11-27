@@ -33,7 +33,11 @@ export const ConfirmPanel = ({
       aria-describedby={`${id}-body`}
       tabIndex={-1}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') onCancel()
+        if (e.key !== 'Escape') return
+        // Cancels the confirmation only, never the panel or dock around it.
+        e.preventDefault()
+        e.stopPropagation()
+        onCancel()
       }}
       className="rounded-(--radius-lg) border border-(--color-warning-500)/60 bg-(--color-warning-500)/10 p-5 outline-none focus-visible:ring-2 focus-visible:ring-(--ring-accent)"
     >

@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
 
-import { categoryById } from '@shared/catalog'
+import { categoryById, needItemIds } from '@shared/catalog'
 import type { Need } from '@shared/contracts'
 
 import { CustomNeeds } from './CustomNeeds'
 import { Fieldset } from './controls'
 import type { SectionProps } from './form-model'
 import { NeedCard } from './NeedCard'
-import { canAddNeed, indexOfItem, tickedInGroup, toggleNeed, updateItem } from './needs-selection'
+import { canAddNeed, indexOfItem, orphanNeeds, removeNeedAt, tickedInGroup, toggleNeed, updateItem, updateNeedAt } from './needs-selection'
 import { useFieldError } from './useFieldError'
 
 /** Step 4 / tab 4: the category's catalog as grouped tick cards, plus the charity's own items. */
@@ -26,6 +26,7 @@ export const NeedsSection = ({ form, update, errors }: SectionProps) => {
   const category = categoryById(form.category)
   const setNeeds = (fn: (needs: readonly Need[]) => readonly Need[]) => update((f) => ({ ...f, needs: fn(f.needs) }))
   const full = !canAddNeed(form.needs)
+  const orphans = orphanNeeds(form.needs, needItemIds(form.category))
 
   return (
     <div className="space-y-10">
@@ -65,6 +66,21 @@ export const NeedsSection = ({ form, update, errors }: SectionProps) => {
             </fieldset>
           )
         })}
+        {orphans.length > 0 && (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {orphans.map(({ need, index }) => (
+              <NeedCard
+                key={`${index}-${need.itemId}`}
+                label={need.customLabel ?? need.itemId}
+                need={need}
+                noteError={error(`needs.${index}.itemId`) ?? error(`needs.${index}.note`)}
+                onToggle={() => setNeeds((n) => removeNeedAt(n, index))}
+                onNote={(note) => setNeeds((n) => updateNeedAt(n, index, { note }))}
+                onUrgent={(urgent) => setNeeds((n) => updateNeedAt(n, index, { urgent }))}
+              />
+            ))}
+          </ul>
+        )}
       </Fieldset>
 
       <CustomNeeds needs={form.needs} onChange={setNeeds} error={error} />

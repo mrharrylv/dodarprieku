@@ -199,6 +199,58 @@ describe('MapView', () => {
     expect(Math.abs(center[1] - shelter.profile.location.lat)).toBeLessThan(0.001)
   })
 
+  it('caps the expanded card to the room above its pin when the camera cannot pan it down (MAP-01)', async () => {
+    const { state, engine } = fakeLibrary()
+    state.project = () => ({ x: 300, y: 400 })
+    renderWithProviders(<MapView charities={[shelter]} selectedId={shelter.id} onSelect={vi.fn()} focus={null} engine={engine} />)
+    await waitFor(() => expect(state.map).not.toBeNull())
+    act(() => state.map?.fire('load'))
+    fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+    await screen.findByRole('button', { name: /Kopēt saiti/ })
+    const popup = state.popups.at(-1)?.node
+    // The pin at y=400: less the popup's tip and the top bar's clearance.
+    expect(popup?.style.getPropertyValue('--dp-card-room')).toBe('292px')
+    // The map moves (the ease ends where maxBounds lets it): the cap follows the pin.
+    state.project = () => ({ x: 300, y: 700 })
+    act(() => state.map?.fire('move'))
+    expect(popup?.style.getPropertyValue('--dp-card-room')).toBe('592px')
+    // Collapsed, the small card is not capped.
+    fireEvent.click(screen.getByRole('button', { name: 'Sakļaut' }))
+    expect(popup?.style.getPropertyValue('--dp-card-room')).toBe('')
+  })
+
+  it('moves focus into a card a pin opened, closes it on Escape with focus nowhere, and gives focus back to the pin (MAP-03)', async () => {
+    vi.stubGlobal('fetch', fakeFetch({}))
+    const { state, engine } = fakeLibrary()
+    const onSelect = vi.fn()
+    const view = (selectedId: string | null) => <MapView charities={[shelter]} selectedId={selectedId} onSelect={onSelect} focus={null} engine={engine} />
+    const { rerender } = renderWithProviders(view(null))
+    await waitFor(() => expect(state.map).not.toBeNull())
+    state.features = [point('c-ulubele', 24.1, 56.95)]
+    act(() => state.map?.fire('load'))
+    const pin = await screen.findByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })
+
+    // A pin pressed: the card opens with focus on its first control, not ~20 Tabs away.
+    fireEvent.click(pin)
+    rerender(view(shelter.id))
+    // The card is portalled on the next frame and focuses in an effect after that commit.
+    const view1 = await screen.findByRole('button', { name: /Skatīt vajadzības/ })
+    await waitFor(() => expect(view1).toHaveFocus())
+
+    // A mouse click on a pin leaves focus on the page: Escape still closes the card.
+    act(() => (document.activeElement as HTMLElement | null)?.blur())
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(onSelect).toHaveBeenLastCalledWith(null)
+
+    // Closed with X: focus goes back to the pin, not to the page.
+    onSelect.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Aizvērt' }))
+    expect(onSelect).toHaveBeenLastCalledWith(null)
+    rerender(view(null))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Dzīvnieku patversme Ulubele, Dzīvnieku patversme' })).toHaveFocus())
+    vi.unstubAllGlobals()
+  })
+
   it('opens the small card of a charity with no needs yet, saying so', async () => {
     const { state, engine } = fakeLibrary()
     renderWithProviders(<MapView charities={[childrenHome]} selectedId={childrenHome.id} onSelect={vi.fn()} focus={null} engine={engine} />)
@@ -246,7 +298,9 @@ describe('MapView', () => {
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Sakļaut' }), { key: 'Escape' })
     expect(screen.queryByRole('dialog', { name: shelter.profile.organization.name })).toBeNull()
-    expect(await screen.findByRole('button', { name: /Skatīt vajadzības/ })).toHaveFocus()
+    const view = await screen.findByRole('button', { name: /Skatīt vajadzības/ })
+    // Focus moves on the next frame, which can land after findByRole under load.
+    await waitFor(() => expect(view).toHaveFocus())
 
     fireEvent.click(screen.getByRole('button', { name: /Skatīt vajadzības/ }))
     fireEvent.click(await screen.findByRole('dialog', { name: shelter.profile.organization.name }))
@@ -373,6 +427,39 @@ describe('MapView', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Atpakaļ uz organizāciju' }))
       expect(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ })).not.toBeChecked()
+    })
+
+    it('keeps the pledge step on Escape in a field, goes back with the ticks on Escape elsewhere, and ignores a map click (MAP-02)', async () => {
+      vi.stubGlobal('fetch', fakeFetch({ '/api/charities/c-ulubele/stats': { body: { ok: true, data: STATS } } }))
+      const { state, engine } = fakeLibrary()
+      const onSelect = vi.fn()
+      renderWithProviders(<MapView charities={[shelter]} selectedId={shelter.id} onSelect={onSelect} focus={null} engine={engine} />)
+      await waitFor(() => expect(state.map).not.toBeNull())
+      act(() => state.map?.fire('load'))
+      fireEvent.click(await screen.findByRole('button', { name: /Skatīt vajadzības/ }))
+      fireEvent.click(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ }))
+      fireEvent.click(screen.getByRole('button', { name: /Es ziedošu/ }))
+      const message = await screen.findByLabelText(/Ziņojums/)
+      fireEvent.change(message, { target: { value: 'Atnesīšu sestdien' } })
+
+      // Escape in the message: the field's, nothing is lost.
+      fireEvent.keyDown(message, { key: 'Escape' })
+      expect(screen.getByLabelText(/Ziņojums/)).toHaveValue('Atnesīšu sestdien')
+      expect(screen.getByRole('button', { name: 'Sakļaut' })).toBeInTheDocument()
+
+      // A stray click on the map does not close a pledge being written.
+      act(() => state.map?.fire('click', { originalEvent: { target: document.body } }))
+      expect(onSelect).not.toHaveBeenCalledWith(null)
+      expect(screen.getByLabelText(/Ziņojums/)).toBeInTheDocument()
+
+      // Escape on the step itself goes back to the details, the tick kept, the card still expanded.
+      fireEvent.keyDown(screen.getByRole('heading', { name: 'Es ziedošu' }), { key: 'Escape' })
+      expect(await screen.findByRole('checkbox', { name: /Kaķu pakaiši/ })).toBeChecked()
+      expect(screen.getByRole('button', { name: 'Sakļaut' })).toBeInTheDocument()
+
+      // Back on the details, a map click closes the card as before.
+      act(() => state.map?.fire('click', { originalEvent: { target: document.body } }))
+      expect(onSelect).toHaveBeenLastCalledWith(null)
     })
 
     it('opens a shared link expanded even when the charity was chosen before the map had loaded', async () => {

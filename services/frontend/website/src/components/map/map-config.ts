@@ -13,8 +13,14 @@ export const MAP_ZOOM = 6.6
 export const MAP_MIN_ZOOM = 4.5
 export const MAP_MAX_ZOOM = 18
 
-/** How far past Latvia's box the visitor may pan, in degrees. Generous: MapLibre zooms in until the view fits inside maxBounds, so a tight box stops a tall, narrow map from showing the whole country. */
-const MARGIN = { lng: 4, lat: 2.5 } as const
+/**
+ * How far past Latvia's box the visitor may pan, in degrees. Generous:
+ * MapLibre zooms in until the view fits inside maxBounds, so a tight box stops
+ * a tall, narrow map from showing the whole country. A 390x844 phone fitted to
+ * Latvia's width needs about 51.5-61.5 degrees north; 2.5 cut off Kurzeme
+ * (map-config.test.ts checks the phone sizes).
+ */
+const MARGIN = { lng: 4, lat: 6 } as const
 
 /** South-west and north-east corners, longitude first, as MapLibre wants them. */
 export const MAP_BOUNDS: readonly [[number, number], [number, number]] = [
@@ -112,6 +118,17 @@ export const SMALL_PIN_FROM_BOTTOM_PX = 150
 export const POPUP_PHONE_SHIFT_PX = 16
 /** How far above the map's bottom edge the pin of an expanded card settles, in pixels. */
 export const EXPANDED_PIN_FROM_BOTTOM_PX = 36
+/**
+ * Room the expanded card leaves above itself for the top bar, in pixels. When
+ * maxBounds stops the camera from moving the pin down to the bottom edge (a
+ * north-border pin at the country view), the card is capped to the space
+ * between this and its pin, so its header and close buttons stay on screen.
+ */
+export const EXPANDED_CARD_TOP_CLEARANCE_PX = 82
+/** The least the expanded card is capped to, however little room the pin leaves. */
+export const EXPANDED_CARD_MIN_PX = 160
+/** The CSS variable on the popup that carries that cap to the card. */
+export const CARD_ROOM_VAR = '--dp-card-room'
 
 /**
  * Below this width the map's panels are a bottom sheet over the map (Tailwind's

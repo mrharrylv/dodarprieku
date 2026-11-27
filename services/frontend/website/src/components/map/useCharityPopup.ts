@@ -3,7 +3,17 @@ import type { Map as MlMap, Popup } from 'maplibre-gl'
 
 import type { PublicCharity } from '@shared/contracts'
 import { drawnAt, type DrawnAt } from '@/lib/snapshot'
-import { EXPANDED_PIN_FROM_BOTTOM_PX, FLY_DURATION_MS, POPUP_OFFSET, POPUP_PAN_OFFSET_PX, popupPanOffset, smallPinBelowCentre } from './map-config'
+import {
+  CARD_ROOM_VAR,
+  EXPANDED_CARD_MIN_PX,
+  EXPANDED_CARD_TOP_CLEARANCE_PX,
+  EXPANDED_PIN_FROM_BOTTOM_PX,
+  FLY_DURATION_MS,
+  POPUP_OFFSET,
+  POPUP_PAN_OFFSET_PX,
+  popupPanOffset,
+  smallPinBelowCentre,
+} from './map-config'
 import { prefersReducedMotion, type MaplibreModule } from './maplibre-engine'
 
 interface Options {
@@ -103,6 +113,24 @@ export const useCharityPopup = ({ ready, mapRef, libRef, flyingToRef, insetRef, 
       duration: prefersReducedMotion() ? 0 : FLY_DURATION_MS / 2,
     })
   }, [ready, mapRef, flyingToRef, insetRef, selected, expanded, sheet])
+
+  // The pan above can be clamped by maxBounds, and the card grows upwards from
+  // the pin: cap it to the room above where the pin really is, as the map moves.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || map === null || node === null || selected === undefined || !expanded || sheet) return undefined
+    const fit = () => {
+      const { y } = map.project(drawnAt(selected, atRef.current))
+      const room = Math.max(EXPANDED_CARD_MIN_PX, Math.round(y - POPUP_OFFSET - EXPANDED_CARD_TOP_CLEARANCE_PX))
+      node.style.setProperty(CARD_ROOM_VAR, `${room}px`)
+    }
+    fit()
+    map.on('move', fit)
+    return () => {
+      map.off('move', fit)
+      node.style.removeProperty(CARD_ROOM_VAR)
+    }
+  }, [ready, mapRef, node, selected, expanded, sheet])
 
   return node
 }

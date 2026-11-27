@@ -8,6 +8,8 @@
  * so it is checked field by field before it is used.
  */
 
+import { isCategoryId } from '@shared/catalog'
+
 import { STORAGE_KEYS } from '@/config/site'
 import type { ProfileForm } from '@/components/profile-editor/form-model'
 
@@ -43,7 +45,8 @@ export const isProfileForm = (v: unknown): v is ProfileForm =>
   strings(v.contactPerson, ['firstName', 'lastName', 'email', 'phone']) &&
   strings(v.address, ['street', 'city', 'postalCode']) &&
   isLocation(v.location) &&
-  typeof v.category === 'string' &&
+  // A category id renamed or removed since the draft was written would throw on render.
+  (v.category === '' || isCategoryId(v.category)) &&
   typeof v.description === 'string' &&
   arrayOf(v.photos, (p) => typeof p === 'string') &&
   typeof v.logo === 'string' &&

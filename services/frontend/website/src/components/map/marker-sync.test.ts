@@ -86,6 +86,16 @@ describe('marker sync', () => {
     expect(FADED.max).toBeLessThanOrEqual(60)
   })
 
+  it('always keeps the selected faded pin, whatever is near it and whatever the cap (MAP-04)', () => {
+    const px = (lngLat: readonly [number, number]): readonly [number, number] => [lngLat[0], lngLat[1]]
+    const faded = (id: string, x: number, y: number) => ({ key: `p:${id}`, kind: 'point', id, lngLat: [x, y], faded: true }) as const
+    const active = [{ key: 'p:a', kind: 'point', id: 'a', lngLat: [0, 0] }] as const
+    const pins = [faded('b', 100, 0), faded('c', 200, 0), faded('z', 10, 0)]
+    expect(thinFaded(pins, active, px, { minGapPx: 40, max: 2 }).map((i) => i.key)).toEqual(['p:b', 'p:c'])
+    const kept = thinFaded(pins, active, px, { minGapPx: 40, max: 2, keep: 'z' })
+    expect(kept.map((i) => i.key)).toEqual(['p:z', 'p:b', 'p:c'])
+  })
+
   it('signs a faded pin apart from an active one at the same place', () => {
     const active = [{ key: 'p:a', kind: 'point', id: 'a', lngLat: [24, 57] }] as const
     const faded = [{ ...active[0], faded: true }] as const

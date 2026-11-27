@@ -2,6 +2,7 @@ import { useEffect, useId, type ReactNode, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
+import { isTextEntry } from '@/lib/keyboard'
 import { Icon } from '@/components/ui/Icon'
 import './dock.css'
 
@@ -12,7 +13,8 @@ import './dock.css'
  * not close it, and the map's padding (`useDockInset`) keeps fly-tos, clusters
  * and the charity card in the visible left part. Below `DOCK_QUERY` it is a
  * full-screen sheet, and the map page marks everything behind it inert. Its X
- * closes it, and so does Escape while focus is inside it. It takes focus when
+ * closes it, and so does Escape while focus is inside it, except in a field or
+ * on an inner widget that handles Escape itself. It takes focus when
  * it opens.
  */
 export const DockPanel = ({
@@ -40,7 +42,9 @@ export const DockPanel = ({
       tabIndex={-1}
       data-dock=""
       onKeyDown={(event) => {
-        if (event.key !== 'Escape') return
+        // Escape typed in a field, or one an inner widget (a confirmation) already
+        // handled, is not a request to close: it would throw away what was typed.
+        if (event.key !== 'Escape' || event.defaultPrevented || isTextEntry(event.target)) return
         // Only the dock: a rail panel open beside it keeps its own Escape.
         event.stopPropagation()
         onClose()

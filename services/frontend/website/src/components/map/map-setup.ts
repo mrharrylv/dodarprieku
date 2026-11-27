@@ -109,9 +109,15 @@ const itemsIn = (map: MlMap, key: SourceKey): readonly PinItem[] =>
 /**
  * The markers to draw now: from whichever clustering suits the view, and only
  * those in it or just around it, plus the `faded` organisations (no needs)
- * once the map is close enough. `null` while the sources are still loading.
+ * once the map is close enough, the selected one always among them. `null`
+ * while the sources are still loading.
  */
-export const markersInView = (map: MlMap, splitter?: ClusterSplitter, faded: readonly FadedPoint[] = []): readonly PinItem[] | null => {
+export const markersInView = (
+  map: MlMap,
+  splitter?: ClusterSplitter,
+  faded: readonly FadedPoint[] = [],
+  selectedId: string | null = null,
+): readonly PinItem[] | null => {
   if (!loaded(map, 'coarse') || !loaded(map, 'fine')) return null
   const bounds = map.getBounds()
   const view = { west: bounds.getWest(), south: bounds.getSouth(), east: bounds.getEast(), north: bounds.getNorth() }
@@ -126,5 +132,5 @@ export const markersInView = (map: MlMap, splitter?: ClusterSplitter, faded: rea
     const p = map.project([lng, lat])
     return [p.x, p.y]
   }
-  return [...active, ...thinFaded(fadedInView(faded, map.getZoom(), view), active, toPx, FADED)]
+  return [...active, ...thinFaded(fadedInView(faded, map.getZoom(), view), active, toPx, { ...FADED, keep: selectedId })]
 }

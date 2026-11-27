@@ -62,6 +62,9 @@ describe('draft-storage', () => {
     expect(isRegisterDraft({ ...draft, form: { ...VALID_FORM, needs: [{ itemId: 'a' }] } })).toBe(false)
     expect(isRegisterDraft({ ...draft, form: { ...VALID_FORM, delivery: { ...VALID_FORM.delivery, post: null } } })).toBe(false)
     expect(isRegisterDraft({ ...draft, form: { ...VALID_FORM, location: null } })).toBe(true)
+    // A category the catalog no longer has would throw in NeedsSection on render (F1).
+    expect(isRegisterDraft({ ...draft, form: { ...VALID_FORM, category: 'animal-shelter' } })).toBe(false)
+    expect(isRegisterDraft({ ...draft, form: { ...VALID_FORM, category: '', needs: [] } })).toBe(true)
   })
 
   it('survives storage that throws', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { categoryById } from '@shared/catalog'
@@ -6,6 +6,7 @@ import type { PublicCharity } from '@shared/contracts'
 import { useCharityStats } from '@/hooks/useCharityStats'
 import { useCountView } from '@/hooks/useCountView'
 import { cn } from '@/lib/cn'
+import { isTextEntry } from '@/lib/keyboard'
 import { coverUrl, groupNeeds } from '@/lib/snapshot'
 import { CategoryBadge } from '@/components/icons/CategoryBadge'
 import { PledgeForm, type PledgeOutcome } from '@/components/pledge/PledgeForm'
@@ -38,7 +39,11 @@ const useScrolledPast = (marker: RefObject<HTMLElement | null>, active: boolean)
  * The card expanded: its sticky header (pill, collapse, close) over three
  * steps in the same card. Step 1 is the details; "Es ziedošu" turns it to
  * step 2, the pledge form, with a back arrow; sending it shows step 3, the
- * thank-you. The ticks survive a trip to step 2 and back. Mounted only while
+ * thank-you. The ticks survive a trip to step 2 and back, Escape included:
+ * on step 2, Escape in a field is the field's, and anywhere else it goes back
+ * to the details rather than collapsing the card and losing the form. While
+ * step 2 is open the card reports it (`onPledging`), so a stray map click
+ * does not close it. Mounted only while
  * expanded, so the stats are fetched (and the view counted) only for a
  * charity someone opened.
  */
@@ -48,12 +53,14 @@ export const ExpandedCard = ({
   sheet,
   onCollapse,
   onClose,
+  onPledging,
 }: {
   charity: PublicCharity
   detailsId: string
   sheet: boolean
   onCollapse: () => void
   onClose: () => void
+  onPledging?: ((pledging: boolean) => void) | undefined
 }) => {
   const { t } = useTranslation('map')
   const { t: tc } = useTranslation('charity')
@@ -83,10 +90,25 @@ export const ExpandedCard = ({
     }
   }, [step])
 
+  const pledging = step.kind === 'pledge'
+  useEffect(() => {
+    onPledging?.(pledging)
+  }, [onPledging, pledging])
+  // Unmounted (closed with X or collapsed): no pledge is open any more.
+  useEffect(() => () => onPledging?.(false), [onPledging])
+
   const back = { label: tc('pledge.back'), onClick: () => setStep({ kind: 'details' }) }
 
+  // Escape on step 2 never reaches the card's collapse, the sheet or the map.
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !pledging) return
+    event.preventDefault()
+    event.stopPropagation()
+    if (!isTextEntry(event.target)) setStep({ kind: 'details' })
+  }
+
   return (
-    <div ref={root} id={detailsId} className="dp-card-in">
+    <div ref={root} id={detailsId} className="dp-card-in" onKeyDown={onKeyDown}>
       <CardHeader
         name={organization.name}
         category={category}

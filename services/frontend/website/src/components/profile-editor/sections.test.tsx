@@ -56,6 +56,15 @@ describe('NeedsSection', () => {
     expect(seen.form.needs).toEqual([])
   })
 
+  it('shows a need the catalog no longer has, with its error, so it can be removed', () => {
+    const seen = harness(NeedsSection, { ...VALID_FORM, needs: [{ itemId: '__gone__', urgent: false }] }, { 'needs.0.itemId': 'invalid' })
+    expect(screen.getByText(/neatbilst izvēlētajam iestādes veidam/)).toBeInTheDocument()
+    const box = screen.getByRole('checkbox', { name: '__gone__' })
+    expect(box).toBeChecked()
+    fireEvent.click(box)
+    expect(seen.form.needs).toEqual([])
+  })
+
   it('adds a custom item, which unticking removes', () => {
     const seen = harness(NeedsSection, { ...VALID_FORM, needs: [] })
     fireEvent.click(screen.getByRole('button', { name: 'Pievienot' }))

@@ -17,6 +17,8 @@ export const fakeLibrary = () => {
     labels: null as Map<string, unknown> | null,
     moved: [] as unknown[],
     padding: null as unknown,
+    /** Where `project` puts a point, when a test needs a real screen position. */
+    project: null as ((lngLat: [number, number]) => { x: number; y: number }) | null,
   }
 
   class FakeMap {
@@ -28,6 +30,10 @@ export const fakeLibrary = () => {
     }
     on(event: string, cb: (e?: unknown) => void) {
       this.handlers.set(event, [...(this.handlers.get(event) ?? []), cb])
+      return this
+    }
+    off(event: string, cb: (e?: unknown) => void) {
+      this.handlers.set(event, (this.handlers.get(event) ?? []).filter((h) => h !== cb))
       return this
     }
     fire(event: string, e?: unknown) {
@@ -79,7 +85,7 @@ export const fakeLibrary = () => {
       return { lng: 24.6, lat: 56.9 }
     }
     project([lng, lat]: [number, number]) {
-      return { x: lng * 1000, y: lat * 1000 }
+      return state.project?.([lng, lat]) ?? { x: lng * 1000, y: lat * 1000 }
     }
     getBounds() {
       return { getWest: () => 20, getSouth: () => 55, getEast: () => 29, getNorth: () => 58.5 }

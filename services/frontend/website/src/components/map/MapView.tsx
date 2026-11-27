@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { Map as MlMap, MapMouseEvent, MapSourceDataEvent, Marker } from 'maplibre-gl'
@@ -135,18 +135,26 @@ export const MapView = ({
   const [expandedId, setExpandedId] = useState<string | null>(() => (focus?.expand === true && focus.id === selectedId ? selectedId : null))
   /** Which of the card's buttons takes focus next: the collapse button after expanding, "Skatīt vajadzības" after collapsing. */
   const [focusTarget, setFocusTarget] = useState<CardFocus | null>(null)
+  /** The charity whose pin was just pressed: its card takes focus when it opens, so the keyboard lands in it. */
+  const [pinPressed, setPinPressed] = useState<string | null>(null)
   /** The selection the expanded state belongs to: a new selection, or none, starts small. */
   const [expandedFor, setExpandedFor] = useState(selectedId)
   if (expandedFor !== selectedId) {
     setExpandedFor(selectedId)
     // A shared link selects its charity and asks for the card expanded in the same render.
     setExpandedId(focus?.expand === true && focus.id === selectedId ? selectedId : null)
-    setFocusTarget(null)
+    setFocusTarget(selectedId !== null && pinPressed === selectedId ? 'view' : null)
+    setPinPressed(null)
   }
   const phone = useMediaQuery(PANEL_SHEET_QUERY)
   /** The charity a fly-to is taking the map to: the popup's own pan must not cut that flight short. */
   const flyingToRef = useRef<string | null>(null)
   const onSelectRef = useRef(onSelect)
+  /** The expanded card's pledge step is open: a stray map click or backdrop tap must not throw it away. */
+  const pledgingRef = useRef(false)
+  const onPledging = useCallback((pledging: boolean) => {
+    pledgingRef.current = pledging
+  }, [])
   /** The padding every camera move uses: the docked panel's width on the right. */
   const insetRef = useRef(insetRight)
   const appliedInset = useRef(0)
@@ -160,6 +168,7 @@ export const MapView = ({
   )
   const dataRef = useRef(data)
   const fadedRef = useRef(fadedPoints)
+  const selectedRef = useRef(selectedId)
   const byId = useMemo(() => new Map(everyone.map((c) => [c.id, c])), [everyone])
 
   useEffect(() => {
@@ -183,7 +192,7 @@ export const MapView = ({
       if (map === null || lib === null) return
       const camera = cameraKey(map)
       if (!dirty && camera === synced) return
-      const items = markersInView(map, splitterRef.current ?? undefined, fadedRef.current)
+      const items = markersInView(map, splitterRef.current ?? undefined, fadedRef.current, selectedRef.current)
       if (items === null) return
       synced = camera
       dirty = false
@@ -278,7 +287,7 @@ export const MapView = ({
       })
       map.on('idle', () => throttle.request(true))
       map.on('click', (event?: MapMouseEvent) => {
-        if (!onChrome(event)) onSelectRef.current(null)
+        if (!onChrome(event) && !pledgingRef.current) onSelectRef.current(null)
       })
     }
     void start()
@@ -306,6 +315,12 @@ export const MapView = ({
     fadedRef.current = fadedPoints
     throttleRef.current.request(true)
   }, [fadedPoints])
+
+  // A faded pin is drawn whenever it is the selected one: work the markers out again.
+  useEffect(() => {
+    selectedRef.current = selectedId
+    throttleRef.current.request(true)
+  }, [selectedId])
 
   // A dock opened, closed or resized: make room for it, or take the room back, gently.
   useEffect(() => {
@@ -363,11 +378,37 @@ export const MapView = ({
     )
   }
 
+  /** A pin pressed: select it, and send focus into its card once it is on screen. */
+  const selectFromPin = (id: string) => {
+    setPinPressed(id)
+    onSelect(id)
+  }
+  /** The card closed by X or Escape: focus goes back to its pin, not to the page. A map click does not use this. */
+  const closeCard = () => {
+    if (selectedId === null) return
+    const pinKey = `p:${selectedId}`
+    onSelect(null)
+    requestAnimationFrame(() => markers.current.get(pinKey)?.getElement().querySelector<HTMLElement>('button')?.focus({ preventScroll: true }))
+  }
+
+  // A mouse click on a pin leaves focus on the page (MapLibre keeps it off the
+  // canvas), where the wrapper's onKeyDown never hears Escape: listen there too.
+  useEffect(() => {
+    if (selectedId === null) return undefined
+    const onPageKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || event.target !== document.body || pledgingRef.current) return
+      if (expanded) collapse()
+      else closeCard()
+    }
+    document.addEventListener('keydown', onPageKey)
+    return () => document.removeEventListener('keydown', onPageKey)
+  })
+
   const onKeyDown = (event: KeyboardEvent) => {
-    // The pledge dialog handles its own Escape.
+    // The phone's sheet handles its own Escape, and the pledge step inside the card its own (ExpandedCard).
     if (event.key !== 'Escape' || selectedId === null || (event.target instanceof Element && event.target.closest('dialog') !== null)) return
     if (expanded) collapse()
-    else onSelect(null)
+    else closeCard()
   }
 
   const card =
@@ -381,7 +422,8 @@ export const MapView = ({
         onFocused={() => setFocusTarget(null)}
         onExpand={() => expand(selected.id)}
         onCollapse={collapse}
-        onClose={() => onSelect(null)}
+        onClose={closeCard}
+        onPledging={onPledging}
       />
     )
 
@@ -405,9 +447,9 @@ export const MapView = ({
           <p className="mt-1 text-(length:--text-sm) text-(--text-secondary)">{t('map.unavailableBody')}</p>
         </div>
       )}
-      {placed.map(({ item, element }) => createPortal(<Pin item={item} byId={byId} selectedId={selectedId} onSelect={onSelect} onZoom={zoomCluster} />, element, item.key))}
+      {placed.map(({ item, element }) => createPortal(<Pin item={item} byId={byId} selectedId={selectedId} onSelect={selectFromPin} onZoom={zoomCluster} />, element, item.key))}
       {popupNode !== null && card !== null && !sheet && createPortal(card, popupNode)}
-      {sheet && selected !== undefined && <CharitySheet title={selected.profile.organization.name} onDismiss={collapse}>{card}</CharitySheet>}
+      {sheet && selected !== undefined && <CharitySheet title={selected.profile.organization.name} onDismiss={() => { if (!pledgingRef.current) collapse() }}>{card}</CharitySheet>}
     </div>
   )
 }

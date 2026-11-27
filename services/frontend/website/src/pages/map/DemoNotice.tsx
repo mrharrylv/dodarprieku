@@ -8,7 +8,9 @@ import { Icon } from '@/components/ui/Icon'
  * While any needs on the map were made up (dev's demo-needs task, `make run`),
  * a tiny pill says "Testa vide" at the bottom centre of the visible map, low
  * enough to sit under the pins' usual places and clear of the zoom buttons,
- * the attribution and the phone's register button. It opens into the full
+ * the attribution and the phone's register button. On a phone the bottom
+ * band is the attribution's, with the register button above it, so the pill
+ * sits above both; its hit area never leaves the map. It opens into the full
  * sentence. Never shown on production, which has no demo needs.
  */
 export const DemoNotice = () => {
@@ -19,7 +21,7 @@ export const DemoNotice = () => {
   return (
     <div
       role="note"
-      className="pointer-events-none absolute bottom-2 left-[calc((100%-var(--dock-inset,0px))/2)] z-20 flex -translate-x-1/2 flex-col items-center gap-1"
+      className="pointer-events-none absolute bottom-[5.75rem] left-[calc((100%-var(--dock-inset,0px))/2)] z-20 flex -translate-x-1/2 flex-col items-center gap-1 md:bottom-3"
     >
       {open && (
         <p id={id} className="dp-chrome-in w-max max-w-[min(22rem,calc(100vw-2rem))] rounded-(--radius-md) border border-(--border-subtle) bg-(--surface-raised) px-3 py-2 text-center text-(length:--text-xs) text-(--text-secondary) shadow-(--shadow-card)">

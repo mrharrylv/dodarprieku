@@ -45,7 +45,9 @@ describe('claim applications', () => {
   })
 
   it('approves the claim and opens the merged charity', async () => {
-    const merged = detail({ id: 'imp-1', name: 'Patversme Ulubele', status: 'approved' })
+    // A name of its own: the application page's h1 carries the fixture default,
+    // and matching that one would race the navigation away from it.
+    const merged = detail({ id: 'imp-1', name: 'Patversme Ulubele (apvienota)', status: 'approved' })
     const { calls } = renderApp('/pieteikumi/p1', {
       'GET /api/admin/charities/p1': () => ok(claimDetail),
       'POST /api/admin/charities/p1/approve': () => ok({ ...merged, mailSent: true }),
@@ -58,7 +60,7 @@ describe('claim applications', () => {
     expect(dialog).toHaveTextContent('citi šī profila pieprasījumi tiks noraidīti')
     await user.click(within(dialog).getByRole('button', { name: 'Apstiprināt' }))
     expect(await screen.findByText('Pieprasījums apstiprināts, profils apvienots.')).toBeInTheDocument()
-    expect(await screen.findByRole('heading', { name: 'Patversme Ulubele', level: 1 }, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Patversme Ulubele (apvienota)', level: 1 }, { timeout: 5000 })).toBeInTheDocument()
     expect(calls.some((c) => c.url === '/api/admin/charities/imp-1')).toBe(true)
   })
 })

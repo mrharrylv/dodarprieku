@@ -45,5 +45,20 @@ export const addCustomNeed = (needs: readonly Need[], label: string, note: strin
 export const customNeeds = (needs: readonly Need[]): readonly { readonly need: Need; readonly index: number }[] =>
   needs.flatMap((need, index) => (need.itemId === CUSTOM_NEED_ID ? [{ need, index }] : []))
 
+/**
+ * Needs no card shows: a catalog id the category does not offer (renamed or
+ * removed since it was stored) or a repeat of one already listed. They still
+ * count and still fail validation, so they must stay visible and removable.
+ */
+export const orphanNeeds = (
+  needs: readonly Need[],
+  offered: readonly string[],
+): readonly { readonly need: Need; readonly index: number }[] =>
+  needs.flatMap((need, index) =>
+    need.itemId !== CUSTOM_NEED_ID && (!offered.includes(need.itemId) || indexOfItem(needs, need.itemId) !== index)
+      ? [{ need, index }]
+      : [],
+  )
+
 export const tickedInGroup = (needs: readonly Need[], itemIds: readonly string[]): number =>
   itemIds.filter((id) => isTicked(needs, id)).length

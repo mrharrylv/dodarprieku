@@ -33,6 +33,7 @@ export const MapPopupCard = ({
   onExpand,
   onCollapse,
   onClose,
+  onPledging,
 }: {
   charity: PublicCharity
   expanded: boolean
@@ -43,6 +44,8 @@ export const MapPopupCard = ({
   onExpand: () => void
   onCollapse: () => void
   onClose: () => void
+  /** The expanded card's pledge step opened or closed. */
+  onPledging?: (pledging: boolean) => void
 }) => {
   const { t } = useTranslation('map')
   const ref = useRef<HTMLElement>(null)
@@ -73,11 +76,11 @@ export const MapPopupCard = ({
       className={cn(
         'dp-card overscroll-contain',
         sheet ? 'w-full' : 'overflow-y-auto',
-        !sheet && (expanded ? 'dp-card-wide max-h-[calc(100dvh-9rem)] max-w-full' : 'w-72'),
+        !sheet && (expanded ? 'dp-card-wide max-h-[min(calc(100dvh-9rem),var(--dp-card-room,100dvh))] max-w-full' : 'w-72'),
       )}
     >
       {expanded ? (
-        <ExpandedCard charity={charity} detailsId={detailsId} sheet={sheet} onCollapse={onCollapse} onClose={onClose} />
+        <ExpandedCard charity={charity} detailsId={detailsId} sheet={sheet} onCollapse={onCollapse} onClose={onClose} onPledging={onPledging} />
       ) : (
         <>
           <div className="relative">
