@@ -1,11 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 
-import { ROUTES } from '@/config/site'
-import { useLocale } from '@/hooks/useLocale'
 import { cn } from '@/lib/cn'
-import { localePath } from '@/lib/locale-path'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { panelDomId, type MapPanels, type PanelId } from './useMapPanels'
 
@@ -26,16 +22,16 @@ const ACTIVE = 'border-(--ring-accent) bg-(--surface-accent-soft) text-(--text-a
 
 /**
  * The floating icon rail on the map's left edge: the leaderboard, the
- * newsletter and the project's info (each opens a panel), and the
- * charities' account (the account panel, docked on the right). Every button carries its name as `aria-label` and as a tooltip
- * that shows on hover and on keyboard focus.
+ * newsletter and the project's info, each opening a panel beside it. The
+ * account lives on the right, with the other button that opens a dock there
+ * (`MapActions`). Every button carries its name as `aria-label` and as a
+ * tooltip that shows on hover and on keyboard focus.
  */
-export const MapRail = ({ panels, accountOpen = false }: { panels: MapPanels; accountOpen?: boolean }) => {
+export const MapRail = ({ panels }: { panels: MapPanels }) => {
   const { t } = useTranslation('map')
-  const { locale } = useLocale()
 
   return (
-    <nav aria-label={t('rail.label')} className="absolute top-36 left-3 z-30 flex flex-col gap-2.5 md:top-24 md:left-4">
+    <nav aria-label={t('rail.label')} className="absolute top-36 left-3 z-30 flex flex-col gap-2.5 md:left-4 xl:top-24">
       {RAIL_PANELS.map(({ id, icon }) => {
         const open = panels.open === id
         return (
@@ -54,16 +50,6 @@ export const MapRail = ({ panels, accountOpen = false }: { panels: MapPanels; ac
           </button>
         )
       })}
-      <Link
-        to={localePath(ROUTES.account, locale)}
-        aria-label={t('rail.account')}
-        aria-current={accountOpen ? 'page' : undefined}
-        data-dock-trigger="account"
-        className={cn(ROUND, 'mt-3 ml-0.5 h-11 w-11', accountOpen && ACTIVE)}
-      >
-        <Icon name="user" />
-        <Tooltip>{t('rail.account')}</Tooltip>
-      </Link>
     </nav>
   )
 }

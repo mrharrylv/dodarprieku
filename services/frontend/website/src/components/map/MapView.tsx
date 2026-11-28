@@ -26,6 +26,7 @@ import {
 import { spreadColocated } from './colocated'
 import { createClusterSplitter, type ClusterSplitter } from './cluster-split'
 import { addCharitySources, applyLatvianLabels, childrenOf, markersInView, refitCoarseSource, setCharityData, sourceOf } from './map-setup'
+import { dockMotionMs } from './dock/dock-motion'
 import { MAPLIBRE_ENGINE, prefersReducedMotion, type MapEngine, type MaplibreModule } from './maplibre-engine'
 import { pinSignature, type FadedPoint, type PinItem } from './marker-sync'
 import { createSyncThrottle } from './sync-throttle'
@@ -51,8 +52,6 @@ const LATVIA_BOX: [[number, number], [number, number]] = [
   [LATVIA_BOUNDS.maxLng, LATVIA_BOUNDS.maxLat],
 ]
 const FIT_PADDING = 24
-/** How long the map takes to make room for the docked panel, or to take it back. */
-const INSET_EASE_MS = 300
 
 /** Fitting the country: the usual margin, and the docked panel's width on the right. */
 const fitPadding = (inset: number) => ({ top: FIT_PADDING, bottom: FIT_PADDING, left: FIT_PADDING, right: FIT_PADDING + inset })
@@ -328,7 +327,8 @@ export const MapView = ({
     const map = mapRef.current
     if (phase !== 'ready' || map === null || appliedInset.current === insetRight) return
     appliedInset.current = insetRight
-    map.easeTo({ padding: mapPadding(insetRight), duration: prefersReducedMotion() ? 0 : INSET_EASE_MS })
+    // The same time as the dock's slide, so the map makes room (or takes it back) in the one motion.
+    map.easeTo({ padding: mapPadding(insetRight), duration: dockMotionMs() })
   }, [insetRight, phase])
 
   // Fly to a charity chosen in the list.

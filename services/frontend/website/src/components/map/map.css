@@ -110,10 +110,11 @@
   animation: dp-card-in 240ms var(--ease-out-soft) both;
 }
 
-/* The zoom buttons and the attribution move left of a docked panel, with it. */
+/* The zoom buttons and the attribution move left of a docked panel, with it:
+   over the slide's own time, on its curve (MapPage sets --dock-ease). */
 .maplibregl-ctrl-bottom-right {
   right: var(--dock-inset, 0px);
-  transition: right 300ms var(--ease-out-soft);
+  transition: right var(--dock-motion) var(--dock-ease, var(--ease-out-soft));
 }
 
 /* The card never grows wider than the map's visible part left of a docked panel. */

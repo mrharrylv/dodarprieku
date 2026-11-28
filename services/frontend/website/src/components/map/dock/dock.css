@@ -1,26 +1,47 @@
-/* The docked panel slides in from the right on a wide screen and rises as a
-   sheet on a phone. The base layer's reduced-motion rule zeroes the duration. */
+/* The docked panel slides in from the right edge on a wide screen and rises
+   from the bottom as a sheet on a phone, in one slow motion, and leaves the
+   same way (`dp-dock-out`). It travels its whole width rather than fading, so
+   nothing blinks: the map eases its padding over the same time. The length
+   is --dock-motion (index.css), which dock-css.test.ts holds equal to
+   DOCK_MOTION_MS. The base layer's reduced-motion rule zeroes the duration. */
 @keyframes dp-dock-rise {
   from {
-    opacity: 0;
-    transform: translateY(1.5rem);
+    transform: translateY(100%);
   }
 }
 
 @keyframes dp-dock-slide {
   from {
-    opacity: 0;
-    transform: translateX(2rem);
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dp-dock-sink {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes dp-dock-leave {
+  to {
+    transform: translateX(100%);
   }
 }
 
 .dp-dock {
-  animation: dp-dock-rise 240ms var(--ease-out-soft) both;
+  animation: dp-dock-rise var(--dock-motion) var(--ease-out-soft) both;
+}
+
+.dp-dock.dp-dock-out {
+  animation: dp-dock-sink var(--dock-motion) var(--ease-in-soft) both;
 }
 
 @media (min-width: 64rem) {
   .dp-dock {
     animation-name: dp-dock-slide;
-    animation-duration: 260ms;
+  }
+
+  .dp-dock.dp-dock-out {
+    animation-name: dp-dock-leave;
   }
 }

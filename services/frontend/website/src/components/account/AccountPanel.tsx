@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccountSession } from '@/hooks/useAccountSession'
 import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
+import { DockSkeleton } from '@/components/map/dock/DockSkeleton'
 import { Dashboard } from './Dashboard'
 import { COMMON_FAILURES, failureKey } from './format'
 import { LoginForm } from './LoginForm'
@@ -19,7 +20,8 @@ export const AccountPanel = () => {
 
   switch (session.kind) {
     case 'loading':
-      return <p role="status" className="py-16 text-center text-(--text-muted)">{t('loading')}</p>
+      // The dock's own placeholder: it is still sliding in, and words swapping for the form would blink in it.
+      return <DockSkeleton label={t('loading')} />
     case 'anon':
       return <LoginForm onLoggedIn={reload} />
     case 'error':

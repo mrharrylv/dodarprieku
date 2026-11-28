@@ -62,4 +62,13 @@ describe('MapTopBar', () => {
     renderWithProviders(bar(true, vi.fn(), { ...NO_FILTER, category: 'dzivnieku-patversme' }))
     expect(screen.getByRole('button', { name: 'Kategorija: Dzīvnieku patversmes' })).toHaveTextContent('Dzīvnieku patversmes')
   })
+
+  it('moves the chips to a line of their own when the brand and the search leave them too little room', () => {
+    renderWithProviders(bar(false))
+    const region = screen.getByRole('region', { name: /./ })
+    expect(region).toHaveClass('md:flex-wrap')
+    // Below xl (1024px: 56px left beside the search) the chips take a line of their own, the bar's whole width.
+    const chips = screen.getByRole('group', { name: 'Kategorijas' }).parentElement?.parentElement
+    expect(chips).toHaveClass('flex-wrap', 'md:w-full', 'md:flex-none', 'xl:w-auto', 'xl:flex-1')
+  })
 })

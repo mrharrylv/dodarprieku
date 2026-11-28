@@ -33,6 +33,7 @@ const renderAt = (route: string) =>
 
 const dock = (name: string) => screen.findByRole('region', { name }, { timeout: 5000 })
 const rail = () => screen.getByRole('navigation', { name: 'Kartes rīki' })
+const actions = () => screen.getByRole('group', { name: 'Pieteikšanās' })
 
 describe('MapPage, the docked panels', () => {
   beforeEach(() => {
@@ -44,8 +45,8 @@ describe('MapPage, the docked panels', () => {
     renderAt(ROUTES.register)
     const panel = await dock('Kļūt par saņēmēju')
     expect(await within(panel).findByRole('navigation', { name: 'Reģistrācijas soļi' }, { timeout: 5000 })).toBeInTheDocument()
-    // The register button is the panel's own way in; while it is open it is not shown.
-    expect(screen.queryByRole('link', { name: /Kļūt par saņēmēju/ })).toBeNull()
+    // The register button is the panel's own way in; while it is open it is faded out of reach under it.
+    expect(actions()).toHaveAttribute('inert')
 
     // A rail panel closes on a press on the map; the dock stays, and so does the map.
     fireEvent.click(within(rail()).getByRole('button', { name: 'Jaunumi' }))
@@ -66,18 +67,25 @@ describe('MapPage, the docked panels', () => {
     expect(panel).toHaveFocus()
 
     await user.click(within(panel).getByRole('button', { name: 'Aizvērt' }))
-    expect(screen.queryByRole('region', { name: 'Kļūt par saņēmēju' })).toBeNull()
+    // It slides out first, out of reach while it goes, and leaves its address once it has.
+    expect(panel).toHaveClass('dp-dock-out')
+    expect(panel).toHaveAttribute('inert')
+    // The zoom buttons and the demo pill follow its edge on the exit's own curve.
+    expect(panel.parentElement?.style.getPropertyValue('--dock-ease')).toBe('var(--ease-in-soft)')
+    expect(actions()).not.toHaveAttribute('inert')
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Kļūt par saņēmēju' })).toBeNull())
     expect(address()).toBe(ROUTES.home)
     await waitFor(() => expect(screen.getByRole('link', { name: /Kļūt par saņēmēju/ })).toHaveFocus())
   })
 
-  it('opens the account from the rail: the login form, then forgot-password in the same panel', async () => {
+  it('opens the account from its button on the right: the login form, then forgot-password in the same panel', async () => {
     const user = userEvent.setup()
     renderAt(ROUTES.home)
-    await user.click(within(rail()).getByRole('link', { name: 'Mans konts' }))
+    await user.click(within(actions()).getByRole('link', { name: 'Mans konts' }))
     const panel = await dock('Mans konts')
     expect(await within(panel).findByRole('heading', { name: 'Pieteikties' })).toBeInTheDocument()
-    expect(within(rail()).getByRole('link', { name: 'Mans konts' })).toHaveAttribute('aria-current', 'page')
+    // Its button is covered by the panel it opened: faded out of reach, not announced as the current page.
+    expect(actions()).toHaveAttribute('inert')
 
     await user.click(within(panel).getByRole('link', { name: /Aizmirsāt paroli|Aizmirsu paroli/ }))
     expect(address()).toBe(ROUTES.forgotPassword)
@@ -136,7 +144,7 @@ describe('MapPage, the docked panels', () => {
     const panel = await dock('Kļūt par saņēmēju')
     expect(panel).toHaveFocus()
     await user.keyboard('{Escape}')
-    expect(screen.queryByRole('region', { name: 'Kļūt par saņēmēju' })).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Kļūt par saņēmēju' })).toBeNull())
     expect(address()).toBe(ROUTES.home)
   })
 

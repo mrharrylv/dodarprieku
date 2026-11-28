@@ -24,7 +24,9 @@
     "all": "Visas",
     "button": "Kategorija",
     "allCategories": "Visas kategorijas",
-    "chosen": "Kategorija: {{name}}"
+    "chosen": "Kategorija: {{name}}",
+    "more": "Rādīt visas kategorijas",
+    "fewer": "Rādīt mazāk kategoriju"
   },
   "needs": {
     "button": "Ko vajag",

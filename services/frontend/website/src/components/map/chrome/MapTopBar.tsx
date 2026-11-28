@@ -21,8 +21,10 @@ import { SearchResults } from './SearchResults'
 /**
  * What floats over the top of the map: the brand (home), the search, "Ko vajag"
  * and the category chips, each on its own see-through surface rather than one bar.
- * One row on a wide screen, the chips scrolling inside it; on a phone the
- * brand and the search sit on top and the chips scroll beneath. The search
+ * One row on a wide screen (xl), the chips scrolling inside it (or laid out
+ * all at once by their chevron); narrower, and on a phone, the brand and the
+ * search sit on top and the chips take the line beneath, the bar's whole
+ * width (the rail and its panels start below that line). The search
  * works from the first frame; the chips appear with the snapshot. Typing
  * opens the matching organisations under the field; choosing one flies there.
  * With a panel docked on the right it keeps to the map's visible left part
@@ -67,8 +69,7 @@ export const MapTopBar = ({
       data-compact={compact || undefined}
       className={cn(
         'pointer-events-none absolute inset-x-3 top-3 z-40 flex flex-col gap-2',
-        'md:inset-x-auto md:top-4 md:left-4 md:max-w-[calc(100%-var(--actions-room,19rem)-var(--dock-inset,0px))] md:flex-row md:items-center md:gap-2.5',
-        compact && 'md:flex-wrap',
+        'md:inset-x-auto md:top-4 md:left-4 md:max-w-[calc(100%-var(--actions-room,19rem)-var(--dock-inset,0px))] md:flex-row md:flex-wrap md:items-start md:gap-2.5',
       )}
     >
       <div ref={row} className="pointer-events-auto relative flex min-w-0 items-center gap-2 md:shrink-0">
@@ -173,7 +174,8 @@ const Chips = ({
   const total = counts.reduce((sum, c) => sum + c.count, 0)
   const category = (next: MapFilter['category']) => onFilter({ ...filter, category: next })
   return (
-    <div className={cn('flex min-w-0 items-center gap-2', !compact && 'flex-1')}>
+    // flex-wrap: the chips laid out all at once take a line of their own, under "Ko vajag".
+    <div className={cn('flex min-w-0 flex-wrap items-start gap-2', !compact && 'flex-1 md:w-full md:flex-none xl:w-auto xl:flex-1')}>
       <NeedKindFilter counts={needKindCounts(charities, filter)} value={filter.kinds} onChange={(kinds) => onFilter({ ...filter, kinds })} />
       {compact ? (
         <div key="menu" className={rise}>
@@ -186,7 +188,7 @@ const Chips = ({
           total={total}
           value={filter.category}
           onChange={category}
-          className={cn(rise, 'dp-fade-x pointer-events-auto -mx-1 -my-2 min-w-0 flex-1 px-1 py-2 pr-16')}
+          className={cn(rise, 'pointer-events-auto min-w-0 flex-1')}
         />
       )}
     </div>

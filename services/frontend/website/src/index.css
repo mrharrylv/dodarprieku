@@ -143,6 +143,10 @@
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The exit twin of ease-out-soft: slow to start, fast to leave. The docked panel's slide out. */
+  --ease-in-soft: cubic-bezier(0.64, 0, 0.78, 0);
+  /* The docked panel's slide in and out; DOCK_MOTION_MS in dock-motion.ts is the same length. */
+  --dock-motion: 450ms;
 
   --container-content: 72rem;
   --container-prose: 44rem;

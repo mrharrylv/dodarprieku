@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { fakeFetch, shelter, childrenHome } from '@/lib/snapshot.fixtures'
 import { renderWithProviders } from '@/test/render'
 import { fakeLibrary } from '@/test/fake-maplibre'
+import { DOCK_MOTION_MS } from './dock/dock-motion'
 import { MapView } from './MapView'
 
 
@@ -310,7 +311,7 @@ describe('MapView', () => {
   describe('beside a docked panel', () => {
     const right = (px: number) => ({ top: 0, bottom: 0, left: 0, right: px })
 
-    it('takes the panel as padding, animated, and gives it back when the panel closes', async () => {
+    it('takes the panel as padding over the dock\'s own slide, and gives it back when the panel closes', async () => {
       vi.stubGlobal('fetch', fakeFetch({}))
       const { state, engine } = fakeLibrary()
       const view = (insetRight: number) => <MapView charities={[shelter]} selectedId={null} onSelect={vi.fn()} focus={null} insetRight={insetRight} engine={engine} />
@@ -320,13 +321,13 @@ describe('MapView', () => {
       expect(state.padding).toEqual(right(0))
 
       rerender(view(720))
-      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(720), duration: 300 })
+      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(720), duration: DOCK_MOTION_MS })
       const calls = state.easeTo.mock.calls.length
       rerender(view(720))
       expect(state.easeTo.mock.calls).toHaveLength(calls)
 
       rerender(view(0))
-      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(0), duration: 300 })
+      expect(state.easeTo).toHaveBeenLastCalledWith({ padding: right(0), duration: DOCK_MOTION_MS })
       vi.unstubAllGlobals()
     })
 

@@ -221,7 +221,7 @@ canonical, and the sitemap and `llms.txt` list `/` only.
 
 | Path | What opens |
 | --- | --- |
-| `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" top right, and a rail on the left that opens one floating panel at a time (top supporters, newsletter, info) and the account |
+| `/` | the map, full screen with no site header or footer: a floating top bar (logo, search, category chips), "+ Kļūt par saņēmēju" with "Mans konts" under it top right, and a rail on the left that opens one floating panel at a time (top supporters, newsletter, info) |
 | `/organizacija/:slug` | the map flown to that charity, its card open; expanded with `?vajadzibas=1`, which "Kopēt saiti" adds (it copies the absolute address). The CloudFront function serves the `/organizacija` shell for every slug |
 | `/registreties` | the registration wizard, docked on the right; `?pieprasit=<slug>` claims that imported charity |
 | `/konts` | the account, docked on the right: the login form, then status, stats, pledges, the profile editor with the sponsor wall, the list request and logout |
@@ -329,8 +329,16 @@ buttons and the attribution; pressed, it opens into "Testa vide: daļa
 vajadzību ir izdomātas demonstrācijai." Production never has one: the API
 refuses the demo tasks there.
 
-The left rail holds the leaderboard, the newsletter, the project info and the
-account; there is no organisations panel (Harry, 2026-11-26). Typing in the
+The left rail holds the leaderboard, the newsletter and the project info;
+there is no organisations panel (Harry, 2026-11-26). "Mans konts" sits on the
+right, under "+ Kļūt par saņēmēju", because both open the panel docked on the
+right (Harry, 2026-11-28); on a phone the two sit side by side at the bottom.
+The docked panel slides in from the right edge in one slow motion (450 ms),
+the map easing its padding over the same time, and slides back out the same
+way; the buttons under it fade rather than vanish. The category chips scroll
+sideways by finger, mouse wheel or mouse drag, and a chevron at the row's
+right end lays every chip out at once. "Pieprasīt profilu" is the same accent
+pill as "+ Kļūt par saņēmēju". Typing in the
 search opens the matching organisations under the field, each one a fly-to.
 The newsletter sign-up in the expanded charity card sends that charity's id,
 like the box after a pledge, and offers "Saņemt arī vispārējos jaunumus"

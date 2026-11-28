@@ -23,6 +23,21 @@ const loggedIn = (account = ACCOUNT, extra: Record<string, Reply | ((b: unknown)
     ...extra,
   })
 
+describe('AccountPanel, asking for the session', () => {
+  it('shows the dock\'s quiet placeholder rather than words that swap inside the slide', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+    try {
+      renderWithProviders(<AccountPanel />)
+      const status = screen.getByRole('status')
+      // The words are for a screen reader; what shows is the same pulse the dock's own placeholder has.
+      expect(within(status).getByText('Ielādē...')).toHaveClass('sr-only')
+      expect(status.querySelectorAll('[aria-hidden="true"].animate-pulse').length).toBeGreaterThan(0)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})
+
 describe('AccountPanel, logged out', () => {
   it('shows the login form and logs in', async () => {
     let session = false

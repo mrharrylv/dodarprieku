@@ -15,17 +15,20 @@ import './dock.css'
  * full-screen sheet, and the map page marks everything behind it inert. Its X
  * closes it, and so does Escape while focus is inside it, except in a field or
  * on an inner widget that handles Escape itself. It takes focus when
- * it opens.
+ * it opens. It slides in from the right edge (a phone: rises from the
+ * bottom), and with `closing` slides back out, out of reach meanwhile.
  */
 export const DockPanel = ({
   title,
   onClose,
   panelRef,
+  closing = false,
   children,
 }: {
   title: string
   onClose: () => void
   panelRef: RefObject<HTMLElement | null>
+  closing?: boolean
   children: ReactNode
 }) => {
   const { t } = useTranslation('map')
@@ -41,6 +44,7 @@ export const DockPanel = ({
       aria-labelledby={headingId}
       tabIndex={-1}
       data-dock=""
+      inert={closing}
       onKeyDown={(event) => {
         // Escape typed in a field, or one an inner widget (a confirmation) already
         // handled, is not a request to close: it would throw away what was typed.
@@ -50,7 +54,9 @@ export const DockPanel = ({
         onClose()
       }}
       className={cn(
-        'dp-dock fixed inset-0 z-50 flex flex-col bg-(--surface-raised) text-(--text-primary) focus:outline-none',
+        'dp-dock',
+        closing && 'dp-dock-out',
+        'fixed inset-0 z-50 flex flex-col bg-(--surface-raised) text-(--text-primary) focus:outline-none',
         'lg:absolute lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[max(30rem,50%)] lg:border-l lg:border-(--border-subtle) lg:shadow-(--shadow-lifted)',
       )}
     >

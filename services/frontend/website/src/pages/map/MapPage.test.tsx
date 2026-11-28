@@ -267,10 +267,11 @@ describe('MapPage', () => {
     expect(screen.queryByRole('region', { name: 'Lielākie atbalstītāji' })).toBeNull()
   })
 
-  it('links the rail to the account, and opens the info as a panel rather than a page', () => {
+  it('links to the account on the right, not from the rail, and opens the info as a panel rather than a page', () => {
     vi.stubGlobal('fetch', fakeFetch({}))
     renderWithProviders(<MapPage />)
-    expect(within(rail()).getByRole('link', { name: 'Mans konts' })).toHaveAttribute('href', ROUTES.account)
+    expect(within(screen.getByRole('group', { name: 'Pieteikšanās' })).getByRole('link', { name: 'Mans konts' })).toHaveAttribute('href', ROUTES.account)
+    expect(within(rail()).queryByRole('link', { name: 'Mans konts' })).toBeNull()
     expect(within(rail()).queryByRole('link', { name: 'Par projektu' })).toBeNull()
     expect(railButton('Par projektu')).toHaveAttribute('aria-expanded', 'false')
   })

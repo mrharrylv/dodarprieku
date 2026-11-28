@@ -22,6 +22,7 @@ import { MapRail } from '@/components/map/chrome/MapRail'
 import { MapTopBar } from '@/components/map/chrome/MapTopBar'
 import { useMapPanels } from '@/components/map/chrome/useMapPanels'
 import { MapDock } from '@/components/map/dock/MapDock'
+import { useDockClose } from '@/components/map/dock/useDockClose'
 import { DOCK_QUERY, useDockInset } from '@/components/map/dock/useDockInset'
 import { DemoNotice } from './DemoNotice'
 import { MapSeo } from './MapSeo'
@@ -64,7 +65,16 @@ export const MapPage = () => {
 
   // The dock opens only in the browser: the prerendered page and its hydration have every panel closed.
   const dock = hydrated ? route.dock : null
-  const inset = useDockInset(dockRef, dock?.kind ?? null)
+  const finishClose = useCallback(() => {
+    const kind = dock?.kind
+    void navigate(home)
+    // Focus returns to what opened it: the register button or the account button.
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-dock-trigger="${kind ?? ''}"]`)?.focus())
+  }, [dock, navigate, home])
+  // Closing slides the dock out while the map, the top bar and the buttons take their room back: one motion.
+  const { closing, close: closeDock } = useDockClose(dock, finishClose)
+  const shown = closing ? null : dock
+  const inset = useDockInset(dockRef, shown?.kind ?? null)
 
   const charities = snapshot.status === 'ready' ? snapshot.snapshot.charities : NO_CHARITIES
   // Clusters hold and count only the organisations with needs; the rest are faded pins from close up.
@@ -126,20 +136,17 @@ export const MapPage = () => {
     void navigate(home, { replace: true })
   }, [hydrated, route.info, show, navigate, home])
 
-  const closeDock = () => {
-    const kind = dock?.kind
-    void navigate(home)
-    // Focus returns to what opened it: the register button or the rail's account link.
-    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-dock-trigger="${kind ?? ''}"]`)?.focus())
-  }
-
   const charity = route.charitySlug === null ? undefined : findBySlug(charities, route.charitySlug)
   // Below DOCK_QUERY the dock is a full-screen sheet: what is behind it leaves the tab order and the accessibility tree.
   const sheet = dock !== null && !docked
-  // While a dock is open, or someone is logged in, the register button is hidden, so the top bar needs no room for it.
-  const style = { '--dock-inset': `${inset}px`, '--actions-room': dock === null && !signedIn ? '19rem' : '2rem' } as CSSProperties
+  // While a dock is open the buttons on the right are covered, so the top bar needs no room for them;
+  // logged in, only "Mans konts" is there.
+  const actionsRoom = shown !== null ? '2rem' : signedIn ? '11rem' : '19rem'
+  // What follows the dock's edge (the zoom buttons, the demo pill) eases on the slide's own curve: out as it opens, in as it leaves.
+  const dockEase = closing ? 'var(--ease-in-soft)' : 'var(--ease-out-soft)'
+  const style = { '--dock-inset': `${inset}px`, '--actions-room': actionsRoom, '--dock-ease': dockEase } as CSSProperties
   // A dock beside the map leaves the top bar half the width: it folds into its compact form.
-  const compactBar = dock !== null && docked
+  const compactBar = shown !== null && docked
 
   return (
     <>
@@ -161,8 +168,8 @@ export const MapPage = () => {
             )}
           </div>
           <MapTopBar state={snapshot} filter={filter} onFilter={setFilter} selectedId={selectedId} onChoose={choose} onRetry={snapshot.retry} compact={compactBar} />
-          <MapActions hidden={dock !== null} />
-          <MapRail panels={panels} accountOpen={dock?.kind === 'account'} />
+          <MapActions hidden={shown !== null} />
+          <MapRail panels={panels} />
           <MapPanels panels={panels} state={snapshot} onRetry={snapshot.retry} />
           {hasDemoNeeds(charities) && <DemoNotice />}
           {snapshot.status === 'error' && panels.open === null && (
@@ -171,7 +178,7 @@ export const MapPage = () => {
             </div>
           )}
         </div>
-        {dock !== null && <MapDock dock={dock} panelRef={dockRef} onClose={closeDock} />}
+        {dock !== null && <MapDock dock={dock} panelRef={dockRef} onClose={closeDock} closing={closing} />}
       </section>
     </>
   )
